@@ -1,0 +1,113 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+ name: all-good
+ annotations:
+   nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+ rules:
+   - host: all-good.test
+     http:
+       paths:
+         - path: /
+           pathType: Prefix
+           backend:
+             service:
+               name: all-good
+               port:
+                 number: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: test
+  name: all-good
+  labels:
+    app: all-good
+spec:
+  type: NodePort
+  sessionAffinity: None
+  selector:
+    app: all-good
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: all-good
+  name: all-good-785d8bcc5f-g92mn
+  namespace: test
+spec:
+  containers:
+  - image: k8s.gcr.io/echoserver:1.4
+    imagePullPolicy: IfNotPresent
+    name: default
+    ports:
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+  serviceAccount: default
+  serviceAccountName: default
+status:
+  conditions:
+  - status: "True"
+    type: Ready
+  - status: "True"
+    type: ContainersReady
+  - status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - image: k8s.gcr.io/echoserver:1.4
+    imageID: docker-pullable://k8s.gcr.io/echoserver@sha256:5d99aa1120524c801bc8c1a7077e8f5ec122ba16b6dda1a5d3826057f67b9bcb
+    lastState: {}
+    name: default
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2022-10-18T20:33:24Z"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: all-good
+  name: all-good-785d8bcc5f-x85p2
+  namespace: test
+spec:
+  containers:
+  - image: k8s.gcr.io/echoserver:1.4
+    imagePullPolicy: IfNotPresent
+    name: default
+    ports:
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+  serviceAccount: default
+  serviceAccountName: default
+status:
+  conditions:
+  - status: "True"
+    type: Ready
+  - status: "True"
+    type: ContainersReady
+  - status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - image: k8s.gcr.io/echoserver:1.4
+    imageID: docker-pullable://k8s.gcr.io/echoserver@sha256:5d99aa1120524c801bc8c1a7077e8f5ec122ba16b6dda1a5d3826057f67b9bcb
+    lastState: {}
+    name: default
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2022-10-18T20:33:24Z"
