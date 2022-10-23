@@ -68,7 +68,6 @@ var _ = Describe("diagnose pods", func() {
 	It("should detect readiness probe error", func() {
 		// given
 		logger := logr.New(os.Stdout)
-		logger.SetLevel(logr.DebugLevel)
 		apiserver, _, err := NewFakeAPIServer(logger, "resources/pod-readiness-probe-error.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
