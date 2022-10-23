@@ -16,7 +16,6 @@ var _ = Describe("diagnose services", func() {
 	It("should not detect errors when all good", func() {
 		// given
 		logger := logr.New(os.Stdout)
-		logger.SetLevel(logr.DebugLevel)
 		// TODO: service should have multiple ports
 		apiserver, _, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
 		Expect(err).NotTo(HaveOccurred())
@@ -37,7 +36,6 @@ var _ = Describe("diagnose services", func() {
 	It("should detect no matching pods", func() {
 		// given
 		logger := logr.New(os.Stdout)
-		logger.SetLevel(logr.DebugLevel)
 		apiserver, _, err := NewFakeAPIServer(logger, "resources/service-no-matching-pods.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
@@ -58,7 +56,6 @@ var _ = Describe("diagnose services", func() {
 	It("should detect invalid target port as string", func() {
 		// given
 		logger := logr.New(os.Stdout)
-		logger.SetLevel(logr.DebugLevel)
 		apiserver, _, err := NewFakeAPIServer(logger, "resources/service-invalid-target-port.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")

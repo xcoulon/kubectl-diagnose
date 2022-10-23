@@ -16,7 +16,6 @@ var _ = Describe("diagnose replicasets", func() {
 	It("should detect sa not found", func() {
 		// given
 		logger := logr.New(os.Stdout)
-		logger.SetLevel(logr.DebugLevel)
 		apiserver, _, err := NewFakeAPIServer(logger, "resources/replicaset-service-account-not-found.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
