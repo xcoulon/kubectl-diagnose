@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: test
+  name: service-invalid-target-port
+  labels:
+    app: service-invalid-target-port
+spec:
+  type: NodePort
+  sessionAffinity: None
+  selector:
+    app: service-invalid-target-port
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: https # invalid target port (`https` instead of `http`)
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: test
+  name: service-invalid-target-port-68968cf979-wtpcp
+  labels:
+    app: service-invalid-target-port
+spec:
+  containers:
+  - name: default
+    image: k8s.gcr.io/echoserver:1.4
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+  serviceAccount: default
+  serviceAccountName: default
+status:
+  conditions:
+  - status: "True"
+    type: Ready
+  - status: "True"
+    type: ContainersReady
+  containerStatuses:
+  - containerID: docker://6f075f5f805f50c3649feeb7a49c36aa2086aa526bbf9aefa318d72a31acf1d9
+    image: k8s.gcr.io/echoserver:1.4
+    imageID: docker-pullable://k8s.gcr.io/echoserver@sha256:5d99aa1120524c801bc8c1a7077e8f5ec122ba16b6dda1a5d3826057f67b9bcb
+    name: default
+    ready: true
+    started: true
+    state:
+      running:
+        startedAt: "2022-10-20T05:36:53Z"
