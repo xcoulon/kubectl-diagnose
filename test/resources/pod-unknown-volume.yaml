@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: test
+  name: unknown-volume
+spec:
+  containers:
+  - name: default
+    image: k8s.gcr.io/echoserver:1.4
+    ports:
+    - containerPort: 80
+      name: http
+      protocol: TCP
+    volumeMounts:
+    - mountPath: "/tmp"
+      name: unknown-volume
+  serviceAccount: default
+  serviceAccountName: default
+  volumes:
+  - name: unknown-volume
+    hostPath:
+      path: /any/path
