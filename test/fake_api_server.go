@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -32,9 +33,12 @@ import (
 var Resources embed.FS
 
 func init() {
-	corev1.AddToScheme(scheme.Scheme)  // Kubernetes Pods and Services
-	appsv1.AddToScheme(scheme.Scheme)  // Kubernetes ReplicaSets
-	routev1.AddToScheme(scheme.Scheme) // OpenShift Routes
+	// Kubernetes Pods and Services
+	corev1.AddToScheme(scheme.Scheme) //nolint:errcheck
+	// Kubernetes ReplicaSets
+	appsv1.AddToScheme(scheme.Scheme) //nolint:errcheck
+	// OpenShift Routes
+	routev1.AddToScheme(scheme.Scheme) //nolint:errcheck
 }
 
 func NewFakeAPIServer(logger logr.Logger, filename string) (*httptest.Server, []runtimeclient.Object, error) {
@@ -52,10 +56,10 @@ func NewFakeAPIServer(logger logr.Logger, filename string) (*httptest.Server, []
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
-			output, _ := json.Marshal(obj)
+			output, _ := json.Marshal(obj) //nolint: errchkjson
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write(output) // nolint: errcheck
+			w.Write(output) //nolint: errcheck
 		default:
 			logger.Errorf("unexpected request: %s %s\n", req.Method, req.URL)
 			w.WriteHeader(http.StatusNotFound)
@@ -182,7 +186,7 @@ func parseObjects(filename string) ([]runtimeclient.Object, error) {
 	// decode 1 yaml value at a time, marshal it again and deserialize to `runtime.Object`
 	for {
 		var value interface{}
-		if err := decoder.Decode(&value); err == io.EOF {
+		if err := decoder.Decode(&value); errors.Is(err, io.EOF) {
 			break
 		} else if err != nil {
 			return nil, err
