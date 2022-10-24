@@ -71,7 +71,7 @@ func checkPodEvents(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool
 		return false, err
 	}
 	events, err := cl.CoreV1().Events(pod.Namespace).List(context.TODO(), metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("involvedObject.namespace=%s,involvedObject.name=%s", pod.Namespace, pod.Name),
+		FieldSelector: fmt.Sprintf("involvedObject.name=%s", pod.Name),
 	})
 	if err != nil {
 		return false, err

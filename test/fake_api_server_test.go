@@ -21,6 +21,21 @@ var _ = Describe("parse resources", func() {
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(objects).To(HaveLen(2))
+		for _, obj := range objects {
+			Expect(obj.GetNamespace()).To(Equal("default"))
+		}
+	})
+})
+
+var _ = Describe("retrieve logs", func() {
+
+	It("should return logs", func() {
+		// given
+
+		// when
+
+		// then
+
 	})
 })
 
