@@ -24,7 +24,7 @@ var _ = Describe("diagnose pods", func() {
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromPod(logger, cfg, "test", "image-pull-backoff")
+		found, err := diagnose.DiagnoseFromPod(logger, cfg, "default", "image-pull-backoff")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -40,7 +40,7 @@ var _ = Describe("diagnose pods", func() {
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromPod(logger, cfg, "test", "container-config-error")
+		found, err := diagnose.DiagnoseFromPod(logger, cfg, "default", "container-config-error")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -56,7 +56,7 @@ var _ = Describe("diagnose pods", func() {
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromPod(logger, cfg, "test", "unknown-configmap")
+		found, err := diagnose.DiagnoseFromPod(logger, cfg, "default", "unknown-configmap")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -73,7 +73,7 @@ var _ = Describe("diagnose pods", func() {
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromPod(logger, cfg, "test", "readiness-probe-error")
+		found, err := diagnose.DiagnoseFromPod(logger, cfg, "default", "readiness-probe-error")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())

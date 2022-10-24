@@ -21,7 +21,7 @@ var _ = Describe("diagnose replicasets", func() {
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromReplicaSet(logger, cfg, "test", "sa-notfound")
+		found, err := diagnose.DiagnoseFromReplicaSet(logger, cfg, "default", "sa-notfound")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())

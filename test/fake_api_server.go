@@ -196,6 +196,8 @@ func parseObjects(filename string) ([]runtimeclient.Object, error) {
 			return nil, err
 		}
 		if obj, ok := obj.(runtimeclient.Object); ok {
+			// force namespace to `default` here (so it works out-of-the-box on a vanilla Kubernetes cluster)
+			obj.SetNamespace("default")
 			objs = append(objs, obj)
 		}
 	}

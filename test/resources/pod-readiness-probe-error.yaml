@@ -1,7 +1,6 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  namespace: test
   name: readiness-probe-error
 spec:
   containers:
@@ -38,14 +37,13 @@ status:
     started: true
     state:
       running:
-        startedAt: "2022-10-21T17:18:02Z"
+        startedAt: "2022-10-22T17:18:02Z"
 ---
 apiVersion: v1
 kind: Event
 metadata:
   name: readiness-probe-error.17202520760a2a72
-  namespace: test
-firstTimestamp: "2022-10-21T17:18:03Z"
+firstTimestamp: "2022-10-22T17:18:03Z"
 lastTimestamp: "2022-10-22T08:48:17Z"
 type: Warning
 reason: Unhealthy
@@ -55,5 +53,4 @@ involvedObject:
   apiVersion: v1
   kind: Pod
   name: readiness-probe-error
-  namespace: test
 count: 156
