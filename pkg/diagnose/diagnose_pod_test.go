@@ -16,15 +16,15 @@ import (
 
 var _ = Describe("diagnose pods", func() {
 
-	It("should detect image pull backoff", func() {
+	It("should detect ImagePullBackOff", func() {
 		// given
 		logger := logr.New(io.Discard)
-		apiserver, err := NewFakeAPIServer(logger, "resources/pod-image-pull-backoff.yaml")
+		apiserver, err := NewFakeAPIServer(logger, "resources/pod-image-pull-back-off.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromPod(logger, cfg, "default", "image-pull-backoff")
+		found, err := diagnose.DiagnoseFromPod(logger, cfg, "default", "image-pull-back-off")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -32,20 +32,20 @@ var _ = Describe("diagnose pods", func() {
 		Expect(logger.Output()).To(ContainSubstring(`👻 container 'default' is waiting with reason 'ImagePullBackOff': Back-off pulling image "docker.io/unknown:latest"`))
 	})
 
-	It("should detect configuration error", func() {
+	It("should detect CreateContainerConfigError", func() {
 		// given
 		logger := logr.New(io.Discard)
-		apiserver, err := NewFakeAPIServer(logger, "resources/pod-container-config-error.yaml")
+		apiserver, err := NewFakeAPIServer(logger, "resources/pod-create-container-config-error.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromPod(logger, cfg, "default", "container-config-error")
+		found, err := diagnose.DiagnoseFromPod(logger, cfg, "default", "create-container-config-error")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👻 container 'default' is waiting with reason 'CreateContainerConfigError': container has runAsNonRoot and image will run as root (pod: "container-config-error_test(2513d2ac-91fa-4d90-b8f8-45d9c438d946)", container: default)`))
+		Expect(logger.Output()).To(ContainSubstring(`👻 container 'default' is waiting with reason 'CreateContainerConfigError': configmap "unknown-configmap" not found`))
 	})
 
 	It("should detect configmap mount error", func() {

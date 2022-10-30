@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: unknown-configmap
+  name: create-container-config-error
 spec:
   containers:
   - name: default
@@ -10,12 +10,6 @@ spec:
     - containerPort: 80
       name: http
       protocol: TCP
-    env:
-    - name: COOKIE
-      valueFrom:
-        configMapKeyRef:
-          name: unknown-configmap # unknown
-          key: cookie
     resources:
       limits:
         cpu: 500m
@@ -23,8 +17,29 @@ spec:
       requests:
         cpu: 100m
         memory: 20Mi
+    volumeMounts:
+    - name: caddy-config
+      mountPath: "/etc/caddy"
+    - name: caddy-config-cache
+      mountPath: "/config/caddy"
+    env:
+    - name: COOKIE
+      valueFrom:
+        configMapKeyRef:
+          name: unknown-configmap # unknown
+          key: cookie
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
   serviceAccount: default
   serviceAccountName: default
+  volumes:
+  - name: caddy-config
+    configMap:
+      name: caddy-config
+  - name: caddy-config-cache
+    emptyDir: {}
 status:
   conditions:
   - message: 'containers with unready status: [default]'
@@ -40,9 +55,19 @@ status:
     imageID: ""
     name: default
     ready: false
-    started: false
     restartCount: 0
+    started: false
     state:
       waiting:
         message: configmap "unknown-configmap" not found
         reason: CreateContainerConfigError
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config
+data:
+  Caddyfile: |-
+    http://:8080
+
+    respond "Hello, world!"

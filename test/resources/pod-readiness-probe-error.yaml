@@ -5,7 +5,7 @@ metadata:
 spec:
   containers:
   - name: default
-    image: k8s.gcr.io/echoserver:1.4
+    image: caddy:2
     ports:
     - containerPort: 80
       name: http
@@ -37,7 +37,7 @@ status:
     type: ContainersReady
   containerStatuses:
   - containerID: docker://7e2a1894ed2773b3a6dc614fb99661ec628c198f0371ed4a9266d79cafc6e2f2
-    image: k8s.gcr.io/echoserver:1.4
+    image: caddy:2
     imageID: docker-pullable://k8s.gcr.io/echoserver@sha256:5d99aa1120524c801bc8c1a7077e8f5ec122ba16b6dda1a5d3826057f67b9bcb
     name: default
     ready: false

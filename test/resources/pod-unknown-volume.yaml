@@ -5,14 +5,11 @@ metadata:
 spec:
   containers:
   - name: default
-    image: k8s.gcr.io/echoserver:1.4
+    image: caddy:2
     ports:
     - containerPort: 80
       name: http
       protocol: TCP
-    volumeMounts:
-    - mountPath: "/tmp"
-      name: unknown-volume
     resources:
       limits:
         cpu: 500m
@@ -20,6 +17,9 @@ spec:
       requests:
         cpu: 100m
         memory: 20Mi
+    volumeMounts:
+    - mountPath: "/tmp"
+      name: unknown-volume
   serviceAccount: default
   serviceAccountName: default
   volumes:

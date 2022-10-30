@@ -24,7 +24,7 @@ metadata:
     app: something-else # not matching the service selector
 spec:
   containers:
-  - image: k8s.gcr.io/echoserver:1.4
+  - image: caddy:2
     imagePullPolicy: IfNotPresent
     name: default
     ports:

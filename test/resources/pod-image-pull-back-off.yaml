@@ -1,18 +1,20 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: image-pull-backoff
+  name: image-pull-back-off
 spec:
   containers:
   - name: default
     image: docker.io/unknown:latest # invalid image name
-  #   imagePullPolicy: Always
-  # securityContext:
-  #   runAsNonRoot: true
-  #   seccompProfile:
-  #     type: RuntimeDefault
-  # serviceAccount: default
-  # serviceAccountName: default
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
+  serviceAccount: default
+  serviceAccountName: default
 status:
   conditions:
   - message: 'containers with unready status: [default]'
