@@ -16,6 +16,13 @@ spec:
         configMapKeyRef:
           name: unknown-configmap # unknown
           key: cookie
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
   serviceAccount: default
   serviceAccountName: default
 status:
@@ -34,6 +41,7 @@ status:
     name: default
     ready: false
     started: false
+    restartCount: 0
     state:
       waiting:
         message: configmap "unknown-configmap" not found

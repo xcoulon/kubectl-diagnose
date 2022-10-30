@@ -16,6 +16,13 @@ spec:
         port: http
       failureThreshold: 1
       periodSeconds: 60
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
   serviceAccount: default
   serviceAccountName: default
 status:
@@ -34,6 +41,7 @@ status:
     imageID: docker-pullable://k8s.gcr.io/echoserver@sha256:5d99aa1120524c801bc8c1a7077e8f5ec122ba16b6dda1a5d3826057f67b9bcb
     name: default
     ready: false
+    restartCount: 0
     started: true
     state:
       running:
