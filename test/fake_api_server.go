@@ -1,14 +1,18 @@
 package test
 
 import (
+	"bufio"
 	"bytes"
 	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 	routev1 "github.com/openshift/api/route/v1"
@@ -36,18 +40,42 @@ func init() {
 	routev1.AddToScheme(scheme.Scheme) //nolint:errcheck
 }
 
-func NewFakeAPIServer(logger logr.Logger, filename string) (*httptest.Server, error) {
-	objs, err := parseObjects(filename)
-	if err != nil {
-		return nil, err
+func NewFakeAPIServer(logger logr.Logger, filenames ...string) (*httptest.Server, error) {
+	allObjs := []runtimeclient.Object{}
+	allLogs := map[string]map[string][]string{}
+	for _, filename := range filenames {
+		switch filepath.Ext(filename) {
+		case ".yaml":
+			objs, err := parseObjects(filename)
+			if err != nil {
+				return nil, err
+			}
+			allObjs = append(allObjs, objs...)
+		case ".logs":
+			logs, err := parseLogs(filename)
+			if err != nil {
+				return nil, err
+			}
+			for p, cl := range logs {
+				for c, l := range cl {
+					if allLogs[p] == nil {
+						allLogs[p] = map[string][]string{}
+					}
+					allLogs[p][c] = l
+				}
+			}
+		default:
+			return nil, fmt.Errorf("unsupported file kind: '%s'", filepath.Ext(filename))
+		}
 	}
 	r := httprouter.New()
-	r.GET(`/api/v1/namespaces/:namespace/pods/:name`, newObjectHandler(logger, objs, "Pod"))
-	r.GET(`/api/v1/namespaces/:namespace/pods`, newPodsHandler(logger, objs))
-	r.GET(`/apis/route.openshift.io/v1/namespaces/:namespace/routes/:name`, newObjectHandler(logger, objs, "Route"))
-	r.GET(`/api/v1/namespaces/:namespace/services/:name`, newObjectHandler(logger, objs, "Service"))
-	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, objs, "ReplicaSet"))
-	r.GET(`/api/v1/namespaces/:namespace/events`, newEventsHandler(logger, objs))
+	r.GET(`/api/v1/namespaces/:namespace/pods/:name`, newObjectHandler(logger, allObjs, "Pod"))
+	r.GET(`/api/v1/namespaces/:namespace/pods`, newPodsHandler(logger, allObjs))
+	r.GET(`/api/v1/namespaces/:namespace/pods/:name/log`, newPodLogsHandler(logger, allLogs))
+	r.GET(`/apis/route.openshift.io/v1/namespaces/:namespace/routes/:name`, newObjectHandler(logger, allObjs, "Route"))
+	r.GET(`/api/v1/namespaces/:namespace/services/:name`, newObjectHandler(logger, allObjs, "Service"))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, allObjs, "ReplicaSet"))
+	r.GET(`/api/v1/namespaces/:namespace/events`, newEventsHandler(logger, allObjs))
 	r.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("no match for request with path='%s' and query='%s' ", r.URL.Path, r.URL.Query().Encode())
 		w.WriteHeader(http.StatusNotFound)
@@ -87,6 +115,35 @@ func parseObjects(filename string) ([]runtimeclient.Object, error) {
 		}
 	}
 	return objs, nil
+}
+
+func parseLogs(filename string) (map[string]map[string][]string, error) {
+	logs := map[string]map[string][]string{}
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	decoder := yaml.NewDecoder(bytes.NewReader(content))
+	data := map[string]interface{}{}
+	if err := decoder.Decode(data); err != nil {
+		return nil, err
+	}
+	for p, e := range data {
+		logs[p] = map[string][]string{}
+		if e, ok := e.(map[string]interface{}); ok {
+			for c, l := range e {
+				if l, ok := l.(string); ok {
+					logs[p][c] = []string{}
+					scanner := bufio.NewScanner(strings.NewReader(l))
+					scanner.Split(bufio.ScanLines)
+					for scanner.Scan() {
+						logs[p][c] = append(logs[p][c], scanner.Text())
+					}
+				}
+			}
+		}
+	}
+	return logs, nil
 }
 
 // ----------------------------------
@@ -131,6 +188,19 @@ func lookupObject(logger logr.Logger, kind, namespace, name string, objs []runti
 		}
 	}
 	return nil, NewNotFoundErr(fmt.Sprintf("no match for %s/%s (missing resource?)", namespace, name))
+}
+
+func newPodLogsHandler(logger logr.Logger, logs map[string]map[string][]string) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+		namespace := params.ByName("namespace")
+		pod := params.ByName("name")
+		container := r.URL.Query().Get("container")
+		logger.Debugf("fetching logs for container '%s' of pod '%s' in namespace '%s'", container, pod, namespace)
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		output := strings.Join(logs[pod][container], "\n")
+		w.Write([]byte(output)) //nolint: errcheck
+	}
 }
 
 func newPodsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.Handle {

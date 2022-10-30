@@ -4,6 +4,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -108,6 +109,22 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp).To(HaveReturnedEventCount(1))
 	})
+
+	It("should retrieve logs", func() {
+		// given
+		logger := logr.New(os.Stdout)
+		logger.SetLevel(logr.DebugLevel)
+		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml", "resources/all-good.logs")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/pods/all-good-785d8bcc5f-g92mn/log?container=default")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveTextBody("some\nlogs"))
+	})
 })
 
 func HaveBodyOfType(expected runtime.Object) types.GomegaMatcher {
@@ -124,6 +141,21 @@ func HaveBodyOfType(expected runtime.Object) types.GomegaMatcher {
 			obj, _, err := deserializer.Decode(data, nil, nil)
 			return obj, err
 		}, BeAssignableToTypeOf(expected)),
+	)
+}
+
+func HaveTextBody(expected string) types.GomegaMatcher {
+	return And(
+		HaveHTTPStatus(200),
+		HaveHTTPHeaderWithValue("Content-Type", "text/plain"),
+		WithTransform(func(resp *http.Response) (string, error) {
+			data, err := ioutil.ReadAll(resp.Body)
+			defer resp.Body.Close()
+			if err != nil {
+				return "", err
+			}
+			return string(data), err
+		}, Equal(expected)),
 	)
 }
 

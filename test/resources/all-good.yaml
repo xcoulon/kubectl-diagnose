@@ -41,7 +41,6 @@ metadata:
   labels:
     app: all-good
   name: all-good-785d8bcc5f-g92mn
-  namespace: test
 spec:
   containers:
   - image: k8s.gcr.io/echoserver:1.4
@@ -79,7 +78,6 @@ metadata:
   labels:
     app: all-good
   name: all-good-785d8bcc5f-x85p2
-  namespace: test
 spec:
   containers:
   - image: k8s.gcr.io/echoserver:1.4
