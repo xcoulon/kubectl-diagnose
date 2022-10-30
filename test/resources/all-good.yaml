@@ -1,22 +1,22 @@
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: route.openshift.io/v1
+kind: Route
 metadata:
- name: all-good
- annotations:
-   nginx.ingress.kubernetes.io/rewrite-target: /$1
+  name: all-good
 spec:
- rules:
-   - host: all-good.test
-     http:
-       paths:
-         - path: /
-           pathType: Prefix
-           backend:
-             service:
-               name: all-good
-               port:
-                 number: 8080
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: all-good
+    weight: 100
+  wildcardPolicy: None
+status:
+  ingress:
+  - conditions:
+    - status: "True"
+      type: Admitted
+    routerName: default
+    wildcardPolicy: None
 ---
 apiVersion: v1
 kind: Service

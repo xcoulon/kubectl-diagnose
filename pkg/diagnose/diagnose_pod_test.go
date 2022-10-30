@@ -19,7 +19,7 @@ var _ = Describe("diagnose pods", func() {
 	It("should detect image pull backoff", func() {
 		// given
 		logger := logr.New(io.Discard)
-		apiserver, _, err := NewFakeAPIServer(logger, "resources/pod-image-pull-backoff.yaml")
+		apiserver, err := NewFakeAPIServer(logger, "resources/pod-image-pull-backoff.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
@@ -35,7 +35,7 @@ var _ = Describe("diagnose pods", func() {
 	It("should detect configuration error", func() {
 		// given
 		logger := logr.New(io.Discard)
-		apiserver, _, err := NewFakeAPIServer(logger, "resources/pod-container-config-error.yaml")
+		apiserver, err := NewFakeAPIServer(logger, "resources/pod-container-config-error.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
@@ -51,7 +51,7 @@ var _ = Describe("diagnose pods", func() {
 	It("should detect configmap mount error", func() {
 		// given
 		logger := logr.New(io.Discard)
-		apiserver, _, err := NewFakeAPIServer(logger, "resources/pod-unknown-configmap.yaml")
+		apiserver, err := NewFakeAPIServer(logger, "resources/pod-unknown-configmap.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
@@ -68,7 +68,7 @@ var _ = Describe("diagnose pods", func() {
 	It("should detect readiness probe error", func() {
 		// given
 		logger := logr.New(os.Stdout)
-		apiserver, _, err := NewFakeAPIServer(logger, "resources/pod-readiness-probe-error.yaml")
+		apiserver, err := NewFakeAPIServer(logger, "resources/pod-readiness-probe-error.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 

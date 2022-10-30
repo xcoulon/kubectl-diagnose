@@ -9,17 +9,16 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"regexp"
 
+	"github.com/julienschmidt/httprouter"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes/scheme"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,137 +36,23 @@ func init() {
 	routev1.AddToScheme(scheme.Scheme) //nolint:errcheck
 }
 
-func NewFakeAPIServer(logger logr.Logger, filename string) (*httptest.Server, []runtimeclient.Object, error) {
+func NewFakeAPIServer(logger logr.Logger, filename string) (*httptest.Server, error) {
 	objs, err := parseObjects(filename)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		logger.Debugf("processing %s %v\n", req.Method, req.URL)
-		switch req.Method {
-		case "GET":
-			obj, err := getResource(logger, objs, req.URL)
-			if err != nil {
-				logger.Errorf(err.Error())
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-			output, _ := json.Marshal(obj) //nolint: errchkjson
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			w.Write(output) //nolint: errcheck
-		default:
-			logger.Errorf("unexpected request: %s %s\n", req.Method, req.URL)
-			w.WriteHeader(http.StatusNotFound)
-		}
+	r := httprouter.New()
+	r.GET(`/api/v1/namespaces/:namespace/pods/:name`, newObjectHandler(logger, objs, "Pod"))
+	r.GET(`/api/v1/namespaces/:namespace/pods`, newPodsHandler(logger, objs))
+	r.GET(`/apis/route.openshift.io/v1/namespaces/:namespace/routes/:name`, newObjectHandler(logger, objs, "Route"))
+	r.GET(`/api/v1/namespaces/:namespace/services/:name`, newObjectHandler(logger, objs, "Service"))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, objs, "ReplicaSet"))
+	r.GET(`/api/v1/namespaces/:namespace/events`, newEventsHandler(logger, objs))
+	r.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger.Errorf("no match for request with path='%s' and query='%s' ", r.URL.Path, r.URL.Query().Encode())
+		w.WriteHeader(http.StatusNotFound)
 	})
-
-	return httptest.NewServer(handler), objs, nil
-}
-
-var routeRegexp = regexp.MustCompile(`^/apis/route\.openshift\.io/v1/namespaces/(?P<namespace>[a-z0-9\.-]+)/routes/(?P<name>[a-z0-9\.-]+)$`)
-var serviceRegexp = regexp.MustCompile(`^/api/v1/namespaces/(?P<namespace>[a-z0-9\.-]+)/services/(?P<name>[a-z0-9\.-]+)$`)
-var replicasetRegexp = regexp.MustCompile(`^/apis/apps/v1/namespaces/(?P<namespace>[a-z0-9\.-]+)/replicasets/(?P<name>[a-z0-9\.-]+)$`)
-var podRegexp = regexp.MustCompile(`^/api/v1/namespaces/(?P<namespace>[a-z0-9\.-]+)/pods/(?P<name>[a-z0-9\.-]+)$`)
-var podsRegex = regexp.MustCompile(`^/api/v1/namespaces/(?P<namespace>[a-z0-9\.-]+)/pods\?labelSelector=(?P<labelSelector>[a-zA-Z0-9\.%-]+)$`)
-var eventsRegex = regexp.MustCompile(`^/api/v1/namespaces/(?P<namespace>[a-z0-9\.-]+)/events\?fieldSelector=(?P<fieldSelector>[a-zA-Z0-9\.%-]+)$`)
-
-func getResource(logger logr.Logger, objs []runtimeclient.Object, u *url.URL) (runtime.Object, error) {
-	// get a single resource by kind/namespace/name
-	for kind, re := range map[string]*regexp.Regexp{
-		"Route":      routeRegexp,
-		"Pod":        podRegexp,
-		"Service":    serviceRegexp,
-		"ReplicaSet": replicasetRegexp,
-	} {
-		if re.MatchString(u.Path) {
-			groups := re.FindStringSubmatch(u.Path)
-			namespace := groups[re.SubexpIndex("namespace")]
-			name := groups[re.SubexpIndex("name")]
-			return getObject(logger, objs, kind, namespace, name)
-		}
-	}
-	// list pods by namespace and label selector
-	if pods, err := listPods(logger, objs, u); err != nil {
-		return nil, err
-	} else if pods != nil {
-		return pods, nil
-	}
-	if events, err := listEvents(logger, objs, u); err != nil {
-		return nil, err
-	} else if events != nil {
-		return events, nil
-	}
-	return nil, fmt.Errorf("no match for '%s' (invalid path?)", u.String())
-
-}
-
-func getObject(logger logr.Logger, objs []runtimeclient.Object, kind, namespace, name string) (runtimeclient.Object, error) {
-	// lookup the object
-	logger.Debugf("looking up %s %s/%s", kind, namespace, name)
-	for _, obj := range objs {
-		if obj.GetObjectKind().GroupVersionKind().Kind == kind &&
-			obj.GetNamespace() == namespace &&
-			obj.GetName() == name {
-			return obj, nil
-		}
-	}
-	return nil, fmt.Errorf("no match for %s %s/%s (missing resource?)", kind, namespace, name)
-}
-
-func listPods(logger logr.Logger, objs []runtimeclient.Object, u *url.URL) (*corev1.PodList, error) {
-	// lookup the object
-	if !podsRegex.MatchString(u.String()) {
-		return nil, nil
-	}
-	groups := podsRegex.FindStringSubmatch(u.String())
-	namespace := groups[podsRegex.SubexpIndex("namespace")]
-	selector := u.Query()["labelSelector"][0]
-	logger.Debugf("listing pods in %s with labels %s", namespace, selector)
-	s, err := labels.Parse(selector)
-	if err != nil {
-		return nil, err
-	}
-	pods := &corev1.PodList{
-		Items: []corev1.Pod{},
-	}
-	for _, obj := range objs {
-		if obj, ok := obj.(*corev1.Pod); ok &&
-			obj.GetNamespace() == namespace &&
-			s.Matches(labels.Set(obj.GetLabels())) {
-			pods.Items = append(pods.Items, *obj)
-		}
-	}
-	return pods, nil
-}
-
-func listEvents(logger logr.Logger, objs []runtimeclient.Object, u *url.URL) (*corev1.EventList, error) {
-	// lookup the object
-	if !eventsRegex.MatchString(u.String()) {
-		return nil, nil
-	}
-	groups := eventsRegex.FindStringSubmatch(u.String())
-	namespace := groups[eventsRegex.SubexpIndex("namespace")]
-	selector := u.Query()["fieldSelector"][0]
-	logger.Debugf("listing pods in %s with labels %s", namespace, selector)
-	s, err := fields.ParseSelector(selector)
-	if err != nil {
-		return nil, err
-	}
-	events := &corev1.EventList{
-		Items: []corev1.Event{},
-	}
-	for _, obj := range objs {
-		if obj, ok := obj.(*corev1.Event); ok &&
-			obj.GetNamespace() == namespace &&
-			s.Matches(fields.Set(map[string]string{
-				"involvedObject.namespace": obj.InvolvedObject.Namespace,
-				"involvedObject.name":      obj.InvolvedObject.Name,
-			})) {
-			events.Items = append(events.Items, *obj)
-		}
-	}
-	return events, nil
+	return httptest.NewServer(r), nil
 }
 
 // see https://github.com/go-yaml/yaml/pull/301#issuecomment-792871300
@@ -202,4 +87,131 @@ func parseObjects(filename string) ([]runtimeclient.Object, error) {
 		}
 	}
 	return objs, nil
+}
+
+// ----------------------------------
+// Endpoint Handlers
+// ----------------------------------
+
+type NotFoundErr struct {
+	msg string
+}
+
+func NewNotFoundErr(msg string) error {
+	return NotFoundErr{
+		msg: msg,
+	}
+}
+
+func (e NotFoundErr) Error() string {
+	return e.msg
+}
+
+func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind string) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+		logger.Infof("handling object at '%s'", r.URL.Path)
+		namespace := params.ByName("namespace")
+		name := params.ByName("name")
+		obj, err := lookupObject(logger, kind, namespace, name, objs)
+		if err != nil {
+			handleError(logger, w, err)
+			return
+		}
+		handleObject(logger, w, obj)
+	}
+}
+
+func lookupObject(logger logr.Logger, kind, namespace, name string, objs []runtimeclient.Object) (interface{}, error) {
+	logger.Debugf("looking up %s/%s", namespace, name)
+	for _, obj := range objs {
+		if obj.GetObjectKind().GroupVersionKind().Kind == kind &&
+			obj.GetNamespace() == namespace &&
+			obj.GetName() == name {
+			return obj, nil
+		}
+	}
+	return nil, NewNotFoundErr(fmt.Sprintf("no match for %s/%s (missing resource?)", namespace, name))
+}
+
+func newPodsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+		namespace := params.ByName("namespace")
+		labelSelector := r.URL.Query().Get("labelSelector")
+		logger.Debugf("listing pods in %s with labels %s", namespace, labelSelector)
+		s, err := labels.Parse(labelSelector)
+		if err != nil {
+			handleError(logger, w, err)
+			return
+		}
+		pods := &corev1.PodList{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "PodList",
+			},
+			Items: []corev1.Pod{},
+		}
+		for _, obj := range objs {
+			if obj, ok := obj.(*corev1.Pod); ok &&
+				obj.GetNamespace() == namespace &&
+				s.Matches(labels.Set(obj.GetLabels())) {
+				pods.Items = append(pods.Items, *obj)
+			}
+		}
+		handleObject(logger, w, pods)
+	}
+}
+
+func newEventsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+		namespace := params.ByName("namespace")
+		fieldSelector := r.URL.Query().Get("fieldSelector")
+		logger.Debugf("listing events in %s with fields %s", namespace, fieldSelector)
+		s, err := fields.ParseSelector(fieldSelector)
+		if err != nil {
+			handleError(logger, w, err)
+			return
+		}
+		events := &corev1.EventList{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "EventList",
+			},
+			Items: []corev1.Event{},
+		}
+		for _, obj := range objs {
+			if obj, ok := obj.(*corev1.Event); ok &&
+				obj.GetNamespace() == namespace &&
+				s.Matches(fields.Set(map[string]string{
+					"involvedObject.kind":      "Pod",
+					"involvedObject.namespace": obj.InvolvedObject.Namespace,
+					"involvedObject.name":      obj.InvolvedObject.Name,
+				})) {
+				events.Items = append(events.Items, *obj)
+			}
+		}
+		handleObject(logger, w, events)
+	}
+}
+
+func handleObject(logger logr.Logger, w http.ResponseWriter, obj interface{}) {
+	output, err := json.Marshal(obj)
+	if err != nil {
+		logger.Errorf(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(output) //nolint: errcheck
+}
+
+func handleError(logger logr.Logger, w http.ResponseWriter, err error) {
+	logger.Errorf(err.Error())
+	switch {
+	case errors.Is(err, NotFoundErr{}):
+		w.WriteHeader(http.StatusNotFound)
+
+	default:
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
