@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: crash-loop-back-off
+spec:
+  containers:
+  - name: default
+    image: caddy:2
+    ports:
+    - containerPort: 80
+      name: http
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
+    volumeMounts:
+    - name: caddy-config
+      mountPath: "/etc/caddy"
+    - name: caddy-config-cache
+      mountPath: "/config/caddy"
+  securityContext:
+    runAsNonRoot: true # but caddy process needs to run as root for port 80
+    seccompProfile:
+      type: RuntimeDefault
+  serviceAccount: default
+  serviceAccountName: default
+  volumes:
+  - name: caddy-config
+    configMap:
+      name: caddy-config-port80
+  - name: caddy-config-cache
+    emptyDir: {}
+status:
+  conditions:
+  - message: 'containers with unready status: [default]'
+    reason: ContainersNotReady
+    status: "False"
+    type: Ready
+  - message: 'containers with unready status: [default]'
+    reason: ContainersNotReady
+    status: "False"
+    type: ContainersReady
+  containerStatuses:
+  - image: docker.io/library/caddy:2
+    imageID: docker.io/library/caddy@sha256:2b5eaec58eda7e9c2cbcf317c6e5fbfa5507a60d323967e24f686e3619330dc9
+    name: default
+    ready: false
+    restartCount: 0
+    started: false
+    state:
+      waiting:
+        message: back-off 40s restarting failed container=default pod=container-crashloopbackoff_namespace(3094aeb6-bb47-4129-8046-af335136521d)
+        reason: CrashLoopBackOff
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config-port80
+data:
+  Caddyfile: |-
+    http://:80
+
+    respond "Hello, world!"
