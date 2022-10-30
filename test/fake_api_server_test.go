@@ -1,138 +1,164 @@
 package test
 
 import (
-	"net/url"
-	"os"
-	"regexp"
+	"io"
+	"io/ioutil"
+	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/types"
+	routev1 "github.com/openshift/api/route/v1"
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
-var _ = Describe("parse resources", func() {
+var _ = Describe("fake api-server endpoints", func() {
 
-	It("should parse resources", func() {
-		// when
-		objects, err := parseObjects("resources/service-invalid-target-port.yaml")
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(objects).To(HaveLen(2))
-		for _, obj := range objects {
-			Expect(obj.GetNamespace()).To(Equal("default"))
-		}
-	})
-})
-
-var _ = Describe("retrieve logs", func() {
-
-	It("should return logs", func() {
+	It("should get single pod", func() {
 		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
 
 		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/pods/all-good-785d8bcc5f-g92mn")
 
 		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveBodyOfType(&corev1.Pod{}))
+	})
 
+	It("should list 2 pods", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/pods?labelSelector=app%3Dall-good")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveReturnedPodCount(2))
+	})
+
+	It("should get single replicaset", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/replicaset-service-account-not-found.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/default/replicasets/sa-notfound")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveBodyOfType(&appsv1.ReplicaSet{}))
+	})
+
+	It("should get single service", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/service-invalid-target-port.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/services/service-invalid-target-port")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveBodyOfType(&corev1.Service{}))
+	})
+
+	It("should get single route", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/route.openshift.io/v1/namespaces/default/routes/all-good")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveBodyOfType(&routev1.Route{}))
+	})
+
+	It("should get events", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/pod-readiness-probe-error.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/events?fieldSelector=involvedObject.name%3Dreadiness-probe-error")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveReturnedEventCount(1))
 	})
 })
 
-var _ = DescribeTable("single resource request regexps",
-	func(re *regexp.Regexp, path, namespace, name string) {
-		match := re.MatchString(path)
-		// then
-		Expect(match).To(BeTrue())
-		groups := re.FindStringSubmatch(path)
-		Expect(namespace).To(Equal(groups[re.SubexpIndex("namespace")]))
-		Expect(name).To(Equal(groups[re.SubexpIndex("name")]))
-	},
-	Entry("pod", podRegexp, "/api/v1/namespaces/test/pods/cookie", "test", "cookie"),
-	Entry("service", serviceRegexp, "/api/v1/namespaces/test/services/cookie", "test", "cookie"),
-	Entry("replicatset", replicasetRegexp, "/apis/apps/v1/namespaces/test/replicasets/cookie", "test", "cookie"),
-	Entry("route", routeRegexp, "/apis/route.openshift.io/v1/namespaces/test/routes/cookie", "test", "cookie"),
-)
+func HaveBodyOfType(expected runtime.Object) types.GomegaMatcher {
+	return And(
+		HaveHTTPStatus(200),
+		HaveHTTPHeaderWithValue("Content-Type", "application/json"),
+		WithTransform(func(resp *http.Response) (runtime.Object, error) {
+			deserializer := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
+			data, err := ioutil.ReadAll(resp.Body)
+			defer resp.Body.Close()
+			if err != nil {
+				return nil, err
+			}
+			obj, _, err := deserializer.Decode(data, nil, nil)
+			return obj, err
+		}, BeAssignableToTypeOf(expected)),
+	)
+}
 
-var _ = DescribeTable("list pods",
-	func(urlStr string, expectedCount int) {
-		objs := []runtimeclient.Object{
-			&corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "test",
-					Name:      "pod-1",
-					Labels: map[string]string{
-						"app":  "cookie",
-						"with": "chocolate",
-					},
-				},
-			},
-			&corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "test",
-					Name:      "pod-1",
-					Labels: map[string]string{
-						"app": "cookie",
-					},
-				},
-			},
-		}
-		u, err := url.Parse(urlStr)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(podsRegex.MatchString(u.String())).To(BeTrue())
-		logger := logr.New(os.Stdout)
-		pods, err := listPods(logger, objs, u)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(pods.Items).To(HaveLen(expectedCount))
-	},
-	Entry("single match", "/api/v1/namespaces/test/pods?labelSelector=with%3Dchocolate", 1),
-	Entry("multiple matches", "/api/v1/namespaces/test/pods?labelSelector=app%3Dcookie", 2),
-	Entry("no match", "/api/v1/namespaces/test/pods?labelSelector=with%3Dnothing", 0),
-)
+func HaveReturnedPodCount(expected int) types.GomegaMatcher {
+	return And(
+		HaveHTTPStatus(200),
+		HaveHTTPHeaderWithValue("Content-Type", "application/json"),
+		WithTransform(func(resp *http.Response) ([]corev1.Pod, error) {
+			deserializer := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
+			data, err := ioutil.ReadAll(resp.Body)
+			defer resp.Body.Close()
+			if err != nil {
+				return nil, err
+			}
+			list := &corev1.PodList{}
+			_, _, err = deserializer.Decode(data, nil, list)
+			return list.Items, err
+		}, HaveLen(expected)),
+	)
+}
 
-var _ = DescribeTable("list events",
-	func(urlStr string, expectedCount int) {
-		objs := []runtimeclient.Object{
-			&corev1.Event{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "test",
-					Name:      "pod-1-event-1",
-				},
-				InvolvedObject: corev1.ObjectReference{
-					Namespace: "test",
-					Name:      "pod-1",
-				},
-			},
-			&corev1.Event{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "test",
-					Name:      "pod-2-event-1",
-				},
-				InvolvedObject: corev1.ObjectReference{
-					Namespace: "test",
-					Name:      "pod-2",
-				},
-			},
-			&corev1.Event{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "test",
-					Name:      "pod-2-event-2",
-				},
-				InvolvedObject: corev1.ObjectReference{
-					Namespace: "test",
-					Name:      "pod-2",
-				},
-			},
-		}
-		u, err := url.Parse(urlStr)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(eventsRegex.MatchString(u.String())).To(BeTrue())
-		logger := logr.New(os.Stdout)
-		pods, err := listEvents(logger, objs, u)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(pods.Items).To(HaveLen(expectedCount))
-	},
-	Entry("single match", "/api/v1/namespaces/test/events?fieldSelector=involvedObject.namespace%3Dtest%2CinvolvedObject.name%3Dpod-1", 1),
-	Entry("multiple matches", "/api/v1/namespaces/test/events?fieldSelector=involvedObject.namespace%3Dtest%2CinvolvedObject.name%3Dpod-2", 2),
-	Entry("no match", "/api/v1/namespaces/test/events?fieldSelector=involvedObject.namespace%3Dtest%2CinvolvedObject.name%3Dunknown", 0),
-)
+func HaveReturnedEventCount(expected int) types.GomegaMatcher {
+	return And(
+		HaveHTTPStatus(200),
+		HaveHTTPHeaderWithValue("Content-Type", "application/json"),
+		WithTransform(func(resp *http.Response) ([]corev1.Event, error) {
+			deserializer := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
+			data, err := ioutil.ReadAll(resp.Body)
+			defer resp.Body.Close()
+			if err != nil {
+				return nil, err
+			}
+			list := &corev1.EventList{}
+			_, _, err = deserializer.Decode(data, nil, list)
+			return list.Items, err
+		}, HaveLen(expected)),
+	)
+}

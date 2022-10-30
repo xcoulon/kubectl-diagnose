@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/fatih/color v1.9.0
+	github.com/julienschmidt/httprouter v1.3.0
 	github.com/onsi/ginkgo/v2 v2.3.1
 	github.com/onsi/gomega v1.22.0
 	github.com/openshift/api v0.0.0-20220912162045-8cfbc78b21bd
