@@ -30,6 +30,13 @@ spec:
     - containerPort: 8080
       name: http
       protocol: TCP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
   serviceAccount: default
   serviceAccountName: default
 status:
@@ -45,6 +52,7 @@ status:
     name: default
     ready: true
     started: true
+    restartCount: 0
     state:
       running:
         startedAt: "2022-10-20T05:36:53Z"

@@ -31,6 +31,13 @@ spec:
     - containerPort: 8080
       name: http
       protocol: TCP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
   serviceAccount: default
   serviceAccountName: default
 status:
