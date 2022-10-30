@@ -1,0 +1,8 @@
+all-good-785d8bcc5f-g92mn:
+  default: |-
+    some
+    logs
+all-good-785d8bcc5f-x85p2:
+  default: |-
+    other
+    logs
