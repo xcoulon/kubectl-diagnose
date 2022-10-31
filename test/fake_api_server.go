@@ -77,7 +77,7 @@ func NewFakeAPIServer(logger logr.Logger, filenames ...string) (*httptest.Server
 	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, allObjs, "ReplicaSet"))
 	r.GET(`/api/v1/namespaces/:namespace/events`, newEventsHandler(logger, allObjs))
 	r.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger.Errorf("no match for request with path='%s' and query='%s' ", r.URL.Path, r.URL.Query().Encode())
+		logger.Infof("no match for request with path='%s' and query='%s' ", r.URL.Path, r.URL.Query().Encode())
 		w.WriteHeader(http.StatusNotFound)
 	})
 	return httptest.NewServer(r), nil
@@ -164,6 +164,10 @@ func (e NotFoundErr) Error() string {
 	return e.msg
 }
 
+func (e NotFoundErr) Is(target error) bool {
+	return target == NotFoundErr{}
+}
+
 func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		logger.Infof("handling object at '%s'", r.URL.Path)
@@ -179,7 +183,7 @@ func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind stri
 }
 
 func lookupObject(logger logr.Logger, kind, namespace, name string, objs []runtimeclient.Object) (interface{}, error) {
-	logger.Debugf("looking up %s/%s", namespace, name)
+	logger.Debugf("looking up %s %s/%s", kind, namespace, name)
 	for _, obj := range objs {
 		if obj.GetObjectKind().GroupVersionKind().Kind == kind &&
 			obj.GetNamespace() == namespace &&
@@ -187,7 +191,8 @@ func lookupObject(logger logr.Logger, kind, namespace, name string, objs []runti
 			return obj, nil
 		}
 	}
-	return nil, NewNotFoundErr(fmt.Sprintf("no match for %s/%s (missing resource?)", namespace, name))
+	logger.Debugf("%s %s/%s not found", kind, namespace, name)
+	return nil, NewNotFoundErr(fmt.Sprintf("no match for %s %s/%s (missing resource?)", kind, namespace, name))
 }
 
 func newPodLogsHandler(logger logr.Logger, logs map[string]map[string][]string) httprouter.Handle {
@@ -280,8 +285,9 @@ func handleError(logger logr.Logger, w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, NotFoundErr{}):
 		w.WriteHeader(http.StatusNotFound)
-
+		w.Write([]byte(err.Error())) //nolint: errcheck
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error())) //nolint: errcheck
 	}
 }

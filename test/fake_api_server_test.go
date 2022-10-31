@@ -35,6 +35,21 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(resp).To(HaveBodyOfType(&corev1.Pod{}))
 	})
 
+	It("should get no pod", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/pods/unknown")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
+	})
+
 	It("should list 2 pods", func() {
 		// given
 		logger := logr.New(io.Discard)
@@ -65,6 +80,21 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(resp).To(HaveBodyOfType(&appsv1.ReplicaSet{}))
 	})
 
+	It("should get no replicaset", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/default/replicasets/unknown")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
+	})
+
 	It("should get single service", func() {
 		// given
 		logger := logr.New(io.Discard)
@@ -78,6 +108,21 @@ var _ = Describe("fake api-server endpoints", func() {
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp).To(HaveBodyOfType(&corev1.Service{}))
+	})
+
+	It("should get no service", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/services/unknown")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
 	})
 
 	It("should get single route", func() {
@@ -95,7 +140,22 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(resp).To(HaveBodyOfType(&routev1.Route{}))
 	})
 
-	It("should get events", func() {
+	It("should get no route", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/route.openshift.io/v1/namespaces/default/routes/unknown")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
+	})
+
+	It("should get 1 event", func() {
 		// given
 		logger := logr.New(io.Discard)
 		s, err := NewFakeAPIServer(logger, "resources/pod-readiness-probe-error.yaml")
@@ -108,6 +168,21 @@ var _ = Describe("fake api-server endpoints", func() {
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp).To(HaveReturnedEventCount(1))
+	})
+
+	It("should get no events", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/pod-readiness-probe-error.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/events?fieldSelector=involvedObject.name%3Dunknown")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveReturnedEventCount(0))
 	})
 
 	It("should retrieve logs", func() {
