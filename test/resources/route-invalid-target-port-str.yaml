@@ -1,0 +1,25 @@
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: invalid-target-port-str
+spec:
+  port:
+    targetPort: https # should be `http`
+  to:
+    kind: Service
+    name: invalid-target-port-str
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: invalid-target-port-str
+  labels:
+    app: invalid-target-port-str
+spec:
+  selector:
+    app: invalid-target-port-str
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP

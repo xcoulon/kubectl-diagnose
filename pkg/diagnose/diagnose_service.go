@@ -12,14 +12,14 @@ import (
 )
 
 func DiagnoseFromService(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
-	svc, err := getService(namespace, name, cfg)
+	svc, err := getService(cfg, namespace, name)
 	if err != nil {
 		return false, err
 	}
 	return checkService(logger, cfg, svc)
 }
 
-func getService(namespace, name string, cfg *rest.Config) (*corev1.Service, error) {
+func getService(cfg *rest.Config, namespace, name string) (*corev1.Service, error) {
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
