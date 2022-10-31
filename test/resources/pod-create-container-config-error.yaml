@@ -5,7 +5,7 @@ metadata:
 spec:
   containers:
   - name: default
-    image: caddy:2
+    image: k8s.gcr.io/echoserver:1.4
     ports:
     - containerPort: 80
       name: http
@@ -17,29 +17,12 @@ spec:
       requests:
         cpu: 100m
         memory: 20Mi
-    volumeMounts:
-    - name: caddy-config
-      mountPath: "/etc/caddy"
-    - name: caddy-config-cache
-      mountPath: "/config/caddy"
-    env:
-    - name: COOKIE
-      valueFrom:
-        configMapKeyRef:
-          name: unknown-configmap # unknown
-          key: cookie
   securityContext:
-    runAsNonRoot: true
+    runAsNonRoot: true # but echoserver process needs to run as root
     seccompProfile:
       type: RuntimeDefault
   serviceAccount: default
   serviceAccountName: default
-  volumes:
-  - name: caddy-config
-    configMap:
-      name: caddy-config
-  - name: caddy-config-cache
-    emptyDir: {}
 status:
   conditions:
   - message: 'containers with unready status: [default]'
@@ -51,7 +34,7 @@ status:
     status: "False"
     type: ContainersReady
   containerStatuses:
-  - image: caddy:2
+  - image: k8s.gcr.io/echoserver:1.4
     imageID: ""
     name: default
     ready: false
@@ -59,15 +42,20 @@ status:
     started: false
     state:
       waiting:
-        message: configmap "unknown-configmap" not found
+        message: 'back-off 5m0s restarting failed container=default pod=create-container-config-error'
         reason: CreateContainerConfigError
 ---
 apiVersion: v1
-kind: ConfigMap
+kind: Event
 metadata:
-  name: caddy-config
-data:
-  Caddyfile: |-
-    http://:8080
-
-    respond "Hello, world!"
+  name: create-container-config-error.1723356ebd9ae4d0
+firstTimestamp: "2022-10-31T16:45:05Z"
+lastTimestamp: "2022-10-31T16:51:05Z"
+type: Warning
+reason: BackOff
+message: Back-off restarting failed container
+involvedObject:
+  apiVersion: v1
+  kind: Pod
+  name: create-container-config-error
+count: 4

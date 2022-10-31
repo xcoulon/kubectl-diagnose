@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -119,7 +118,7 @@ func parseObjects(filename string) ([]runtimeclient.Object, error) {
 
 func parseLogs(filename string) (map[string]map[string][]string, error) {
 	logs := map[string]map[string][]string{}
-	content, err := ioutil.ReadFile(filename)
+	content, err := Resources.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}

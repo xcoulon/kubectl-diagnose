@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: crash-loop-back-off
+  name: crash-loop-back-off-error
 spec:
   containers:
   - name: default
@@ -65,3 +65,18 @@ data:
     http://:80
 
     respond "Hello, world!"
+---
+apiVersion: v1
+kind: Event
+metadata:
+  name: crash-loop-back-off-error.17233cf30d5bf54b
+count: 4
+type: Warning
+reason: BackOff
+message: Back-off restarting failed container
+firstTimestamp: "2022-10-31T19:08:21Z"
+lastTimestamp: "2022-10-31T19:08:48Z"
+involvedObject:
+  apiVersion: v1
+  kind: Pod
+  name: crash-loop-back-off-error

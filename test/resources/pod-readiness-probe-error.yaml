@@ -52,7 +52,7 @@ kind: Event
 metadata:
   name: readiness-probe-error.17202520760a2a72
 firstTimestamp: "2022-10-22T17:18:03Z"
-lastTimestamp: "2022-10-22T08:48:17Z"
+lastTimestamp: "2022-10-22T18:48:17Z"
 type: Warning
 reason: Unhealthy
 message: 'Readiness probe failed: Get "http://172.17.0.4:80/healthz": dial tcp 172.17.0.4:80:
