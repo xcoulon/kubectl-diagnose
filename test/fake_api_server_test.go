@@ -94,6 +94,21 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
 	})
 
+	It("should list 2 replicasets", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/replicasets.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/default/replicasets")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveReturnedReplicaSetCount(2))
+	})
+
 	It("should get single service", func() {
 		// given
 		logger := logr.New(io.Discard)
@@ -198,6 +213,21 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp).To(HaveTextBody("some\nlogs"))
 	})
+
+	It("should not match any endpoint", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger)
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/nodes/unknown") // unsupported kind of resource: nodes
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
+	})
 })
 
 func HaveBodyOfType(expected runtime.Object) types.GomegaMatcher {
@@ -244,6 +274,24 @@ func HaveReturnedPodCount(expected int) types.GomegaMatcher {
 				return nil, err
 			}
 			list := &corev1.PodList{}
+			_, _, err = deserializer.Decode(data, nil, list)
+			return list.Items, err
+		}, HaveLen(expected)),
+	)
+}
+
+func HaveReturnedReplicaSetCount(expected int) types.GomegaMatcher {
+	return And(
+		HaveHTTPStatus(200),
+		HaveHTTPHeaderWithValue("Content-Type", "application/json"),
+		WithTransform(func(resp *http.Response) ([]appsv1.ReplicaSet, error) {
+			deserializer := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
+			data, err := ioutil.ReadAll(resp.Body)
+			defer resp.Body.Close()
+			if err != nil {
+				return nil, err
+			}
+			list := &appsv1.ReplicaSetList{}
 			_, _, err = deserializer.Decode(data, nil, list)
 			return list.Items, err
 		}, HaveLen(expected)),
