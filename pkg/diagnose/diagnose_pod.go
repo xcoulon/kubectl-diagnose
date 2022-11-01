@@ -14,14 +14,6 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func DiagnoseFromPod(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
-	pod, err := getPod(cfg, namespace, name)
-	if err != nil {
-		return false, err
-	}
-	return checkPod(logger, cfg, pod)
-}
-
 func getPod(cfg *rest.Config, namespace, name string) (*corev1.Pod, error) {
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {

@@ -1,7 +1,7 @@
 package diagnose_test
 
 import (
-	"os"
+	"io"
 
 	"github.com/xcoulon/kubectl-diagnose/pkg/diagnose"
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
@@ -15,14 +15,13 @@ var _ = Describe("diagnose routes", func() {
 
 	It("should detect missing target service", func() {
 		// given
-		logger := logr.New(os.Stdout)
-		logger.SetLevel(logr.DebugLevel)
+		logger := logr.New(io.Discard)
 		apiserver, err := NewFakeAPIServer(logger, "resources/route-missing-target-service.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromRoute(logger, cfg, "default", "missing-target-service")
+		found, err := diagnose.Diagnose(logger, cfg, diagnose.Route, "default", "missing-target-service")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -33,14 +32,13 @@ var _ = Describe("diagnose routes", func() {
 
 	It("should detect invalid target port (as string)", func() {
 		// given
-		logger := logr.New(os.Stdout)
-		logger.SetLevel(logr.DebugLevel)
+		logger := logr.New(io.Discard)
 		apiserver, err := NewFakeAPIServer(logger, "resources/route-invalid-target-port-str.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromRoute(logger, cfg, "default", "invalid-target-port-str")
+		found, err := diagnose.Diagnose(logger, cfg, diagnose.Route, "default", "invalid-target-port-str")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -51,14 +49,13 @@ var _ = Describe("diagnose routes", func() {
 
 	It("should detect invalid target port (as int)", func() {
 		// given
-		logger := logr.New(os.Stdout)
-		logger.SetLevel(logr.DebugLevel)
+		logger := logr.New(io.Discard)
 		apiserver, err := NewFakeAPIServer(logger, "resources/route-invalid-target-port-int.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromRoute(logger, cfg, "default", "invalid-target-port-int")
+		found, err := diagnose.Diagnose(logger, cfg, diagnose.Route, "default", "invalid-target-port-int")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())

@@ -4,7 +4,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -187,8 +186,7 @@ var _ = Describe("fake api-server endpoints", func() {
 
 	It("should retrieve logs", func() {
 		// given
-		logger := logr.New(os.Stdout)
-		logger.SetLevel(logr.DebugLevel)
+		logger := logr.New(io.Discard)
 		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml", "resources/all-good.logs")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()

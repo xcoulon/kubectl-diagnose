@@ -12,15 +12,6 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func DiagnoseFromRoute(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
-	// TODO: verify that an error 503 is actually returned?
-	r, err := getRoute(cfg, namespace, name)
-	if err != nil {
-		return false, err
-	}
-	return checkRoute(logger, cfg, r)
-}
-
 func getRoute(cfg *rest.Config, namespace, name string) (*routev1.Route, error) {
 	cl, err := routeclient.NewForConfig(cfg)
 	if err != nil {
