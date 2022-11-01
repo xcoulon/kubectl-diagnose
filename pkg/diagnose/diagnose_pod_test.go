@@ -3,7 +3,6 @@ package diagnose_test
 import (
 	"fmt"
 	"io"
-	"os"
 	"time"
 
 	"github.com/xcoulon/kubectl-diagnose/pkg/diagnose"
@@ -24,7 +23,7 @@ var _ = Describe("diagnose pods", func() {
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromPod(logger, cfg, "default", "image-pull-back-off")
+		found, err := diagnose.Diagnose(logger, cfg, diagnose.Pod, "default", "image-pull-back-off")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -34,14 +33,13 @@ var _ = Describe("diagnose pods", func() {
 
 	It("should detect CreateContainerConfigError with logs", func() {
 		// given
-		logger := logr.New(os.Stdout)
-		logger.SetLevel(logr.DebugLevel)
+		logger := logr.New(io.Discard)
 		apiserver, err := NewFakeAPIServer(logger, "resources/pod-create-container-config-error.yaml", "resources/pod-create-container-config-error.logs")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromPod(logger, cfg, "default", "create-container-config-error")
+		found, err := diagnose.Diagnose(logger, cfg, diagnose.Pod, "default", "create-container-config-error")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -66,7 +64,7 @@ var _ = Describe("diagnose pods", func() {
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromPod(logger, cfg, "default", "unknown-configmap")
+		found, err := diagnose.Diagnose(logger, cfg, diagnose.Pod, "default", "unknown-configmap")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -77,13 +75,13 @@ var _ = Describe("diagnose pods", func() {
 
 	It("should detect Readiness Probe error", func() {
 		// given
-		logger := logr.New(os.Stdout)
+		logger := logr.New(io.Discard)
 		apiserver, err := NewFakeAPIServer(logger, "resources/pod-readiness-probe-error.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromPod(logger, cfg, "default", "readiness-probe-error")
+		found, err := diagnose.Diagnose(logger, cfg, diagnose.Pod, "default", "readiness-probe-error")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -95,13 +93,13 @@ var _ = Describe("diagnose pods", func() {
 
 	It("should detect CrashLoopBackOff error with logs", func() {
 		// given
-		logger := logr.New(os.Stdout)
+		logger := logr.New(io.Discard)
 		apiserver, err := NewFakeAPIServer(logger, "resources/pod-crash-loop-back-off.yaml", "resources/pod-crash-loop-back-off.logs")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromPod(logger, cfg, "default", "crash-loop-back-off-error")
+		found, err := diagnose.Diagnose(logger, cfg, diagnose.Pod, "default", "crash-loop-back-off-error")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())

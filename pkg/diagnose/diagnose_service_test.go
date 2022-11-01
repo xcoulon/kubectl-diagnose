@@ -1,7 +1,7 @@
 package diagnose_test
 
 import (
-	"os"
+	"io"
 
 	"github.com/xcoulon/kubectl-diagnose/pkg/diagnose"
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
@@ -15,14 +15,14 @@ var _ = Describe("diagnose services", func() {
 
 	It("should not detect errors when all good", func() {
 		// given
-		logger := logr.New(os.Stdout)
+		logger := logr.New(io.Discard)
 		// TODO: service should have multiple ports
 		apiserver, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromService(logger, cfg, "default", "all-good")
+		found, err := diagnose.Diagnose(logger, cfg, "svc", "default", "all-good")
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeFalse())
@@ -35,13 +35,13 @@ var _ = Describe("diagnose services", func() {
 
 	It("should detect no matching pods", func() {
 		// given
-		logger := logr.New(os.Stdout)
+		logger := logr.New(io.Discard)
 		apiserver, err := NewFakeAPIServer(logger, "resources/service-no-matching-pods.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromService(logger, cfg, "default", "service-no-matching-pods")
+		found, err := diagnose.Diagnose(logger, cfg, "svc", "default", "service-no-matching-pods")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -55,13 +55,13 @@ var _ = Describe("diagnose services", func() {
 
 	It("should detect invalid target port as string", func() {
 		// given
-		logger := logr.New(os.Stdout)
+		logger := logr.New(io.Discard)
 		apiserver, err := NewFakeAPIServer(logger, "resources/service-invalid-target-port.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromService(logger, cfg, "default", "service-invalid-target-port")
+		found, err := diagnose.Diagnose(logger, cfg, "svc", "default", "service-invalid-target-port")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())

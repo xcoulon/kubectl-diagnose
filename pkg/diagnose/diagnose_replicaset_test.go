@@ -1,7 +1,7 @@
 package diagnose_test
 
 import (
-	"os"
+	"io"
 
 	"github.com/xcoulon/kubectl-diagnose/pkg/diagnose"
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
@@ -15,13 +15,13 @@ var _ = Describe("diagnose replicasets", func() {
 
 	It("should detect sa not found", func() {
 		// given
-		logger := logr.New(os.Stdout)
+		logger := logr.New(io.Discard)
 		apiserver, err := NewFakeAPIServer(logger, "resources/replicaset-service-account-not-found.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.DiagnoseFromReplicaSet(logger, cfg, "default", "sa-notfound")
+		found, err := diagnose.Diagnose(logger, cfg, diagnose.ReplicaSet, "default", "sa-notfound")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())

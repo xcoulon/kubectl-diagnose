@@ -15,6 +15,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	routev1 "github.com/openshift/api/route/v1"
+	"github.com/xcoulon/kubectl-diagnose/pkg/diagnose"
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
@@ -68,12 +69,12 @@ func NewFakeAPIServer(logger logr.Logger, filenames ...string) (*httptest.Server
 		}
 	}
 	r := httprouter.New()
-	r.GET(`/api/v1/namespaces/:namespace/pods/:name`, newObjectHandler(logger, allObjs, "Pod"))
+	r.GET(`/api/v1/namespaces/:namespace/pods/:name`, newObjectHandler(logger, allObjs, diagnose.Pod))
 	r.GET(`/api/v1/namespaces/:namespace/pods`, newPodsHandler(logger, allObjs))
 	r.GET(`/api/v1/namespaces/:namespace/pods/:name/log`, newPodLogsHandler(logger, allLogs))
-	r.GET(`/apis/route.openshift.io/v1/namespaces/:namespace/routes/:name`, newObjectHandler(logger, allObjs, "Route"))
-	r.GET(`/api/v1/namespaces/:namespace/services/:name`, newObjectHandler(logger, allObjs, "Service"))
-	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, allObjs, "ReplicaSet"))
+	r.GET(`/apis/route.openshift.io/v1/namespaces/:namespace/routes/:name`, newObjectHandler(logger, allObjs, diagnose.Route))
+	r.GET(`/api/v1/namespaces/:namespace/services/:name`, newObjectHandler(logger, allObjs, diagnose.Service))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, allObjs, diagnose.ReplicaSet))
 	r.GET(`/api/v1/namespaces/:namespace/events`, newEventsHandler(logger, allObjs))
 	r.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.Infof("no match for request with path='%s' and query='%s' ", r.URL.Path, r.URL.Query().Encode())
@@ -184,7 +185,7 @@ func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind stri
 func lookupObject(logger logr.Logger, kind, namespace, name string, objs []runtimeclient.Object) (interface{}, error) {
 	logger.Debugf("looking up %s %s/%s", kind, namespace, name)
 	for _, obj := range objs {
-		if obj.GetObjectKind().GroupVersionKind().Kind == kind &&
+		if strings.ToLower(obj.GetObjectKind().GroupVersionKind().Kind) == kind &&
 			obj.GetNamespace() == namespace &&
 			obj.GetName() == name {
 			return obj, nil
@@ -256,7 +257,7 @@ func newEventsHandler(logger logr.Logger, objs []runtimeclient.Object) httproute
 			if obj, ok := obj.(*corev1.Event); ok &&
 				obj.GetNamespace() == namespace &&
 				s.Matches(fields.Set(map[string]string{
-					"involvedObject.kind":      "Pod",
+					"involvedObject.kind":      "Pod", // TODO: parameterize?
 					"involvedObject.namespace": obj.InvolvedObject.Namespace,
 					"involvedObject.name":      obj.InvolvedObject.Name,
 				})) {

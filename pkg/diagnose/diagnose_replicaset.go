@@ -12,14 +12,6 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func DiagnoseFromReplicaSet(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
-	rs, err := getReplicaSet(cfg, namespace, name)
-	if err != nil {
-		return false, err
-	}
-	return checkReplicaSet(logger, rs)
-}
-
 func getReplicaSet(cfg *rest.Config, namespace, name string) (*appsv1.ReplicaSet, error) {
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
