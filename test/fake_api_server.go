@@ -69,13 +69,14 @@ func NewFakeAPIServer(logger logr.Logger, filenames ...string) (*httptest.Server
 		}
 	}
 	r := httprouter.New()
-	r.GET(`/api/v1/namespaces/:namespace/pods/:name`, newObjectHandler(logger, allObjs, diagnose.Pod))
 	r.GET(`/api/v1/namespaces/:namespace/pods`, newPodsHandler(logger, allObjs))
+	r.GET(`/api/v1/namespaces/:namespace/pods/:name`, newObjectHandler(logger, allObjs, diagnose.Pod))
 	r.GET(`/api/v1/namespaces/:namespace/pods/:name/log`, newPodLogsHandler(logger, allLogs))
-	r.GET(`/apis/route.openshift.io/v1/namespaces/:namespace/routes/:name`, newObjectHandler(logger, allObjs, diagnose.Route))
 	r.GET(`/api/v1/namespaces/:namespace/services/:name`, newObjectHandler(logger, allObjs, diagnose.Service))
-	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, allObjs, diagnose.ReplicaSet))
 	r.GET(`/api/v1/namespaces/:namespace/events`, newEventsHandler(logger, allObjs))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets`, newReplicaSetsHandler(logger, allObjs))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, allObjs, diagnose.ReplicaSet))
+	r.GET(`/apis/route.openshift.io/v1/namespaces/:namespace/routes/:name`, newObjectHandler(logger, allObjs, diagnose.Route))
 	r.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.Infof("no match for request with path='%s' and query='%s' ", r.URL.Path, r.URL.Query().Encode())
 		w.WriteHeader(http.StatusNotFound)
@@ -219,10 +220,6 @@ func newPodsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.
 			return
 		}
 		pods := &corev1.PodList{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "PodList",
-			},
 			Items: []corev1.Pod{},
 		}
 		for _, obj := range objs {
@@ -233,6 +230,23 @@ func newPodsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.
 			}
 		}
 		handleObject(logger, w, pods)
+	}
+}
+
+func newReplicaSetsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+		namespace := params.ByName("namespace")
+		logger.Debugf("listing replicasets in %s", namespace)
+		rss := &appsv1.ReplicaSetList{
+			Items: []appsv1.ReplicaSet{},
+		}
+		for _, obj := range objs {
+			if obj, ok := obj.(*appsv1.ReplicaSet); ok &&
+				obj.GetNamespace() == namespace {
+				rss.Items = append(rss.Items, *obj)
+			}
+		}
+		handleObject(logger, w, rss)
 	}
 }
 
