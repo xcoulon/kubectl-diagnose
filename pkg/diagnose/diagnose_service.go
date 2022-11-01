@@ -21,9 +21,6 @@ func getService(cfg *rest.Config, namespace, name string) (*corev1.Service, erro
 
 func checkService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) (bool, error) {
 	logger.Infof("👀 checking service '%s' in namespace '%s'...", svc.Name, svc.Namespace)
-	// Check endpoints
-	// endpoints, _ := d.CoreV1().Endpoints(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-
 	// find all pods with the associated label selector in the same namespace
 	selector := labels.Set(svc.Spec.Selector).String()
 	cl, err := kubernetes.NewForConfig(cfg)
@@ -38,10 +35,29 @@ func checkService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) (bo
 	}
 	// if there is no pod matching the selector
 	if len(pods.Items) == 0 {
+		// attempt to find the ReplicaSet which was supposed to create the Pods (if there is one)
+		rss, err := cl.AppsV1().ReplicaSets(svc.Namespace).List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			return false, err
+		}
+		for _, rs := range rss.Items {
+			s, err := labels.Parse(selector)
+			if err != nil {
+				return false, err
+			}
+			if s.Matches(labels.Set(rs.Spec.Selector.MatchLabels)) {
+				obj := rs
+				found, err := checkReplicaSet(logger, &obj)
+				if err != nil {
+					return false, err
+				}
+				if found {
+					return true, err
+				}
+			}
+		}
 		logger.Errorf("👻 no pods matching label selector '%s' found in namespace '%s'", selector, svc.Namespace)
-		logger.Infof("💡 you may want to:")
-		logger.Infof(" - check the 'service.spec.selector' value")
-		logger.Infof(" - make sure that the expected pods exists")
+		logger.Infof("💡 you may want to verify that the pods exist and their labels match '%s'", selector)
 		return true, nil
 	}
 pods:

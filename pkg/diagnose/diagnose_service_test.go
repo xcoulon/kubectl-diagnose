@@ -48,9 +48,7 @@ var _ = Describe("diagnose services", func() {
 		Expect(found).To(BeTrue())
 		Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'service-no-matching-pods' in namespace 'default'...`))
 		Expect(logger.Output()).To(ContainSubstring(`👻 no pods matching label selector 'app=invalid' found in namespace 'default'`))
-		Expect(logger.Output()).To(ContainSubstring(`💡 you may want to:`))
-		Expect(logger.Output()).To(ContainSubstring(` - check the 'service.spec.selector' value`))
-		Expect(logger.Output()).To(ContainSubstring(` - make sure that the expected pods exists`))
+		Expect(logger.Output()).To(ContainSubstring(`💡 you may want to verify that the pods exist and their labels match 'app=invalid'`))
 	})
 
 	It("should detect invalid target port as string", func() {

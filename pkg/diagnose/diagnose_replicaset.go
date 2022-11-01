@@ -22,7 +22,7 @@ func getReplicaSet(cfg *rest.Config, namespace, name string) (*appsv1.ReplicaSet
 }
 
 func checkReplicaSet(logger logr.Logger, rs *appsv1.ReplicaSet) (bool, error) {
-	logger.Infof("👀 checking ReplicaSet '%s'...", rs.Name)
+	logger.Infof("👀 checking replicaset '%s'...", rs.Name)
 	return checkReplicaSetStatus(logger, rs)
 }
 
