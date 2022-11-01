@@ -37,30 +37,14 @@ func (l *DefaultLogger) SetLevel(level int) {
 	l.loglevel = level
 }
 
-// Tee uses the given `out` as a secondary output.
-// Usage: `Tee(os.Stdout)` to see in the console what's record in this terminal during the tests
-// Note: it should be configured at the beginning of a test
-// DEPRECATED
-func (l *DefaultLogger) Tee(out io.Writer) {
-	l.out = io.MultiWriter(l.out, out)
-}
-
 func (l *DefaultLogger) Debugf(msg string, args ...interface{}) {
 	if l.loglevel == 0 {
-		return
-	}
-	if msg == "" {
-		fmt.Fprintln(l.out, "")
 		return
 	}
 	fmt.Fprintln(l.out, fmt.Sprintf(msg, args...))
 }
 
 func (l *DefaultLogger) Infof(msg string, args ...interface{}) {
-	if msg == "" {
-		fmt.Fprintln(l.out, "")
-		return
-	}
 	fmt.Fprintln(l.out, fmt.Sprintf(msg, args...))
 }
 
