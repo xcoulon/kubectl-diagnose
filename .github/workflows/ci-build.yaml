@@ -3,13 +3,17 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - main
+   
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [1.17.x,1.18.x,1.19.x]
+        go-version: [1.17,1.18,1.19]
     name: Build and Test with Go ${{ matrix.go-version }}
 
     steps:
@@ -17,12 +21,13 @@ jobs:
       uses: actions/setup-go@v3
       with:
         go-version: ${{ matrix.go-version }}
+        check-latest: true
 
     - name: Checkout code
       uses: actions/checkout@v3
 
     - name: Cache dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/go/pkg/mod
         key: ${{ runner.os }}-go-${{ hashFiles ('**/go.sum') }}
@@ -38,8 +43,8 @@ jobs:
         make test-with-coverage
 
     - name: Codecov
-      if: runner.os == 'Linux'
-      uses: codecov/codecov-action@v1.0.6
+      if: ${{ matrix.go-version }} == '1.17'
+      uses: codecov/codecov-action@v3.1.1
       with:
         # Path to coverage file to upload
         file: coverprofile.out
