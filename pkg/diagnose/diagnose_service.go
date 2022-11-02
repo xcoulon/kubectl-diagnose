@@ -63,17 +63,21 @@ func checkService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) (bo
 pods:
 	for _, pod := range pods.Items {
 		for _, sp := range svc.Spec.Ports {
-			logger.Debugf("   checking pod '%s'...", pod.Name)
+			logger.Debugf("checking pod '%s'...", pod.Name)
 			// check the svc/pod port bindings
+			found := false
 		containers:
 			for _, c := range pod.Spec.Containers {
 				for _, cp := range c.Ports {
 					if cp.Name == sp.TargetPort.StrVal || cp.ContainerPort == sp.TargetPort.IntVal {
 						logger.Infof("☑️ found matching target port '%s' (%d) in container '%s' of pod '%s'", cp.Name, cp.ContainerPort, c.Name, pod.Name)
+						found = true
 						break containers
 					}
 				}
-				logger.Errorf("👻 no container with matching target port '%s' in pod '%s'", sp.TargetPort.String(), pod.Name)
+			}
+			if !found {
+				logger.Errorf("👻 no container with port '%s' in pod '%s'", sp.TargetPort.String(), pod.Name)
 				return true, nil
 			}
 			p := pod

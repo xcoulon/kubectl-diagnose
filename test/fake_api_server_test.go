@@ -112,12 +112,12 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get single service", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/service-invalid-target-port.yaml")
+		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/services/service-invalid-target-port")
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/services/all-good")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())

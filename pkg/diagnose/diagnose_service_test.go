@@ -54,18 +54,35 @@ var _ = Describe("diagnose services", func() {
 	It("should detect invalid target port as string", func() {
 		// given
 		logger := logr.New(io.Discard)
-		apiserver, err := NewFakeAPIServer(logger, "resources/service-invalid-target-port.yaml")
+		apiserver, err := NewFakeAPIServer(logger, "resources/service-invalid-target-port-str.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, "svc", "default", "service-invalid-target-port")
+		found, err := diagnose.Diagnose(logger, cfg, "svc", "default", "service-invalid-target-port-str")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'service-invalid-target-port' in namespace 'default'...`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 no container with matching target port 'https' in pod 'service-invalid-target-port-68968cf979-wtpcp'`))
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'service-invalid-target-port-str' in namespace 'default'...`))
+		Expect(logger.Output()).To(ContainSubstring(`👻 no container with port 'https' in pod 'service-invalid-target-port-str'`))
+	})
+
+	It("should detect invalid target port as int", func() {
+		// given
+		logger := logr.New(io.Discard)
+		apiserver, err := NewFakeAPIServer(logger, "resources/service-invalid-target-port-int.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		cfg := NewConfig(apiserver.URL, "/api")
+
+		// when
+		found, err := diagnose.Diagnose(logger, cfg, "svc", "default", "service-invalid-target-port-int")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(found).To(BeTrue())
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'service-invalid-target-port-int' in namespace 'default'...`))
+		Expect(logger.Output()).To(ContainSubstring(`👻 no container with port '8443' in pod 'service-invalid-target-port-int'`))
 	})
 
 })

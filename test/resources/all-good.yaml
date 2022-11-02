@@ -45,6 +45,25 @@ metadata:
     app: all-good
 spec:
   containers:
+  - name: unused
+    image: caddy:2
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 8079
+      name: unused
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
+    volumeMounts:
+    - name: caddy-config
+      mountPath: "/etc/caddy"
+    - name: caddy-config-cache
+      mountPath: "/config/caddy"
   - name: default
     image: caddy:2
     imagePullPolicy: IfNotPresent
