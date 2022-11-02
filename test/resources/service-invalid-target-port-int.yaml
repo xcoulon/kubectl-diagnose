@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-invalid-target-port-int
+  labels:
+    app: service-invalid-target-port-int
+spec:
+  type: NodePort
+  sessionAffinity: None
+  selector:
+    app: service-invalid-target-port-int
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8443 # invalid target port (`8443` instead of `8080`)
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: service-invalid-target-port-int
+  labels:
+    app: service-invalid-target-port-int
+spec:
+  containers:
+  - name: default
+    image: caddy:2
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
+  serviceAccount: default
+  serviceAccountName: default
+status:
+  conditions:
+  - status: "True"
+    type: Ready
+  - status: "True"
+    type: ContainersReady
+  containerStatuses:
+  - containerID: docker://6f075f5f805f50c3649feeb7a49c36aa2086aa526bbf9aefa318d72a31acf1d9
+    image: caddy:2
+    imageID: docker-pullable://k8s.gcr.io/echoserver@sha256:5d99aa1120524c801bc8c1a7077e8f5ec122ba16b6dda1a5d3826057f67b9bcb
+    name: default
+    ready: true
+    started: true
+    restartCount: 0
+    state:
+      running:
+        startedAt: "2022-10-20T05:36:53Z"
