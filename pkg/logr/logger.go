@@ -53,11 +53,6 @@ func (l *DefaultLogger) Errorf(msg string, args ...interface{}) {
 	c.Fprintln(l.out, fmt.Sprintf(msg, args...))
 }
 
-func (l *DefaultLogger) Error(msg string) {
-	c := color.New(color.FgHiRed)
-	c.Fprintln(l.out, msg)
-}
-
 func (l *DefaultLogger) Output() string {
 	return l.buff.String()
 }
