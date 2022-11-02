@@ -86,7 +86,7 @@ func checkPodEvents(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool
 	found := false
 	for _, e := range events.Items {
 		if e.Type == corev1.EventTypeWarning {
-			logger.Infof("⚡️ %s ago: %s", time.Since(e.LastTimestamp.Time).Truncate(time.Second), e.Message)
+			logger.Errorf("⚡️ %s ago: %s", time.Since(e.LastTimestamp.Time).Truncate(time.Second), e.Message)
 			found = true
 		}
 	}
