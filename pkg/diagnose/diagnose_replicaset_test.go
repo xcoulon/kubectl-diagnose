@@ -26,7 +26,7 @@ var _ = Describe("diagnose replicasets", func() {
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'sa-notfound'...`))
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking ReplicaSet 'sa-notfound'...`))
 		Expect(logger.Output()).To(ContainSubstring(`👻 replicaset 'sa-notfound' failed to create pods: pods "sa-notfound-" is forbidden: error looking up service account test/sa-notfound: serviceaccount "sa-notfound" not found`))
 	})
 
@@ -43,7 +43,7 @@ var _ = Describe("diagnose replicasets", func() {
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'sa-notfound'...`))
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking ReplicaSet 'sa-notfound'...`))
 		Expect(logger.Output()).To(ContainSubstring(`👻 replicaset 'sa-notfound' failed to create pods: pods "sa-notfound-" is forbidden: error looking up service account test/sa-notfound: serviceaccount "sa-notfound" not found`))
 	})
 

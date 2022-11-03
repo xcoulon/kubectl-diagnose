@@ -1,0 +1,64 @@
+= kubectl-diagnose (a.k.a. "Route 503")
+
+You just exposed your application running on OpenShift or Kubernetes to the outter world, but you're getting a `503 Service Unavailable` response when trying to access it? 
+Damn'it! 😬
+
+Say hello to `kubectl-diagnose`👋 
+
+This tool attempts to find which of the `route`, `service`, `replicaset` or `pod` resource is misconfigured or failing, so you don't have to pull your hair out on such a problem.
+
+
+
+== Installing
+
+You can either:
+
+- run `go install github.com/xcoulon/kubectl-diagnose` and add `$GOPAH/bin` to `$PATH` or move `$GOPAtH/bin/kubectl-diagnose` in one of the directories of `$PATH`
+- clone this repository, run `make install` and add `$GOPAH/bin` to `$PATH` or move `$GOPAtH/bin/kubectl-terminate` in one of the directories of `$PATH`
+
+== Supported Cases
+
+`kubectl-diagnose` is able to detect the following cases:
+
+- when the target Service of an OpenShift Route does not exist (look-up by name)
+- when the target Service of an OpenShift Route has no matching port (compare by name or by number)
+- when there is no Pod matching the Service selector, look for a ReplicaSet with the same labels and check its status
+- when there is no port in the Pod containers matching the Service target port (compare  by name or by number)
+- when one of the Pod container is not running (check the status, events and look for error messages in the logs)
+
+== Demo
+
+Using the `replicaset-service-account-not-found.yaml` manifest in the `test/resources` directory:
+
+[source,bash]
+----
+$ oc apply -f test/resources/replicaset-service-account-not-found.yaml
+route.route.openshift.io/sa-notfound created
+service/sa-notfound created
+replicaset.apps/sa-notfound created
+
+$ oc diagnose route/sa-notfound
+👀 checking route 'sa-notfound' in namespace 'xcoulon-dev'
+👀 checking service 'sa-notfound' in namespace 'xcoulon-dev'...
+👀 checking replicaset 'sa-notfound-846cfcbb94'...
+👻 replicaset 'sa-notfound-846cfcbb94' failed to create pods: pods "sa-notfound-846cfcbb94-" is forbidden: error looking up service account xcoulon-dev/sa-notfound: serviceaccount "sa-notfound" not found
+----
+
+`kubectl-diagnose` can be run as a standalone command or as a plugin for `kubectl` and `oc` (for OpenShift 4 users). Just make sure that the binary is in your `$PATH` and run it as `kubectl diagnose route/cheesecake` or `oc diagnose route/cheesecake` 🎉
+
+// NOTE: `kubectl-diagnose` uses the connection settings of your choice: 
+// - `KUBECONFIG` env var if it exists
+// - the `--kubeconfig` flag if specified 
+// - the default location (`$HOME/.kube/config` on Linux and macOS or `%USERPROFILE%\.kube\config` on Windows). 
+
+== Contributing
+
+Feel free to https://github.com/xcoulon/kubectl-diagnose/issues[open an issue] describing a case that is not covered yet. It could help you and others in the future!🤩
+If you're in the mood to implement it, that's awesome! 🙌
+You can submit a pull-request along with tests written with Ginkgo and a ideally, title based on the https://www.conventionalcommits.org/en/v1.0.0/[Conventional Commits specification].
+
+Don’t get discouraged if you don't get an immediate response, this is a side-project 😅
+
+== License
+
+`kubectl-diagnose` is available under the terms of the https://raw.githubusercontent.com/bytesparadise/libasciidoc/LICENSE[Apache License 2.0].
