@@ -1,5 +1,11 @@
 = kubectl-diagnose (a.k.a. "Route 503")
 
+image:https://godoc.org/github.com/xcoulon/kubectl-diagnose?status.svg["GoDoc", link="https://godoc.org/github.com/xcoulon/kubectl-diagnose"]
+image:https://goreportcard.com/badge/github.com/xcoulon/kubectl-diagnose["Go Report Card", link="https://goreportcard.com/report/github.com/xcoulon/kubectl-diagnose"]
+image:https://github.com/xcoulon/kubectl-diagnose/workflows/ci-build/badge.svg["GitHub Action Build Status", link="https://github.com/xcoulon/kubectl-diagnose/actions?query=workflow%3Aci-build"]
+image:https://codecov.io/gh/xcoulon/kubectl-diagnose/branch/main/graph/badge.svg["Codecov", link="https://codecov.io/gh/xcoulon/kubectl-diagnose"]
+image:https://img.shields.io/badge/License-Apache%202.0-blue.svg["License", link="https://opensource.org/licenses/Apache-2.0"]
+
 You just exposed your application running on OpenShift or Kubernetes to the outter world, but you're getting a `503 Service Unavailable` response when trying to access it? 
 Damn'it! 😬
 
@@ -46,10 +52,10 @@ $ oc diagnose route/sa-notfound
 
 `kubectl-diagnose` can be run as a standalone command or as a plugin for `kubectl` and `oc` (for OpenShift 4 users). Just make sure that the binary is in your `$PATH` and run it as `kubectl diagnose route/cheesecake` or `oc diagnose route/cheesecake` 🎉
 
-// NOTE: `kubectl-diagnose` uses the connection settings of your choice: 
-// - `KUBECONFIG` env var if it exists
-// - the `--kubeconfig` flag if specified 
-// - the default location (`$HOME/.kube/config` on Linux and macOS or `%USERPROFILE%\.kube\config` on Windows). 
+NOTE: `kubectl-diagnose` uses the connection settings of your choice and in the following order: 
+- the `--kubeconfig` flag if specified 
+- the `KUBECONFIG` env var if it exists
+- the default location (`$HOME/.kube/config` on Linux and macOS or `%USERPROFILE%\.kube\config` on Windows). 
 
 == Contributing
 
@@ -61,4 +67,4 @@ Don’t get discouraged if you don't get an immediate response, this is a side-p
 
 == License
 
-`kubectl-diagnose` is available under the terms of the https://raw.githubusercontent.com/bytesparadise/libasciidoc/LICENSE[Apache License 2.0].
+`kubectl-diagnose` is available under the terms of the https://raw.githubusercontent.com/xcoulon/kubectl-diagnose/LICENSE[Apache License 2.0].
