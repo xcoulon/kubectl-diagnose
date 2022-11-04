@@ -52,7 +52,7 @@ $ oc diagnose route/sa-notfound
 
 `kubectl-diagnose` can be run as a standalone command or as a plugin for `kubectl` and `oc` (for OpenShift 4 users). Just make sure that the binary is in your `$PATH` and run it as `kubectl diagnose route/cheesecake` or `oc diagnose route/cheesecake` 🎉
 
-NOTE: `kubectl-diagnose` uses the connection settings of your choice and in the following order: 
+NOTE:: `kubectl-diagnose` uses the connection settings of your choice and in the following order: 
 - the `--kubeconfig` flag if specified 
 - the `KUBECONFIG` env var if it exists
 - the default location (`$HOME/.kube/config` on Linux and macOS or `%USERPROFILE%\.kube\config` on Windows). 
