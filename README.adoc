@@ -32,6 +32,16 @@ You can either:
 - when there is no port in the Pod containers matching the Service target port (compare  by name or by number)
 - when one of the Pod container is not running (check the status, events and look for error messages in the logs)
 
+== Usage
+
+`kubectl-diagnose` can be run as a standalone command or as a plugin for `kubectl` and `oc` (for OpenShift 4 users) when the binary is in your `$PATH`.
+
+`kubectl-diagnose` uses the same connection settings as the regular `kubectl` and `oc` commands: 
+
+- via the `--kubeconfig` flag if specified 
+- via `KUBECONFIG` env var if it exists
+- from the default location (`$HOME/.kube/config` on Linux and macOS or `%USERPROFILE%\.kube\config` on Windows). 
+
 == Demo
 
 Using the `replicaset-service-account-not-found.yaml` manifest in the `test/resources` directory:
@@ -49,13 +59,6 @@ $ oc diagnose route/sa-notfound
 👀 checking replicaset 'sa-notfound-846cfcbb94'...
 👻 replicaset 'sa-notfound-846cfcbb94' failed to create pods: pods "sa-notfound-846cfcbb94-" is forbidden: error looking up service account xcoulon-dev/sa-notfound: serviceaccount "sa-notfound" not found
 ----
-
-`kubectl-diagnose` can be run as a standalone command or as a plugin for `kubectl` and `oc` (for OpenShift 4 users). Just make sure that the binary is in your `$PATH` and run it as `kubectl diagnose route/cheesecake` or `oc diagnose route/cheesecake` 🎉
-
-NOTE: `kubectl-diagnose` uses the connection settings of your choice and in the following order: 
-- the `--kubeconfig` flag if specified 
-- the `KUBECONFIG` env var if it exists
-- the default location (`$HOME/.kube/config` on Linux and macOS or `%USERPROFILE%\.kube\config` on Windows). 
 
 == Contributing
 
