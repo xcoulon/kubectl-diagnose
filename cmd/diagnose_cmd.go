@@ -11,13 +11,14 @@ import (
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
 
 	"github.com/spf13/cobra"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 func Execute() {
 	if err := NewDiagnoseCmd().Execute(); err != nil {
-		fmt.Println(err)
+		// fmt.Println(err)
 		os.Exit(1)
 	}
 }
@@ -29,10 +30,10 @@ func NewDiagnoseCmd() *cobra.Command {
 	var loglevel int
 
 	cmd := &cobra.Command{
-		Use:           "diagnose (TYPE NAME | TYPE/NAME)",
+		Use:           "kubectl-diagnose (TYPE NAME | TYPE/NAME)",
 		Short:         "try to find the cause of the 503 error",
-		SilenceErrors: true,
-		SilenceUsage:  true,
+		SilenceErrors: false,
+		SilenceUsage:  false,
 		Args:          cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			logger := logr.New(cmd.OutOrStdout())
@@ -53,10 +54,14 @@ func NewDiagnoseCmd() *cobra.Command {
 				}
 			}
 			found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
-			if err != nil {
+			switch {
+			case apierrors.IsNotFound(err):
+				// if resource was not found, just print the error but
+				// no need to print of the cmd usage
+				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
+			case err != nil:
 				return err
-			}
-			if !found {
+			case !found:
 				logger.Infof("🤷 couldn't find the culprit")
 			}
 			return nil
@@ -74,7 +79,7 @@ func getResourceTypeName(args []string) (string, string, error) {
 	case 1:
 		s := strings.Split(args[0], "/")
 		if len(s) != 2 {
-			return "", "", fmt.Errorf("invalid resource name: %s", args[0])
+			return "", "", fmt.Errorf("missing resource name in '%s' (expected 'pod/cookie' or 'pod cookie')", args[0])
 		}
 		return strings.ToLower(s[0]), s[1], nil
 	case 2:

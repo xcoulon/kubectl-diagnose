@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
+
 	"k8s.io/client-go/rest"
 )
 
