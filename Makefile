@@ -3,24 +3,21 @@ GO_PACKAGE_REPO_NAME ?= $(shell basename $$PWD)
 GO_PACKAGE_PATH ?= github.com/${GO_PACKAGE_ORG_NAME}/${GO_PACKAGE_REPO_NAME}
 GO_PATH_BIN=${GOPATH}/bin
 BIN_DIR := bin
-GIT_COMMIT_ID := $(shell git rev-parse HEAD)
-ifneq ($(shell git status --porcelain --untracked-files=no),)
-       GIT_COMMIT_ID := $(GIT_COMMIT_ID)-dirty
-endif
-GIT_COMMIT_ID_SHORT := $(shell git rev-parse --short HEAD)
-ifneq ($(shell git status --porcelain --untracked-files=no),)
-       GIT_COMMIT_ID_SHORT := $(GIT_COMMIT_ID_SHORT)-dirty
-endif
-BUILD_TIME = `date -u '+%Y-%m-%dT%H:%M:%SZ'`
 
 .PHONY: build
 ## Build the binary
 build:
 	@rm -rf $(BIN_DIR) 2>/dev/null || true
 	@echo "building the binary in ${GO_PACKAGE_PATH}"
+	$(eval BUILD_COMMIT:=$(shell git rev-parse --short HEAD))
+	$(eval BUILD_TAG:=$(shell git tag --contains $(BUILD_COMMIT)))
+	$(eval BUILD_TIME:=$(shell date -u '+%Y-%m-%dT%H:%M:%SZ'))
 	@$(Q)CGO_ENABLED=0 \
 		go build ${V_FLAG} \
-		-ldflags "-X ${GO_PACKAGE_PATH}/pkg/version.Commit=${GIT_COMMIT_ID} -X ${GO_PACKAGE_PATH}/pkg/version.BuildTime=${BUILD_TIME}" \
+		-ldflags \
+		 " -X github.com/xcoulon/kubectl-diagnose/cmd.BuildCommit=$(BUILD_COMMIT) \
+	       -X github.com/xcoulon/kubectl-diagnose/cmd.BuildTag=$(BUILD_TAG) \
+	       -X github.com/xcoulon/kubectl-diagnose/cmd.BuildTime=$(BUILD_TIME)" \
 		-o $(BIN_DIR)/kubectl-diagnose \
 		main.go
 
