@@ -35,6 +35,7 @@ func NewDiagnoseCmd() *cobra.Command {
 		SilenceErrors: false,
 		SilenceUsage:  false,
 		Args:          cobra.RangeArgs(1, 2),
+		Version:       version(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			logger := logr.New(cmd.OutOrStdout())
 			logger.SetLevel(loglevel)
