@@ -1,4 +1,4 @@
-crash-loop-back-off-error:
+crash-loop-back-off:
   default: |-
     {"level":"info","ts":1666623369.9459965,"msg":"using provided configuration","config_file":"/etc/caddy/Caddyfile","config_adapter":"caddyfile"}
     {"level":"warn","ts":1666623369.9474516,"msg":"Caddyfile input is not formatted; run the 'caddy fmt' command to fix inconsistencies","adapter":"caddyfile","file":"/etc/caddy/Caddyfile","line":3}

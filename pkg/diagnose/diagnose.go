@@ -35,7 +35,7 @@ func Diagnose(logger logr.Logger, cfg *rest.Config, kind, namespace, name string
 		if err != nil {
 			return false, err
 		}
-		return checkReplicaSet(logger, rs)
+		return checkReplicaSet(logger, cfg, rs)
 	case Pod:
 		pod, err := getPod(cfg, namespace, name)
 		if err != nil {

@@ -1,0 +1,4 @@
+crash-loop-back-off-8644b7cf9d-s2fpd:
+  default: |-
+    2022/11/09 09:57:27 [emerg] 1#1: mkdir() "/var/lib/nginx/proxy" failed (13: Permission denied)
+    nginx: [emerg] mkdir() "/var/lib/nginx/proxy" failed (13: Permission denied)

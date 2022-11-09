@@ -22,11 +22,11 @@ func getService(cfg *rest.Config, namespace, name string) (*corev1.Service, erro
 func checkService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) (bool, error) {
 	logger.Infof("👀 checking service '%s' in namespace '%s'...", svc.Name, svc.Namespace)
 	// find all pods with the associated label selector in the same namespace
-	selector := labels.Set(svc.Spec.Selector).String()
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return false, err
 	}
+	selector := labels.Set(svc.Spec.Selector).String()
 	pods, err := cl.CoreV1().Pods(svc.Namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: selector,
 	})
@@ -47,7 +47,7 @@ func checkService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) (bo
 			}
 			if s.Matches(labels.Set(rs.Spec.Selector.MatchLabels)) {
 				obj := rs
-				found, err := checkReplicaSet(logger, &obj)
+				found, err := checkReplicaSet(logger, cfg, &obj)
 				if err != nil {
 					return false, err
 				}
@@ -62,8 +62,8 @@ func checkService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) (bo
 	}
 pods:
 	for _, pod := range pods.Items {
+		logger.Debugf("checking pod '%s'...", pod.Name)
 		for _, sp := range svc.Spec.Ports {
-			logger.Debugf("checking pod '%s'...", pod.Name)
 			// check the svc/pod port bindings
 			found := false
 		containers:

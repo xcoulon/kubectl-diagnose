@@ -99,7 +99,7 @@ var _ = Describe("diagnose pods", func() {
 		cfg := NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, diagnose.Pod, "default", "crash-loop-back-off-error")
+		found, err := diagnose.Diagnose(logger, cfg, diagnose.Pod, "default", "crash-loop-back-off")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
