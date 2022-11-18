@@ -24,56 +24,61 @@ func getPod(cfg *rest.Config, namespace, name string) (*corev1.Pod, error) {
 
 func checkPod(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, error) {
 	logger.Infof("👀 checking pod '%s'...", pod.Name)
-	return checkPodStatus(logger, cfg, pod)
-}
-
-// check the status of the pod status
-func checkPodStatus(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, error) {
+	found := false
+	// check events associated with the pod
+	f, err := checkPodEvents(logger, cfg, pod)
+	if err != nil {
+		return false, err
+	}
+	logger.Infof("👀 checking pod status...")
+	found = found || f
+	// check the containers
 	for _, c := range pod.Status.Conditions {
 		if c.Type == corev1.ContainersReady && c.Status == corev1.ConditionFalse {
-			logger.Errorf("👻 %s", c.Message)
+			if c.Message != "" {
+				logger.Errorf("👻 %s", c.Message)
+			}
 			// also, check the container statuses
-			waiting := checkContainerStatuses(logger, pod)
-			found := len(waiting) > 0
-			// also, check events associated with the pod
-			f, err := checkPodEvents(logger, cfg, pod)
+			f, err := checkContainer(logger, cfg, pod)
 			if err != nil {
 				return false, err
 			}
 			found = found || f
-			// also, check logs
-			// TODO: only if container is in running (check the `ready` and `started` fields of `.status.containerStatuses[]``)
-			f, err = checkPodLogs(logger, cfg, pod, waiting...)
-			if err != nil {
-				return false, err
-			}
-			found = found || f
-
-			return found, nil
 		}
 	}
-	return false, nil
+	return found, nil
 }
 
 // check the status of the pod containers
 // return the list of containers' name whose status is `waiting`
-func checkContainerStatuses(logger logr.Logger, pod *corev1.Pod) []string {
-	waiting := []string{}
+func checkContainer(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, error) {
+	found := false
 	for _, s := range pod.Status.ContainerStatuses {
-		// container is not in `Running` state
+		// if container not in `Running` state
 		if s.State.Waiting != nil {
+			found = true
 			if s.State.Waiting.Message != "" {
 				logger.Errorf("👻 container '%s' is waiting with reason '%s': %s", s.Name, s.State.Waiting.Reason, s.State.Waiting.Message)
 			} else {
 				logger.Errorf("👻 container '%s' is waiting with reason '%s'", s.Name, s.State.Waiting.Reason)
 			}
-			// TODO: check reason and provide a more detailed diagnosis or hint to fix the problem?
-			// if reason is `CrashLoopBackOff`, look for errors (`ERROR`/`FATAL`) in the container logs? (but display the n last lines?)
-			// if reason is `CreateContainerConfigError`, message should be enough (eg: `secret "cookie" not found`)
-			waiting = append(waiting, s.Name)
 		}
+		// also, check the logs
+		if (s.Started != nil && *s.Started) ||
+			s.LastTerminationState.Running != nil ||
+			s.LastTerminationState.Terminated != nil ||
+			s.LastTerminationState.Waiting != nil {
+			f, err := checkContainerLogs(logger, cfg, pod, s.Name)
+			if err != nil {
+				return false, err
+			}
+			found = found || f
+		}
+		// TODO: check reason and provide a more detailed diagnosis or hint to fix the problem?
+		// eg: if reason is `CrashLoopBackOff`, look for errors (`ERROR`/`FATAL`) in the container logs? (but display the n last lines?)
+		// eg: if reason is `CreateContainerConfigError`, message should be enough (eg: `secret "cookie" not found`)
 	}
-	return waiting
+	return found, nil
 }
 
 func checkPodEvents(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, error) {
@@ -98,32 +103,30 @@ func checkPodEvents(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool
 	return found, nil
 }
 
-func checkPodLogs(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod, containers ...string) (bool, error) {
+func checkContainerLogs(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod, container string) (bool, error) {
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return false, err
 	}
 	found := false
-	for _, container := range containers {
-		logger.Infof("👀 checking logs in '%s' container...", container)
-		logs, err := cl.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: container}).DoRaw(context.TODO())
-		if err != nil {
-			return false, err
-		}
-		logger.Debugf("logs: '%s'", string(logs))
-		for _, l := range strings.Split(string(logs), "\n") {
-			ll := strings.ToLower(l)
-			if strings.Contains(ll, "error") ||
-				strings.Contains(ll, "fatal") ||
-				strings.Contains(ll, "panic") ||
-				strings.Contains(ll, "emerg") {
-				found = true
-				logger.Errorf("🗒  %s", l)
-			}
+	logger.Infof("👀 checking '%s' container logs...", container)
+	logs, err := cl.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: container}).DoRaw(context.TODO())
+	if err != nil {
+		return false, err
+	}
+	logger.Debugf("logs: '%s'", string(logs))
+	for _, l := range strings.Split(string(logs), "\n") {
+		ll := strings.ToLower(l)
+		if strings.Contains(ll, "error") ||
+			strings.Contains(ll, "fatal") ||
+			strings.Contains(ll, "panic") ||
+			strings.Contains(ll, "emerg") {
+			found = true
+			logger.Errorf("🗒  %s", l)
 		}
 	}
 	if !found {
-		logger.Infof("🤷 no relevant message found in the pod logs (but you may want to check yourself)")
+		logger.Infof("🤷 no 'error'/'fatal'/'panic'/'emerg' messages found in the container logs")
 	}
 	return found, nil
 }
