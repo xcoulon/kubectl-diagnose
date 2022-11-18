@@ -33,7 +33,7 @@ var _ = DescribeTable("container in CrashLoopBackOff status",
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-12T18:02:28Z")
 		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Back-off restarting failed container`, time.Since(lastTimestamp).Truncate(time.Second))))
 		// logs
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking logs in 'default' container...`))
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking 'default' container logs...`))
 		Expect(logger.Output()).To(ContainSubstring(`🗒  Error: loading initial config: loading new config: http app module: start: listening on :80: listen tcp :80: bind: permission denied`))
 	},
 	Entry("should detect from pod", diagnose.Pod, "test", "crash-loop-back-off-7994787459-2nrz5"),
@@ -60,8 +60,6 @@ var _ = DescribeTable("container in ImagePullBackOff status",
 		Expect(logger.Output()).To(ContainSubstring(`👻 container 'default' is waiting with reason 'ImagePullBackOff': Back-off pulling image "unknown:v0.0.0"`))
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-13T07:59:04Z")
 		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Error: ImagePullBackOff`, time.Since(lastTimestamp).Truncate(time.Second))))
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking logs in 'default' container...`))
-		Expect(logger.Output()).To(ContainSubstring(`🤷 no relevant message found in the pod logs (but you may want to check yourself)`))
 	},
 	Entry("should detect from pod", diagnose.Pod, "test", "image-pull-back-off-9bbb4f9bd-pjj55"),
 	Entry("should detect from replicaset", diagnose.ReplicaSet, "test", "image-pull-back-off-9bbb4f9bd"),
@@ -103,7 +101,7 @@ var _ = DescribeTable("container with readiness probe error",
 	func(kind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
-		apiserver, err := NewFakeAPIServer(logger, "resources/pod-readiness-probe-error.yaml")
+		apiserver, err := NewFakeAPIServer(logger, "resources/pod-readiness-probe-error.yaml", "resources/pod-readiness-probe-error.logs")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := NewConfig(apiserver.URL, "/api")
 
@@ -118,6 +116,9 @@ var _ = DescribeTable("container with readiness probe error",
 		// events
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-13T21:55:27Z")
 		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Readiness probe failed: HTTP probe failed with statuscode: 404`, time.Since(lastTimestamp).Truncate(time.Second))))
+		// logs
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking 'default' container logs...`))
+		Expect(logger.Output()).To(ContainSubstring("🤷 no 'error'/'fatal'/'panic'/'emerg' messages found in the container logs"))
 	},
 	Entry("should detect from pod", diagnose.Pod, "test", "readiness-probe-error-6cb7664768-qlmns"),
 	Entry("should detect from replicaset", diagnose.ReplicaSet, "test", "readiness-probe-error-6cb7664768"),

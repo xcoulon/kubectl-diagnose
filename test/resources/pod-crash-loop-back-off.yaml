@@ -249,6 +249,11 @@ status:
     ready: false
     restartCount: 32
     started: false
+    lastState:
+      terminated:
+        containerID: cri-o://535539c2857de6af7128c1b236193408d2d7a0560436f60591ef351a15723690
+        exitCode: 1
+        reason: Error
     state:
       waiting:
         message: back-off 5m0s restarting failed container=default pod=crash-loop-back-off-7994787459-2nrz5(307c7d07-dda4-4877-8195-833e2e7a9e7a)

@@ -1,0 +1,11 @@
+readiness-probe-error-6cb7664768-qlmns:
+  default: |-
+    {"level":"info","ts":1668791096.6823626,"msg":"using provided configuration","config_file":"/etc/caddy/Caddyfile","config_adapter":"caddyfile"}
+    {"level":"warn","ts":1668791096.6829545,"msg":"Caddyfile input is not formatted; run the 'caddy fmt' command to fix inconsistencies","adapter":"caddyfile","file":"/etc/caddy/Caddyfile","line":3}
+    {"level":"info","ts":1668791096.6845772,"logger":"admin","msg":"admin endpoint started","address":"localhost:2019","enforce_origin":false,"origins":["//localhost:2019","//[::1]:2019","//127.0.0.1:2019"]}
+    {"level":"info","ts":1668791096.6847827,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0xc0006a62a0"}
+    {"level":"info","ts":1668791096.684886,"logger":"tls","msg":"cleaning storage unit","description":"FileStorage:/data/caddy"}
+    {"level":"info","ts":1668791096.6849148,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2","h3"]}
+    {"level":"info","ts":1668791096.6849515,"logger":"tls","msg":"finished cleaning storage units"}
+    {"level":"info","ts":1668791096.6850195,"msg":"autosaved config (load with --resume flag)","file":"/config/caddy/autosave.json"}
+    {"level":"info","ts":1668791096.6850297,"msg":"serving initial configuration"}
