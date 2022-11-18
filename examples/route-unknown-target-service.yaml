@@ -1,0 +1,91 @@
+# vscode-kubernetes-tools: exclude
+# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: unknown-target-service
+  labels:
+    app: unknown-target-service
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: unknown # unknown
+    weight: 100
+  wildcardPolicy: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: unknown-target-service
+  labels:
+    app: unknown-target-service
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  selector:
+    app: unknown-target-service
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unknown-target-service
+  labels:
+    app: unknown-target-service
+spec:
+  selector:
+    matchLabels:
+      app: unknown-target-service
+  template:
+    metadata:
+      labels:
+        app: unknown-target-service
+    spec:
+      containers:
+      - name: default
+        image: caddy:2
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        volumeMounts:
+        - name: caddy-config
+          mountPath: "/etc/caddy"
+        - name: caddy-config-cache
+          mountPath: "/config/caddy"
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      volumes:
+      - name: caddy-config
+        configMap:
+          name: caddy-config-port-8080
+      - name: caddy-config-cache
+        emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config-port-8080
+data:
+  Caddyfile: |-
+    http://:8080
+
+    respond "Hello, world!"
+  

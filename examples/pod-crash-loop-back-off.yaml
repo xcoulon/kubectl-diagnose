@@ -1,0 +1,90 @@
+# vscode-kubernetes-tools: exclude
+# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: crash-loop-back-off
+  labels:
+    app: crash-loop-back-off
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: crash-loop-back-off
+    weight: 100
+  wildcardPolicy: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crash-loop-back-off
+  labels:
+    app: crash-loop-back-off
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  selector:
+    app: crash-loop-back-off
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crash-loop-back-off
+  labels:
+    app: crash-loop-back-off
+spec:
+  selector:
+    matchLabels:
+      app: crash-loop-back-off
+  template:
+    metadata:
+      labels:
+        app: crash-loop-back-off
+    spec:
+      containers:
+      - name: default
+        image: caddy:2
+        ports:
+        - containerPort: 80 
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        volumeMounts:
+        - name: caddy-config
+          mountPath: "/etc/caddy"
+        - name: caddy-config-cache
+          mountPath: "/config/caddy"
+      securityContext:
+        runAsNonRoot: true # but caddy needs to run as `root` to listen on port 80
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      volumes:
+        - name: caddy-config
+          configMap:
+            name: caddy-config-port-80
+        - name: caddy-config-cache
+          emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config-port-80
+data:
+  Caddyfile: |-
+    http://:80
+
+    respond "Hello, world!"

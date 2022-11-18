@@ -1,0 +1,69 @@
+# vscode-kubernetes-tools: exclude
+# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: image-pull-back-off
+  labels:
+    app: image-pull-back-off
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: image-pull-back-off
+    weight: 100
+  wildcardPolicy: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: image-pull-back-off
+  labels:
+    app: image-pull-back-off
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  selector:
+    app: image-pull-back-off
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-pull-back-off
+  labels:
+    app: image-pull-back-off
+spec:
+  selector:
+    matchLabels:
+      app: image-pull-back-off
+  template:
+    metadata:
+      labels:
+        app: image-pull-back-off
+    spec:
+      containers:
+      - name: default
+        image: unknown:v0.0.0 # unknown image
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+      securityContext:
+        runAsNonRoot: true # but caddy process needs to run as root for port 80
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default

@@ -1,31 +1,226 @@
+# vscode-kubernetes-tools: exclude
+# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
+--- 
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: invalid-service-target-port-int
+  name: invalid-service-target-port-int
+  namespace: test
+  uid: 00216abe-1452-4d1d-9ad9-48b68bf9096e
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: invalid-service-target-port-int
+    weight: 100
+  wildcardPolicy: None
+status:
+  ingress:
+  - conditions:
+    - status: "True"
+      type: Admitted
+    routerName: default
+    wildcardPolicy: None
+---
 apiVersion: v1
 kind: Service
 metadata:
-  name: service-invalid-target-port-int
   labels:
-    app: service-invalid-target-port-int
+    app: invalid-service-target-port-int
+  name: invalid-service-target-port-int
+  namespace: test
+  uid: c35030e4-a4fb-49b8-bbba-13d77908e8db
 spec:
-  type: NodePort
-  sessionAffinity: None
-  selector:
-    app: service-invalid-target-port-int
   ports:
   - name: http
     port: 8080
     protocol: TCP
-    targetPort: 8443 # invalid target port (`8443` instead of `8080`)
+    targetPort: 8443
+  selector:
+    app: invalid-service-target-port-int
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: invalid-service-target-port-int
+  name: invalid-service-target-port-int
+  namespace: test
+  uid: e6ef5d6e-d3a4-4ee6-a198-a8b40f4d062a
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: invalid-service-target-port-int
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: invalid-service-target-port-int
+    spec:
+      containers:
+      - image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-port-8080
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+status:
+  availableReplicas: 1
+  conditions:
+  - message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - message: ReplicaSet "invalid-service-target-port-int-bbcb4fd5d" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  labels:
+    app: invalid-service-target-port-int
+    pod-template-hash: bbcb4fd5d
+  name: invalid-service-target-port-int-bbcb4fd5d
+  namespace: test
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: invalid-service-target-port-int
+    uid: e6ef5d6e-d3a4-4ee6-a198-a8b40f4d062a
+  uid: 16fcbf78-18b6-4261-87d5-a49f6dece5dd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: invalid-service-target-port-int
+      pod-template-hash: bbcb4fd5d
+  template:
+    metadata:
+      labels:
+        app: invalid-service-target-port-int
+        pod-template-hash: bbcb4fd5d
+    spec:
+      containers:
+      - image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-port-8080
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+status:
+  availableReplicas: 1
+  fullyLabeledReplicas: 1
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
 ---
 apiVersion: v1
 kind: Pod
 metadata:
-  name: service-invalid-target-port-int
   labels:
-    app: service-invalid-target-port-int
+    app: invalid-service-target-port-int
+    pod-template-hash: bbcb4fd5d
+  name: invalid-service-target-port-int-bbcb4fd5d-k8kg8
+  namespace: test
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: invalid-service-target-port-int-bbcb4fd5d
+    uid: 16fcbf78-18b6-4261-87d5-a49f6dece5dd
+  uid: 8debbb7a-930b-4282-88c4-8a0d9b903275
 spec:
   containers:
-  - name: default
-    image: caddy:2
+  - image: caddy:2
     imagePullPolicy: IfNotPresent
+    name: default
     ports:
     - containerPort: 8080
       name: http
@@ -37,22 +232,68 @@ spec:
       requests:
         cpu: 100m
         memory: 20Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      runAsUser: 1003880000
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /etc/caddy
+      name: caddy-config
+    - mountPath: /config/caddy
+      name: caddy-config-cache
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-8x5pg
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  imagePullSecrets:
+  - name: default-dockercfg-jhpvm
+  nodeName: ip-10-0-182-196.us-east-2.compute.internal
+  preemptionPolicy: PreemptLowerPriority
+  priority: -3
+  priorityClassName: sandbox-users-pods
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext:
+    fsGroup: 1003880000
+    runAsNonRoot: true
+    seLinuxOptions:
+      level: s0:c62,c49
+    seccompProfile:
+      type: RuntimeDefault
   serviceAccount: default
   serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  volumes:
+  - configMap:
+      defaultMode: 420
+      name: caddy-config-port-8080
+    name: caddy-config
+  - emptyDir: {}
+    name: caddy-config-cache
 status:
   conditions:
+  - status: "True"
+    type: Initialized
   - status: "True"
     type: Ready
   - status: "True"
     type: ContainersReady
+  - status: "True"
+    type: PodScheduled
   containerStatuses:
-  - containerID: docker://6f075f5f805f50c3649feeb7a49c36aa2086aa526bbf9aefa318d72a31acf1d9
-    image: caddy:2
-    imageID: docker-pullable://k8s.gcr.io/echoserver@sha256:5d99aa1120524c801bc8c1a7077e8f5ec122ba16b6dda1a5d3826057f67b9bcb
+  - containerID: cri-o://e809a65c66c24c994417e35cab6538653167d6ad26c0257649346360b9e527e2
+    image: docker.io/library/caddy:2
+    imageID: docker.io/library/caddy@sha256:50743fc6130295e9e8feccd8b2f437d8c472f626bf277dc873734ed98219f44f
+    lastState: {}
     name: default
     ready: true
-    started: true
     restartCount: 0
+    started: true
     state:
       running:
-        startedAt: "2022-10-20T05:36:53Z"
+        startedAt: "2022-11-16T05:58:25Z"

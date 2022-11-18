@@ -1,0 +1,91 @@
+# vscode-kubernetes-tools: exclude
+# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: invalid-service-target-port-str
+  labels:
+    app: invalid-service-target-port-str
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: invalid-service-target-port-str
+    weight: 100
+  wildcardPolicy: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: invalid-service-target-port-str
+  labels:
+    app: invalid-service-target-port-str
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  selector:
+    app: invalid-service-target-port-str
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: https # should be `http`
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: invalid-service-target-port-str
+  labels:
+    app: invalid-service-target-port-str
+spec:
+  selector:
+    matchLabels:
+      app: invalid-service-target-port-str
+  template:
+    metadata:
+      labels:
+        app: invalid-service-target-port-str
+    spec:
+      containers:
+      - name: default
+        image: caddy:2
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        volumeMounts:
+        - name: caddy-config
+          mountPath: "/etc/caddy"
+        - name: caddy-config-cache
+          mountPath: "/config/caddy"
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      volumes:
+      - name: caddy-config
+        configMap:
+          name: caddy-config-port-8080
+      - name: caddy-config-cache
+        emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config-port-8080
+data:
+  Caddyfile: |-
+    http://:8080
+
+    respond "Hello, world!"
+  
