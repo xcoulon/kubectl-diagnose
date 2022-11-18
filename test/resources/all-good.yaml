@@ -3,6 +3,7 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
+  namespace: test
   name: all-good
 spec:
   port:
@@ -23,6 +24,7 @@ status:
 apiVersion: v1
 kind: Service
 metadata:
+  namespace: test
   name: all-good
   labels:
     app: all-good
@@ -40,6 +42,7 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
+  namespace: test
   name: all-good-785d8bcc5f-g92mn
   labels:
     app: all-good
@@ -116,9 +119,10 @@ status:
 apiVersion: v1
 kind: Pod
 metadata:
+  namespace: test
+  name: all-good-785d8bcc5f-x85p2
   labels:
     app: all-good
-  name: all-good-785d8bcc5f-x85p2
 spec:
   containers:
   - image: caddy:2
@@ -155,6 +159,8 @@ spec:
 status:
   conditions:
   - status: "True"
+    type: Initialized
+  - status: "True"
     type: Ready
   - status: "True"
     type: ContainersReady
@@ -175,6 +181,7 @@ status:
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  namespace: test
   name: caddy-config
 data:
   Caddyfile: |-

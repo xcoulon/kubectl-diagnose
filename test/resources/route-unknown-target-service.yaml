@@ -4,16 +4,16 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   labels:
-    app: no-matching-pods
-  name: no-matching-pods
-  namespace: test
-  uid: c10d1985-26c2-45fe-91b9-dc67844a0bc6
+    app: unknown-target-service
+  name: unknown-target-service
+  namespace: "test"
+  uid: 16849929-3dc5-4ab0-a151-14aeb67d431d
 spec:
   port:
     targetPort: http
   to:
     kind: Service
-    name: no-matching-pods
+    name: unknown
     weight: 100
   wildcardPolicy: None
 status:
@@ -28,22 +28,18 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: no-matching-pods
-  name: no-matching-pods
-  namespace: test
-  uid: b629ceba-6e7e-4536-836f-9dc835d401ad
+    app: unknown-target-service
+  name: unknown-target-service
+  namespace: "test"
+  uid: ee65fdd1-30f6-42f0-bd64-74b7bd0fb2d2
 spec:
-  internalTrafficPolicy: Cluster
-  ipFamilies:
-  - IPv4
-  ipFamilyPolicy: SingleStack
   ports:
   - name: http
     port: 8080
     protocol: TCP
     targetPort: http
   selector:
-    app: invalid
+    app: unknown-target-service
   sessionAffinity: None
   type: ClusterIP
 status:
@@ -53,17 +49,17 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: no-matching-pods
-  name: no-matching-pods
-  namespace: test
-  resourceVersion: "1722414558"
+    app: unknown-target-service
+  name: unknown-target-service
+  namespace: "test"
+  uid: 577381dc-9b41-481f-8919-09a5581a2b7a
 spec:
   progressDeadlineSeconds: 600
   replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: no-matching-pods
+      app: unknown-target-service
   strategy:
     rollingUpdate:
       maxSurge: 25%
@@ -72,7 +68,7 @@ spec:
   template:
     metadata:
       labels:
-        app: no-matching-pods
+        app: unknown-target-service
     spec:
       containers:
       - image: caddy:2
@@ -120,7 +116,7 @@ status:
     reason: MinimumReplicasAvailable
     status: "True"
     type: Available
-  - message: ReplicaSet "no-matching-pods-7679b75f99" has successfully progressed.
+  - message: ReplicaSet "unknown-target-service-7f47895569" has successfully progressed.
     reason: NewReplicaSetAvailable
     status: "True"
     type: Progressing
@@ -128,34 +124,34 @@ status:
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
---- 
+---
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
   labels:
-    app: no-matching-pods
-    pod-template-hash: 7679b75f99
-  name: no-matching-pods-7679b75f99
-  namespace: test
+    app: unknown-target-service
+    pod-template-hash: 7f47895569
+  name: unknown-target-service-7f47895569
+  namespace: "test"
   ownerReferences:
   - apiVersion: apps/v1
     blockOwnerDeletion: true
     controller: true
     kind: Deployment
-    name: no-matching-pods
-    uid: 73a2688f-df08-4bef-a7b4-7ff23e831965
-  uid: 94176ee9-062c-4ff4-b4ac-048d3fd769c9
+    name: unknown-target-service
+    uid: 577381dc-9b41-481f-8919-09a5581a2b7a
+  uid: 74748063-fb97-4cda-a61a-9954800946c4
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: no-matching-pods
-      pod-template-hash: 7679b75f99
+      app: unknown-target-service
+      pod-template-hash: 7f47895569
   template:
     metadata:
       labels:
-        app: no-matching-pods
-        pod-template-hash: 7679b75f99
+        app: unknown-target-service
+        pod-template-hash: 7f47895569
     spec:
       containers:
       - image: caddy:2
@@ -206,19 +202,20 @@ status:
 apiVersion: v1
 kind: Pod
 metadata:
+  generateName: unknown-target-service-7f47895569-
   labels:
-    app: no-matching-pods
-    pod-template-hash: 7679b75f99
-  name: no-matching-pods-7679b75f99-grpj7
-  namespace: test
+    app: unknown-target-service
+    pod-template-hash: 7f47895569
+  name: unknown-target-service-7f47895569-5h2gn
+  namespace: "test"
   ownerReferences:
   - apiVersion: apps/v1
     blockOwnerDeletion: true
     controller: true
     kind: ReplicaSet
-    name: no-matching-pods-7679b75f99
-    uid: 94176ee9-062c-4ff4-b4ac-048d3fd769c9
-  uid: 1a43e4d3-900f-454d-a579-25e870f0a8f1
+    name: unknown-target-service-7f47895569
+    uid: 74748063-fb97-4cda-a61a-9954800946c4
+  uid: d9b7800f-a52c-4fdf-ac3a-8d2055c8e183
 spec:
   containers:
   - image: caddy:2
@@ -249,17 +246,8 @@ spec:
     - mountPath: /config/caddy
       name: caddy-config-cache
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      name: kube-api-access-dx9wp
+      name: kube-api-access-2pr84
       readOnly: true
-  dnsPolicy: ClusterFirst
-  enableServiceLinks: true
-  imagePullSecrets:
-  - name: default-dockercfg-jhpvm
-  nodeName: ip-10-0-182-196.us-east-2.compute.internal
-  preemptionPolicy: PreemptLowerPriority
-  priority: -3
-  priorityClassName: sandbox-users-pods
-  restartPolicy: Always
   schedulerName: default-scheduler
   securityContext:
     fsGroup: 1003880000
@@ -289,7 +277,7 @@ status:
   - status: "True"
     type: PodScheduled
   containerStatuses:
-  - containerID: cri-o://1145ebf00316b4fe52679fa106b4419456c251a34d331482b7d64c2468627d30
+  - containerID: cri-o://b6f3035e21912c38d8190642d1f5d928f84fc07bc3487e6a0b0f1ec3b44be55c
     image: docker.io/library/caddy:2
     imageID: docker.io/library/caddy@sha256:50743fc6130295e9e8feccd8b2f437d8c472f626bf277dc873734ed98219f44f
     lastState: {}
@@ -299,5 +287,5 @@ status:
     started: true
     state:
       running:
-        startedAt: "2022-11-16T06:32:32Z"
-  startTime: "2022-11-16T06:32:29Z"
+        startedAt: "2022-11-17T06:45:29Z"
+  startTime: "2022-11-17T06:45:27Z"

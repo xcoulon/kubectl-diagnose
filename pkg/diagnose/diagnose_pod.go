@@ -42,6 +42,7 @@ func checkPodStatus(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool
 			}
 			found = found || f
 			// also, check logs
+			// TODO: only if container is in running (check the `ready` and `started` fields of `.status.containerStatuses[]``)
 			f, err = checkPodLogs(logger, cfg, pod, waiting...)
 			if err != nil {
 				return false, err
@@ -61,7 +62,11 @@ func checkContainerStatuses(logger logr.Logger, pod *corev1.Pod) []string {
 	for _, s := range pod.Status.ContainerStatuses {
 		// container is not in `Running` state
 		if s.State.Waiting != nil {
-			logger.Errorf("👻 container '%s' is waiting with reason '%s': %s", s.Name, s.State.Waiting.Reason, s.State.Waiting.Message)
+			if s.State.Waiting.Message != "" {
+				logger.Errorf("👻 container '%s' is waiting with reason '%s': %s", s.Name, s.State.Waiting.Reason, s.State.Waiting.Message)
+			} else {
+				logger.Errorf("👻 container '%s' is waiting with reason '%s'", s.Name, s.State.Waiting.Reason)
+			}
 			// TODO: check reason and provide a more detailed diagnosis or hint to fix the problem?
 			// if reason is `CrashLoopBackOff`, look for errors (`ERROR`/`FATAL`) in the container logs? (but display the n last lines?)
 			// if reason is `CreateContainerConfigError`, message should be enough (eg: `secret "cookie" not found`)

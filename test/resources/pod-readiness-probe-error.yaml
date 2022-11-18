@@ -1,21 +1,239 @@
+# vscode-kubernetes-tools: exclude
+# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: readiness-probe-error
+  namespace: test
+  name: readiness-probe-error
+  uid: 61bce6b8-2c39-4fd7-befc-e69f024653e3
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: readiness-probe-error
+    weight: 100
+  wildcardPolicy: None
+status:
+  ingress:
+  - conditions:
+    - status: "True"
+      type: Admitted
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: readiness-probe-error
+  namespace: test
+  name: readiness-probe-error
+  uid: 764b874e-cd1c-48f1-b94a-e2e60cb43726
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: readiness-probe-error
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: readiness-probe-error
+    spec:
+      containers:
+      - image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 1
+          httpGet:
+            path: /unknown
+            port: http
+            scheme: HTTP
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-port-8080-fileserver
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+status:
+  conditions:
+  - message: Deployment does not have minimum availability.
+    reason: MinimumReplicasUnavailable
+    status: "False"
+    type: Available
+  - message: ReplicaSet "readiness-probe-error-6cb7664768" is progressing.
+    reason: ReplicaSetUpdated
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  replicas: 1
+  unavailableReplicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  labels:
+    app: readiness-probe-error
+    pod-template-hash: 6cb7664768
+  namespace: test
+  name: readiness-probe-error-6cb7664768
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: readiness-probe-error
+    uid: 764b874e-cd1c-48f1-b94a-e2e60cb43726
+  uid: 8be8a2db-fca3-4da3-9a73-0f28396ebb77
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: readiness-probe-error
+  template:
+    metadata:
+      labels:
+        app: readiness-probe-error
+    spec:
+      containers:
+      - image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 1
+          httpGet:
+            path: /unknown
+            port: http
+            scheme: HTTP
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-port-8080-fileserver
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+status:
+  fullyLabeledReplicas: 1
+  observedGeneration: 1
+  replicas: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: readiness-probe-error
+  namespace: test
+  name: readiness-probe-error
+  uid: d288b597-9241-4d5c-83a6-a58d5f10c07d
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: readiness-probe-error
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
 apiVersion: v1
 kind: Pod
 metadata:
-  name: readiness-probe-error
+  labels:
+    app: readiness-probe-error
+  namespace: test
+  name: readiness-probe-error-6cb7664768-qlmns
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: readiness-probe-error-6cb7664768
+    uid: 8be8a2db-fca3-4da3-9a73-0f28396ebb77
+  uid: c188fba1-0304-4686-a67c-17db71548c6f
 spec:
   containers:
-  - name: default
-    image: caddy:2
+  - image: caddy:2
+    imagePullPolicy: IfNotPresent
+    name: default
     ports:
-    - containerPort: 80
+    - containerPort: 8080
       name: http
       protocol: TCP
     readinessProbe:
-      httpGet:
-        path: /healthz # endpoint does not exist
-        port: http
       failureThreshold: 1
-      periodSeconds: 60
+      httpGet:
+        path: /unknown
+        port: http
+        scheme: HTTP
+      periodSeconds: 5
+      successThreshold: 1
+      timeoutSeconds: 1
     resources:
       limits:
         cpu: 500m
@@ -23,10 +241,40 @@ spec:
       requests:
         cpu: 100m
         memory: 20Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      runAsUser: 1003880000
+    volumeMounts:
+    - mountPath: /etc/caddy
+      name: caddy-config
+    - mountPath: /config/caddy
+      name: caddy-config-cache
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-rgcks
+      readOnly: true
+  securityContext:
+    fsGroup: 1003880000
+    runAsNonRoot: true
+    seLinuxOptions:
+      level: s0:c62,c49
+    seccompProfile:
+      type: RuntimeDefault
   serviceAccount: default
   serviceAccountName: default
+  volumes:
+  - configMap:
+      defaultMode: 420
+      name: caddy-config-port-8080-fileserver
+    name: caddy-config
+  - emptyDir: {}
+    name: caddy-config-cache
 status:
   conditions:
+  - status: "True"
+    type: Initialized
   - message: 'containers with unready status: [default]'
     reason: ContainersNotReady
     status: "False"
@@ -36,29 +284,34 @@ status:
     status: "False"
     type: ContainersReady
   containerStatuses:
-  - containerID: docker://7e2a1894ed2773b3a6dc614fb99661ec628c198f0371ed4a9266d79cafc6e2f2
-    image: caddy:2
-    imageID: docker-pullable://k8s.gcr.io/echoserver@sha256:5d99aa1120524c801bc8c1a7077e8f5ec122ba16b6dda1a5d3826057f67b9bcb
+  - containerID: cri-o://a619f3ab14747d9857283dab3f74cdf75db77964bf857310074b3feb2872c80d
+    image: docker.io/library/caddy:2
+    imageID: docker.io/library/caddy@sha256:50743fc6130295e9e8feccd8b2f437d8c472f626bf277dc873734ed98219f44f
+    lastState: {}
     name: default
     ready: false
     restartCount: 0
     started: true
     state:
       running:
-        startedAt: "2022-10-22T17:18:02Z"
+        startedAt: "2022-11-13T21:53:53Z"
 ---
 apiVersion: v1
 kind: Event
 metadata:
-  name: readiness-probe-error.17202520760a2a72
-firstTimestamp: "2022-10-22T17:18:03Z"
-lastTimestamp: "2022-10-22T18:48:17Z"
+  namespace: test
+  name: readiness-probe-error-6cb7664768-qlmns.17276445166d1359
+  resourceVersion: "1715384686"
+  uid: 5fc5066a-216d-4ef5-a17e-5d70e5ba11d1
 type: Warning
+lastTimestamp: "2022-11-13T21:55:27Z"
+count: 22
+message: 'Readiness probe failed: HTTP probe failed with statuscode: 404'
 reason: Unhealthy
-message: 'Readiness probe failed: Get "http://172.17.0.4:80/healthz": dial tcp 172.17.0.4:80:
-  connect: connection refused'
 involvedObject:
   apiVersion: v1
+  fieldPath: spec.containers{default}
   kind: Pod
-  name: readiness-probe-error
-count: 156
+  namespace: test
+  name: readiness-probe-error-6cb7664768-qlmns
+  uid: c188fba1-0304-4686-a67c-17db71548c6f

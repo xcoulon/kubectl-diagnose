@@ -1,10 +1,11 @@
-crash-loop-back-off:
+crash-loop-back-off-7994787459-2nrz5:
   default: |-
-    {"level":"info","ts":1666623369.9459965,"msg":"using provided configuration","config_file":"/etc/caddy/Caddyfile","config_adapter":"caddyfile"}
-    {"level":"warn","ts":1666623369.9474516,"msg":"Caddyfile input is not formatted; run the 'caddy fmt' command to fix inconsistencies","adapter":"caddyfile","file":"/etc/caddy/Caddyfile","line":3}
-    {"level":"info","ts":1666623369.9480617,"logger":"admin","msg":"admin endpoint started","address":"localhost:2019","enforce_origin":false,"origins":["//localhost:2019","//[::1]:2019","//127.0.0.1:2019"]}
-    {"level":"warn","ts":1666623369.9481733,"logger":"http","msg":"server is listening only on the HTTP port, so no automatic HTTPS will be applied to this server","server_name":"srv0","http_port":80}
-    {"level":"info","ts":1666623369.9482057,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0xc00071ce70"}
-    {"level":"info","ts":1666623369.9483323,"logger":"tls.cache.maintenance","msg":"stopped background certificate maintenance","cache":"0xc00071ce70"}
-    {"level":"info","ts":1666623369.9483352,"logger":"tls","msg":"cleaning storage unit","description":"FileStorage:/data/caddy"}
+    {"level":"info","ts":1668275796.760332,"msg":"using provided configuration","config_file":"/etc/caddy/Caddyfile","config_adapter":"caddyfile"}
+    {"level":"warn","ts":1668275796.7609367,"msg":"Caddyfile input is not formatted; run the 'caddy fmt' command to fix inconsistencies","adapter":"caddyfile","file":"/etc/caddy/Caddyfile","line":3}
+    {"level":"info","ts":1668275796.762223,"logger":"admin","msg":"admin endpoint started","address":"localhost:2019","enforce_origin":false,"origins":["//localhost:2019","//[::1]:2019","//127.0.0.1:2019"]}
+    {"level":"warn","ts":1668275796.7623403,"logger":"http","msg":"server is listening only on the HTTP port, so no automatic HTTPS will be applied to this server","server_name":"srv0","http_port":80}
+    {"level":"info","ts":1668275796.7623954,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0xc0005282a0"}
+    {"level":"info","ts":1668275796.7625043,"logger":"tls","msg":"cleaning storage unit","description":"FileStorage:/data/caddy"}
+    {"level":"info","ts":1668275796.7625732,"logger":"tls","msg":"finished cleaning storage units"}
+    {"level":"info","ts":1668275796.7625968,"logger":"tls.cache.maintenance","msg":"stopped background certificate maintenance","cache":"0xc0005282a0"}
     Error: loading initial config: loading new config: http app module: start: listening on :80: listen tcp :80: bind: permission denied

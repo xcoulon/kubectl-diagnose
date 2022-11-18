@@ -1,6 +1,7 @@
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
+  namespace: test
   name: rs-1
 spec:
   replicas: 1
@@ -22,6 +23,7 @@ spec:
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
+  namespace: test
   name: rs-2
 spec:
   replicas: 1

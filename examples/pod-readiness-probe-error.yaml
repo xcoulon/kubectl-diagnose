@@ -1,0 +1,98 @@
+# vscode-kubernetes-tools: exclude
+# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: readiness-probe-error
+  labels:
+    app: readiness-probe-error
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: readiness-probe-error
+    weight: 100
+  wildcardPolicy: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: readiness-probe-error
+  labels:
+    app: readiness-probe-error
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  selector:
+    app: readiness-probe-error
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: readiness-probe-error
+  labels:
+    app: readiness-probe-error
+spec:
+  selector:
+    matchLabels:
+      app: readiness-probe-error
+  template:
+    metadata:
+      labels:
+        app: readiness-probe-error
+    spec:
+      containers:
+      - name: default
+        image: caddy:2
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /unknown # endpoint does not exist
+            port: http
+          failureThreshold: 1
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        volumeMounts:
+        - name: caddy-config
+          mountPath: "/etc/caddy"
+        - name: caddy-config-cache
+          mountPath: "/config/caddy"
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      volumes:
+      - name: caddy-config
+        configMap:
+          name: caddy-config-port-8080-fileserver
+      - name: caddy-config-cache
+        emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config-port-8080-fileserver
+  labels:
+    app: readiness-probe-error
+data:
+  Caddyfile: |-
+    http://:8080
+
+    file_server

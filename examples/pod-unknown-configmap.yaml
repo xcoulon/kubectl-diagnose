@@ -1,0 +1,99 @@
+# vscode-kubernetes-tools: exclude
+# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: unknown-configmap
+  labels:
+    app: unknown-configmap
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: unknown-configmap
+    weight: 100
+  wildcardPolicy: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: unknown-configmap
+  labels:
+    app: unknown-configmap
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  selector:
+    app: unknown-configmap
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unknown-configmap
+  labels:
+    app: unknown-configmap
+spec:
+  selector:
+    matchLabels:
+      app: unknown-configmap
+  template:
+    metadata:
+      labels:
+        app: unknown-configmap
+    spec:
+      containers:
+      - name: default
+        image: caddy:2
+        env:
+        - name: COOKIE
+          valueFrom:
+            configMapKeyRef:
+              name: unknown-configmap # unknown
+              key: cookie
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        volumeMounts:
+        - name: caddy-config
+          mountPath: "/etc/caddy"
+        - name: caddy-config-cache
+          mountPath: "/config/caddy"
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      volumes:
+      - name: caddy-config
+        configMap:
+          name: caddy-config-port-8080
+      - name: caddy-config-cache
+        emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config-port-8080
+  labels:
+    app: unknown-configmap
+data:
+  Caddyfile: |-
+    http://:8080
+
+    respond "Hello, world!"
+  

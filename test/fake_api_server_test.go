@@ -27,7 +27,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/pods/all-good-785d8bcc5f-g92mn")
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/pods/all-good-785d8bcc5f-g92mn")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -42,7 +42,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/pods/unknown")
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/pods/unknown")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -57,22 +57,37 @@ var _ = Describe("fake api-server endpoints", func() {
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/pods?labelSelector=app%3Dall-good")
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/pods?labelSelector=app%3Dall-good")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp).To(HaveReturnedPodCount(2))
 	})
 
-	It("should get single replicaset", func() {
+	It("should list no pod", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/replicaset-service-account-not-found.yaml")
+		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/default/replicasets/sa-notfound")
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/pods?labelSelector=app%3Dunknown")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveReturnedPodCount(0))
+	})
+
+	It("should get single replicaset", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/deployment-service-account-not-found.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/replicasets/sa-notfound-59b5d8468f")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -87,7 +102,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/default/replicasets/unknown")
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/replicasets/unknown")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -102,7 +117,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/default/replicasets")
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/replicasets")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -117,7 +132,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/services/all-good")
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/services/all-good")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -132,7 +147,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/services/unknown")
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/services/unknown")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -147,7 +162,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/apis/route.openshift.io/v1/namespaces/default/routes/all-good")
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/route.openshift.io/v1/namespaces/test/routes/all-good")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -162,7 +177,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/apis/route.openshift.io/v1/namespaces/default/routes/unknown")
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/route.openshift.io/v1/namespaces/test/routes/unknown")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -177,7 +192,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/events?fieldSelector=involvedObject.name%3Dreadiness-probe-error")
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/events?fieldSelector=involvedObject.name%3Dreadiness-probe-error-6cb7664768-qlmns")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -192,7 +207,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/events?fieldSelector=involvedObject.name%3Dunknown")
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/events?fieldSelector=involvedObject.name%3Dunknown")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -207,7 +222,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/pods/all-good-785d8bcc5f-g92mn/log?container=default")
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/pods/all-good-785d8bcc5f-g92mn/log?container=default")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -222,7 +237,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/default/nodes/unknown") // unsupported kind of resource: nodes
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/nodes/unknown") // unsupported kind of resource: nodes
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
