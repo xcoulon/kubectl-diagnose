@@ -76,6 +76,7 @@ func NewFakeAPIServer(logger logr.Logger, filenames ...string) (*httptest.Server
 	r.GET(`/api/v1/namespaces/:namespace/events`, newEventsHandler(logger, allObjs))
 	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets`, newReplicaSetsHandler(logger, allObjs))
 	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, allObjs, diagnose.ReplicaSet))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/deployments/:name`, newObjectHandler(logger, allObjs, diagnose.Deployment))
 	r.GET(`/apis/route.openshift.io/v1/namespaces/:namespace/routes/:name`, newObjectHandler(logger, allObjs, diagnose.Route))
 	r.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.Infof("no match for request with path='%s' and query='%s' ", r.URL.Path, r.URL.Query().Encode())
@@ -234,13 +235,20 @@ func newPodsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.
 func newReplicaSetsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		namespace := params.ByName("namespace")
-		logger.Debugf("listing replicasets in %s", namespace)
+		labelSelector := r.URL.Query().Get("labelSelector")
+		logger.Debugf("listing replicasets in %s with label selector '%s'", namespace, labelSelector)
+		s, err := labels.Parse(labelSelector)
+		if err != nil {
+			handleError(logger, w, err)
+			return
+		}
 		rss := &appsv1.ReplicaSetList{
 			Items: []appsv1.ReplicaSet{},
 		}
 		for _, obj := range objs {
 			if obj, ok := obj.(*appsv1.ReplicaSet); ok &&
-				obj.GetNamespace() == namespace {
+				obj.GetNamespace() == namespace &&
+				s.Matches(labels.Set(obj.Labels)) {
 				rss.Items = append(rss.Items, *obj)
 			}
 		}

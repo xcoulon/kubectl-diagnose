@@ -124,6 +124,51 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(resp).To(HaveReturnedReplicaSetCount(2))
 	})
 
+	It("should list 1 replicaset by labelSelector", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/replicasets.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/replicasets?labelSelector=app%3Drs-1")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveReturnedReplicaSetCount(1))
+	})
+
+	It("should list 2 replicasets by labelSelector", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/replicasets.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/replicasets?labelSelector=more%3Dcookies")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveReturnedReplicaSetCount(2))
+	})
+
+	It("should get single deployment", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := NewFakeAPIServer(logger, "resources/deployment-service-account-not-found.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/deployments/sa-notfound")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveBodyOfType(&appsv1.Deployment{}))
+	})
+
 	It("should get single service", func() {
 		// given
 		logger := logr.New(io.Discard)
@@ -184,7 +229,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
 	})
 
-	It("should get 1 event", func() {
+	It("should list 1 event by fieldSelector", func() {
 		// given
 		logger := logr.New(io.Discard)
 		s, err := NewFakeAPIServer(logger, "resources/pod-readiness-probe-error.yaml")
@@ -199,7 +244,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(resp).To(HaveReturnedEventCount(1))
 	})
 
-	It("should get no events", func() {
+	It("should list no events by fieldSelector", func() {
 		// given
 		logger := logr.New(io.Discard)
 		s, err := NewFakeAPIServer(logger, "resources/pod-readiness-probe-error.yaml")
