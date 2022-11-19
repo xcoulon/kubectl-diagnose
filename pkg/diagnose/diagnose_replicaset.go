@@ -24,11 +24,6 @@ func getReplicaSet(cfg *rest.Config, namespace, name string) (*appsv1.ReplicaSet
 
 func checkReplicaSet(logger logr.Logger, cfg *rest.Config, rs *appsv1.ReplicaSet) (bool, error) {
 	logger.Infof("👀 checking ReplicaSet '%s'...", rs.Name)
-	return checkReplicaSetStatus(logger, cfg, rs)
-}
-
-// check the status of the pod status
-func checkReplicaSetStatus(logger logr.Logger, cfg *rest.Config, rs *appsv1.ReplicaSet) (bool, error) {
 	for _, c := range rs.Status.Conditions {
 		if c.Type == appsv1.ReplicaSetReplicaFailure &&
 			c.Reason == "FailedCreate" &&
@@ -38,7 +33,7 @@ func checkReplicaSetStatus(logger logr.Logger, cfg *rest.Config, rs *appsv1.Repl
 		}
 	}
 	// if status looks fine, then look for pods with the matching label(s)
-	selector := labels.Set(rs.Spec.Template.ObjectMeta.Labels).String()
+	selector := labels.Set(rs.Spec.Selector.MatchLabels).String()
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return false, err
@@ -55,13 +50,18 @@ func checkReplicaSetStatus(logger logr.Logger, cfg *rest.Config, rs *appsv1.Repl
 		logger.Infof("💡 you may want to verify that the pods exist and their labels match '%s'", selector)
 		return true, nil
 	}
-	for _, pod := range pods.Items {
+	for i := range pods.Items {
+		pod := pods.Items[i]
 		logger.Debugf("checking pod '%s'...", pod.Name)
-		p := pod
-		if found, err := checkPod(logger, cfg, &p); err != nil {
-			return false, err
-		} else if found {
-			return true, nil
+		for _, ownerRef := range pod.OwnerReferences {
+			if ownerRef.UID == rs.UID {
+				// pod is "owned" by this replicaset
+				if found, err := checkPod(logger, cfg, &pod); err != nil {
+					return false, err
+				} else if found {
+					return true, nil
+				}
+			}
 		}
 	}
 	return false, nil

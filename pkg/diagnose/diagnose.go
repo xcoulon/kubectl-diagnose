@@ -9,11 +9,13 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+// TODO: support aliases and fully qualified names (eg: `po` and `route.route.openshift.io`)
 const Pod = "pod"
 const Service = "service"
 const ServiceShortName = "svc"
 const ReplicaSet = "replicaset"
 const ReplicaSetShortName = "rs"
+const Deployment = "deployment"
 const Route = "route"
 
 func Diagnose(logger logr.Logger, cfg *rest.Config, kind, namespace, name string) (bool, error) {
@@ -30,6 +32,12 @@ func Diagnose(logger logr.Logger, cfg *rest.Config, kind, namespace, name string
 			return false, err
 		}
 		return checkService(logger, cfg, svc)
+	case Deployment:
+		d, err := getDeployment(cfg, namespace, name)
+		if err != nil {
+			return false, err
+		}
+		return checkDeployment(logger, cfg, d)
 	case ReplicaSet, ReplicaSetShortName:
 		rs, err := getReplicaSet(cfg, namespace, name)
 		if err != nil {

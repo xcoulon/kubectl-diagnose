@@ -3,6 +3,10 @@ kind: ReplicaSet
 metadata:
   namespace: test
   name: rs-1
+  labels:
+    app: rs-1
+    more: cookies
+
 spec:
   replicas: 1
   selector:
@@ -25,6 +29,9 @@ kind: ReplicaSet
 metadata:
   namespace: test
   name: rs-2
+  labels:
+    app: rs-2
+    more: cookies
 spec:
   replicas: 1
   selector:
