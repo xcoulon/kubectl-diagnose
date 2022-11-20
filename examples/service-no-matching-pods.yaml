@@ -39,6 +39,7 @@ metadata:
   labels:
     app: no-matching-pods
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: no-matching-pods

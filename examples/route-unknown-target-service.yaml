@@ -39,6 +39,7 @@ metadata:
   labels:
     app: unknown-target-service
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: unknown-target-service

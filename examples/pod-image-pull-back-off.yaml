@@ -39,6 +39,7 @@ metadata:
   labels:
     app: image-pull-back-off
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: image-pull-back-off

@@ -144,7 +144,7 @@ var _ = DescribeTable("serviceaccount not found",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking ReplicaSet 'sa-notfound-59b5d8468f'...`))
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking ReplicaSet 'sa-notfound-59b5d8468f' in namespace 'test'...`))
 		Expect(logger.Output()).To(ContainSubstring(`👻 replicaset 'sa-notfound-59b5d8468f' failed to create pods: pods "sa-notfound-59b5d8468f-" is forbidden: error looking up service account test/sa-notfound: serviceaccount "sa-notfound" not found`))
 	},
 	Entry("should detect from replicaset", diagnose.ReplicaSet, "test", "sa-notfound-59b5d8468f"),
@@ -231,7 +231,7 @@ var _ = DescribeTable("should detect missing route target service",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'unknown-target-service' in namespace 'test'`))
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'unknown-target-service' in namespace 'test'...`))
 		Expect(logger.Output()).To(ContainSubstring("👻 unable to find service 'unknown'"))
 	},
 	Entry("should detect from route", diagnose.Route, "test", "unknown-target-service"),
@@ -251,7 +251,7 @@ var _ = DescribeTable("should detect invalid route target port as string",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'invalid-route-target-port-str' in namespace 'test'`))
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'invalid-route-target-port-str' in namespace 'test'...`))
 		Expect(logger.Output()).To(ContainSubstring("👻 route target port 'https' is not defined in service 'invalid-route-target-port-str'"))
 	},
 	Entry("should detect from route", diagnose.Route, "test", "invalid-route-target-port-str"),
@@ -271,8 +271,49 @@ var _ = DescribeTable("should detect invalid route target port as int",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'invalid-route-target-port-int' in namespace 'test'`))
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'invalid-route-target-port-int' in namespace 'test'...`))
 		Expect(logger.Output()).To(ContainSubstring("👻 route target port '8443' is not defined in service 'invalid-route-target-port-int'"))
 	},
 	Entry("should detect from route", diagnose.Route, "test", "invalid-route-target-port-int"),
+)
+
+var _ = DescribeTable("should detect zero replicas specified in deployment",
+	func(kind, namespace, name string) {
+		// given
+		logger := logr.New(io.Discard)
+		apiserver, err := NewFakeAPIServer(logger, "resources/deployment-zero-replica.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		cfg := NewConfig(apiserver.URL, "/api")
+
+		// when
+		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(found).To(BeTrue())
+		switch {
+		case kind == diagnose.Route:
+			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'zero-replica' in namespace 'test'...`))
+			fallthrough
+		case kind == diagnose.Service:
+			// with fallthrough statement in case above, this also applies to `kind==route`
+			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'zero-replica' in namespace 'test'...`))
+			fallthrough
+		case kind == diagnose.ReplicaSet:
+			// with fallthrough statement in case above, this also applies to `kind==[route|service]`
+			Expect(logger.Output()).To(ContainSubstring(`👀 checking ReplicaSet 'zero-replica-9bccf7d88' in namespace 'test'...`))
+			fallthrough
+		case kind == diagnose.Deployment:
+			// with fallthrough statement in case above, this also applies to `kind==[route|service|replicaset]`
+			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'zero-replica' in namespace 'test'...`))
+			Expect(logger.Output()).To(ContainSubstring(`👻 number of desired replicas for deployment 'zero-replica' is set to 0`))
+			Expect(logger.Output()).To(ContainSubstring(`💡 you may want run 'oc scale --replicas=1 deployment/zero-replica -n test' or increase the 'replicas' value in the deployment specs`))
+		default:
+			Fail("unexpected case 🤨")
+		}
+	},
+	Entry("should detect from route", diagnose.Route, "test", "zero-replica"),
+	Entry("should detect from service", diagnose.Service, "test", "zero-replica"),
+	Entry("should detect from deployment", diagnose.Deployment, "test", "zero-replica"),
+	Entry("should detect from replicaset", diagnose.ReplicaSet, "test", "zero-replica-9bccf7d88"),
 )

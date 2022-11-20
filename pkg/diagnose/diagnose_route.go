@@ -24,7 +24,7 @@ func getRoute(cfg *rest.Config, namespace, name string) (*routev1.Route, error) 
 // - the route's target port on pods selected by the service this route points to.
 // (If this is a string, it will be looked up as a named port in the target endpoints port list)
 func checkRoute(logger logr.Logger, cfg *rest.Config, route *routev1.Route) (bool, error) {
-	logger.Infof("👀 checking route '%s' in namespace '%s'", route.Name, route.Namespace)
+	logger.Infof("👀 checking route '%s' in namespace '%s'...", route.Name, route.Namespace)
 	svc, err := getService(cfg, route.Namespace, route.Spec.To.Name)
 	if apierrors.IsNotFound(err) {
 		logger.Errorf("👻 unable to find service '%s'", route.Spec.To.Name)

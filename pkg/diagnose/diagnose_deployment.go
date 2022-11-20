@@ -23,7 +23,7 @@ func getDeployment(cfg *rest.Config, namespace, name string) (*appsv1.Deployment
 }
 
 func checkDeployment(logger logr.Logger, cfg *rest.Config, d *appsv1.Deployment) (bool, error) {
-	logger.Infof("👀 checking deployment '%s'...", d.Name)
+	logger.Infof("👀 checking deployment '%s' in namespace '%s'...", d.Name, d.Namespace)
 	found := false
 	for _, c := range d.Status.Conditions {
 		if c.Type == appsv1.DeploymentAvailable && c.Status == corev1.ConditionFalse {
@@ -35,8 +35,15 @@ func checkDeployment(logger logr.Logger, cfg *rest.Config, d *appsv1.Deployment)
 	if err != nil {
 		return false, err
 	}
+	// check the `.spec.replicas`
+	if d.Spec.Replicas != nil && *d.Spec.Replicas == 0 {
+		logger.Errorf("👻 number of desired replicas for deployment '%s' is set to 0", d.Name)
+		logger.Infof("💡 you may want run 'oc scale --replicas=1 deployment/%s -n %s' or increase the 'replicas' value in the deployment specs", d.Name, d.Namespace)
+		// no need to check further (and avoid infinite loops if coming from service->replicaset->deployment)
+		return true, nil
+	}
+	// check the associated replicasets
 	selector := labels.Set(d.Spec.Selector.MatchLabels).String()
-
 	rss, err := cl.AppsV1().ReplicaSets(d.Namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: selector,
 	})

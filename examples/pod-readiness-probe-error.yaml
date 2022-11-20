@@ -39,6 +39,7 @@ metadata:
   labels:
     app: readiness-probe-error
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: readiness-probe-error

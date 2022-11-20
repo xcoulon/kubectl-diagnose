@@ -39,6 +39,7 @@ metadata:
   labels:
     app: invalid-service-target-port-int
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: invalid-service-target-port-int
