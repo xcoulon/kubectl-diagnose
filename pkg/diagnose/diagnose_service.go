@@ -70,7 +70,7 @@ pods:
 			for _, c := range pod.Spec.Containers {
 				for _, cp := range c.Ports {
 					if cp.Name == sp.TargetPort.StrVal || cp.ContainerPort == sp.TargetPort.IntVal {
-						logger.Infof("☑️ found matching target port '%s' (%d) in container '%s' of pod '%s'", cp.Name, cp.ContainerPort, c.Name, pod.Name)
+						logger.Debugf("☑️ found matching target port '%s' (%d) in container '%s' of pod '%s'", cp.Name, cp.ContainerPort, c.Name, pod.Name)
 						found = true
 						break containers
 					}

@@ -23,7 +23,7 @@ func getPod(cfg *rest.Config, namespace, name string) (*corev1.Pod, error) {
 }
 
 func checkPod(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, error) {
-	logger.Infof("👀 checking pod '%s'...", pod.Name)
+	logger.Infof("👀 checking pod '%s' in namespace '%s'...", pod.Name, pod.Namespace)
 	found := false
 	// check events associated with the pod
 	f, err := checkPodEvents(logger, cfg, pod)
