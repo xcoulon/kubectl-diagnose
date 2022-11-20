@@ -23,7 +23,7 @@ func getReplicaSet(cfg *rest.Config, namespace, name string) (*appsv1.ReplicaSet
 }
 
 func checkReplicaSet(logger logr.Logger, cfg *rest.Config, rs *appsv1.ReplicaSet) (bool, error) {
-	logger.Infof("👀 checking ReplicaSet '%s'...", rs.Name)
+	logger.Infof("👀 checking ReplicaSet '%s' in namespace '%s'...", rs.Name, rs.Namespace)
 	for _, c := range rs.Status.Conditions {
 		if c.Type == appsv1.ReplicaSetReplicaFailure &&
 			c.Reason == "FailedCreate" &&
@@ -32,12 +32,24 @@ func checkReplicaSet(logger logr.Logger, cfg *rest.Config, rs *appsv1.ReplicaSet
 			return true, nil
 		}
 	}
-	// if status looks fine, then look for pods with the matching label(s)
-	selector := labels.Set(rs.Spec.Selector.MatchLabels).String()
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return false, err
 	}
+	// check the `.spec.replicas`
+	if rs.Spec.Replicas != nil && *rs.Spec.Replicas == 0 {
+		for _, ownerRef := range rs.OwnerReferences {
+			if ownerRef.Kind == "Deployment" {
+				d, err := getDeployment(cfg, rs.Namespace, ownerRef.Name)
+				if err != nil {
+					return false, err
+				}
+				return checkDeployment(logger, cfg, d)
+			}
+		}
+	}
+	// if status looks fine, then look for pods with the matching label(s)
+	selector := labels.Set(rs.Spec.Selector.MatchLabels).String()
 	pods, err := cl.CoreV1().Pods(rs.Namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: selector,
 	})

@@ -170,7 +170,7 @@ func (e NotFoundErr) Is(target error) bool {
 
 func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-		logger.Infof("handling object at '%s'", r.URL.Path)
+		logger.Debugf("handling object at '%s'", r.URL.Path)
 		namespace := params.ByName("namespace")
 		name := params.ByName("name")
 		obj, err := lookupObject(logger, kind, namespace, name, objs)

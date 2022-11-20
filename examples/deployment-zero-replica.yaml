@@ -3,29 +3,29 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: invalid-route-target-port-str
+  name: zero-replica
   labels:
-    app: invalid-route-target-port-str
+    app: zero-replica
 spec:
   port:
-    targetPort: https # should be `http`
+    targetPort: http
   to:
     kind: Service
-    name: invalid-route-target-port-str
+    name: zero-replica
     weight: 100
   wildcardPolicy: None
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: invalid-route-target-port-str
+  name: zero-replica
   labels:
-    app: invalid-route-target-port-str
+    app: zero-replica
 spec:
   type: ClusterIP
   sessionAffinity: None
   selector:
-    app: invalid-route-target-port-str
+    app: zero-replica
   ports:
   - name: http
     port: 8080
@@ -35,18 +35,18 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: invalid-route-target-port-str
+  name: zero-replica
   labels:
-    app: invalid-route-target-port-str
+    app: zero-replica
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
-      app: invalid-route-target-port-str
+      app: zero-replica
   template:
     metadata:
       labels:
-        app: invalid-route-target-port-str
+        app: zero-replica
     spec:
       containers:
       - name: default

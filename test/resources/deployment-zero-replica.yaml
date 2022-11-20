@@ -1,0 +1,200 @@
+# vscode-kubernetes-tools: exclude
+# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
+--- 
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: zero-replica
+  name: zero-replica
+  namespace: test
+  uid: 26b18e39-bec7-401e-adc5-0e39fd5fd640
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: zero-replica
+    weight: 100
+  wildcardPolicy: None
+status:
+  ingress:
+  - conditions:
+    - status: "True"
+      type: Admitted
+    routerName: default
+    wildcardPolicy: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: zero-replica
+  name: zero-replica
+  namespace: test
+  uid: acca1b77-45bc-4e86-88f9-a06c09469c60
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: zero-replica
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: zero-replica
+  name: zero-replica
+  namespace: test
+  uid: 2483a148-7879-4c40-8a60-653c7b82158b
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 0
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: zero-replica
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: zero-replica
+    spec:
+      containers:
+      - image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-port-8080
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+status:
+  conditions:
+  - message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - message: ReplicaSet "zero-replica-9bccf7d88" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "0"
+    deployment.kubernetes.io/max-replicas: "0"
+    deployment.kubernetes.io/revision: "1"
+  generation: 1
+  labels:
+    app: zero-replica
+    pod-template-hash: 9bccf7d88
+  name: zero-replica-9bccf7d88
+  namespace: test
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: zero-replica
+    uid: 2483a148-7879-4c40-8a60-653c7b82158b
+  uid: 83854a84-b174-4d0d-ada9-8958a6757e90
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: zero-replica
+      pod-template-hash: 9bccf7d88
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: zero-replica
+        pod-template-hash: 9bccf7d88
+    spec:
+      containers:
+      - image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-port-8080
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+status:
+  observedGeneration: 1
+  replicas: 0
