@@ -144,7 +144,7 @@ var _ = DescribeTable("serviceaccount not found",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking ReplicaSet 'sa-notfound-59b5d8468f' in namespace 'test'...`))
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'sa-notfound-59b5d8468f' in namespace 'test'...`))
 		Expect(logger.Output()).To(ContainSubstring(`👻 replicaset 'sa-notfound-59b5d8468f' failed to create pods: pods "sa-notfound-59b5d8468f-" is forbidden: error looking up service account test/sa-notfound: serviceaccount "sa-notfound" not found`))
 	},
 	Entry("should detect from replicaset", diagnose.ReplicaSet, "test", "sa-notfound-59b5d8468f"),
@@ -301,7 +301,7 @@ var _ = DescribeTable("should detect zero replicas specified in deployment",
 			fallthrough
 		case kind == diagnose.ReplicaSet:
 			// with fallthrough statement in case above, this also applies to `kind==[route|service]`
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking ReplicaSet 'zero-replica-9bccf7d88' in namespace 'test'...`))
+			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'zero-replica-9bccf7d88' in namespace 'test'...`))
 			fallthrough
 		case kind == diagnose.Deployment:
 			// with fallthrough statement in case above, this also applies to `kind==[route|service|replicaset]`
