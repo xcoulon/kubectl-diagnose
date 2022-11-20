@@ -15,7 +15,6 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	routev1 "github.com/openshift/api/route/v1"
-	"github.com/xcoulon/kubectl-diagnose/pkg/diagnose"
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
@@ -70,14 +69,14 @@ func NewFakeAPIServer(logger logr.Logger, filenames ...string) (*httptest.Server
 	}
 	r := httprouter.New()
 	r.GET(`/api/v1/namespaces/:namespace/pods`, newPodsHandler(logger, allObjs))
-	r.GET(`/api/v1/namespaces/:namespace/pods/:name`, newObjectHandler(logger, allObjs, diagnose.Pod))
+	r.GET(`/api/v1/namespaces/:namespace/pods/:name`, newObjectHandler(logger, allObjs, "pod"))
 	r.GET(`/api/v1/namespaces/:namespace/pods/:name/log`, newPodLogsHandler(logger, allLogs))
-	r.GET(`/api/v1/namespaces/:namespace/services/:name`, newObjectHandler(logger, allObjs, diagnose.Service))
+	r.GET(`/api/v1/namespaces/:namespace/services/:name`, newObjectHandler(logger, allObjs, "service"))
 	r.GET(`/api/v1/namespaces/:namespace/events`, newEventsHandler(logger, allObjs))
 	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets`, newReplicaSetsHandler(logger, allObjs))
-	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, allObjs, diagnose.ReplicaSet))
-	r.GET(`/apis/apps/v1/namespaces/:namespace/deployments/:name`, newObjectHandler(logger, allObjs, diagnose.Deployment))
-	r.GET(`/apis/route.openshift.io/v1/namespaces/:namespace/routes/:name`, newObjectHandler(logger, allObjs, diagnose.Route))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, allObjs, "replicaset"))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/deployments/:name`, newObjectHandler(logger, allObjs, "deployment"))
+	r.GET(`/apis/route.openshift.io/v1/namespaces/:namespace/routes/:name`, newObjectHandler(logger, allObjs, "route"))
 	r.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.Infof("no match for request with path='%s' and query='%s' ", r.URL.Path, r.URL.Query().Encode())
 		w.WriteHeader(http.StatusNotFound)
