@@ -1,4 +1,4 @@
-package test
+package testsupport
 
 import (
 	"io"
@@ -22,7 +22,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get single pod", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -37,7 +37,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get no pod", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -52,7 +52,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should list 2 pods", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -67,7 +67,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should list no pod", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -97,7 +97,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get no replicaset", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -112,7 +112,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should list 2 replicasets", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/replicasets.yaml")
+		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -127,7 +127,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should list 1 replicaset by labelSelector", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/replicasets.yaml")
+		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -142,7 +142,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should list 2 replicasets by labelSelector", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/replicasets.yaml")
+		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -172,7 +172,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get single service", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -187,7 +187,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get no service", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -202,7 +202,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get single route", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -217,7 +217,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get no route", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml")
+		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -262,7 +262,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should retrieve logs", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/all-good.yaml", "resources/all-good.logs")
+		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml", "resources/fake-api-server.logs")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
