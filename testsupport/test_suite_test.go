@@ -1,4 +1,4 @@
-package test_test
+package testsupport_test
 
 import (
 	"testing"
