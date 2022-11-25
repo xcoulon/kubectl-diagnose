@@ -27,16 +27,15 @@ var _ = DescribeTable("container in CrashLoopBackOff status",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		if diagnose.IsRoute(kind) {
+		k := diagnose.Kind(kind)
+		switch {
+		case k == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'crash-loop-back-off' in namespace 'test'...`))
-		}
-		if diagnose.IsRoute(kind) || diagnose.IsService(kind) {
+		case k == diagnose.Route || k == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'crash-loop-back-off' in namespace 'test'...`))
-		}
-		if diagnose.IsDeployment(kind) {
+		case k == diagnose.Deployment:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'crash-loop-back-off' in namespace 'test'...`))
-		}
-		if diagnose.IsDeployment(kind) || diagnose.IsReplicaSet(kind) {
+		case k == diagnose.Deployment || k == diagnose.ReplicaSet:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'crash-loop-back-off-7994787459' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -71,16 +70,15 @@ var _ = DescribeTable("container in ImagePullBackOff status",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		if diagnose.IsRoute(kind) {
+		k := diagnose.Kind(kind)
+		switch {
+		case k == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'image-pull-back-off' in namespace 'test'...`))
-		}
-		if diagnose.IsRoute(kind) || diagnose.IsService(kind) {
+		case k == diagnose.Route || k == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'image-pull-back-off' in namespace 'test'...`))
-		}
-		if diagnose.IsDeployment(kind) {
+		case k == diagnose.Deployment:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'image-pull-back-off' in namespace 'test'...`))
-		}
-		if diagnose.IsDeployment(kind) || diagnose.IsReplicaSet(kind) {
+		case k == diagnose.Deployment || k == diagnose.ReplicaSet:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'image-pull-back-off-9bbb4f9bd' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -110,16 +108,15 @@ var _ = DescribeTable("container with unknown configmap mount",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		if diagnose.IsRoute(kind) {
+		k := diagnose.Kind(kind)
+		switch {
+		case k == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'unknown-configmap' in namespace 'test'...`))
-		}
-		if diagnose.IsRoute(kind) || diagnose.IsService(kind) {
+		case k == diagnose.Route || k == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'unknown-configmap' in namespace 'test'...`))
-		}
-		if diagnose.IsDeployment(kind) {
+		case k == diagnose.Deployment:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'unknown-configmap' in namespace 'test'...`))
-		}
-		if diagnose.IsDeployment(kind) || diagnose.IsReplicaSet(kind) {
+		case k == diagnose.Deployment || k == diagnose.ReplicaSet:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'unknown-configmap-76476b7d5' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -154,16 +151,15 @@ var _ = DescribeTable("container with readiness probe error",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		if diagnose.IsRoute(kind) {
+		k := diagnose.Kind(kind)
+		switch {
+		case k == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'readiness-probe-error' in namespace 'test'...`))
-		}
-		if diagnose.IsRoute(kind) || diagnose.IsService(kind) {
+		case k == diagnose.Route || k == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'readiness-probe-error' in namespace 'test'...`))
-		}
-		if diagnose.IsDeployment(kind) {
+		case k == diagnose.Deployment:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'readiness-probe-error' in namespace 'test'...`))
-		}
-		if diagnose.IsDeployment(kind) || diagnose.IsReplicaSet(kind) {
+		case k == diagnose.Deployment || k == diagnose.ReplicaSet:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'readiness-probe-error-6cb7664768' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -197,13 +193,13 @@ var _ = DescribeTable("serviceaccount not found",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		if diagnose.IsRoute(kind) {
+		k := diagnose.Kind(kind)
+		switch {
+		case k == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'sa-notfound' in namespace 'test'...`))
-		}
-		if diagnose.IsRoute(kind) || diagnose.IsService(kind) {
+		case k == diagnose.Route || k == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'sa-notfound' in namespace 'test'...`))
-		}
-		if diagnose.IsDeployment(kind) {
+		case k == diagnose.Deployment:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'sa-notfound' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -230,7 +226,7 @@ var _ = DescribeTable("should detect no matching pods",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		if diagnose.IsRoute(kind) {
+		if diagnose.Kind(kind) == diagnose.Route {
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'no-matching-pods' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -256,7 +252,7 @@ var _ = DescribeTable("should detect invalid service target port as string",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		if diagnose.IsRoute(kind) {
+		if diagnose.Kind(kind) == diagnose.Route {
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'invalid-service-target-port-str' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -281,7 +277,7 @@ var _ = DescribeTable("should detect invalid service target port as int",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		if diagnose.IsRoute(kind) {
+		if diagnose.Kind(kind) == diagnose.Route {
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'invalid-service-target-port-int' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -366,13 +362,14 @@ var _ = DescribeTable("should detect zero replicas specified in deployment",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		if diagnose.IsRoute(kind) {
+		k := diagnose.Kind(kind)
+		switch {
+		case k == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'zero-replica' in namespace 'test'...`))
-		}
-		if diagnose.IsRoute(kind) || diagnose.IsService(kind) {
+		case k == diagnose.Route || k == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'zero-replica' in namespace 'test'...`))
 		}
-		if diagnose.IsRoute(kind) || diagnose.IsService(kind) || diagnose.IsReplicaSet(kind) {
+		if k == diagnose.Route || k == diagnose.Service || k == diagnose.ReplicaSet {
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'zero-replica-9bccf7d88' in namespace 'test'...`))
 		}
 		// in all cases
