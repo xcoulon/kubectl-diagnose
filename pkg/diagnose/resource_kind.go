@@ -1,46 +1,36 @@
 package diagnose
 
-func IsRoute(kind string) bool {
+const (
+	Route = iota
+	Service
+	Deployment
+	ReplicaSet
+	Pod
+	StatefulSet
+	PersistentVolumeClaim
+	StorageClass
+	Unkwown
+)
+
+func Kind(kind string) int {
 	switch kind {
 	case "routes", "route", "route.route.openshift.io":
-		return true
-	default:
-		return false
-	}
-}
-
-func IsService(kind string) bool {
-	switch kind {
+		return Route
 	case "services", "service", "svc":
-		return true
-	default:
-		return false
-	}
-}
-
-func IsDeployment(kind string) bool {
-	switch kind {
+		return Service
 	case "deployments", "deployment", "deploy", "deployment.apps":
-		return true
-	default:
-		return false
-	}
-}
-
-func IsReplicaSet(kind string) bool {
-	switch kind {
+		return Deployment
 	case "replicasets", "replicaset", "rs", "replicaset.apps":
-		return true
-	default:
-		return false
-	}
-}
-
-func IsPod(kind string) bool {
-	switch kind {
+		return ReplicaSet
 	case "pods", "pod", "po":
-		return true
+		return Pod
+	case "statefulsets", "statefulset", "sts", "statefulset.apps":
+		return StatefulSet
+	case "persistentvolumeclaims", "persistentvolumeclaim", "pvc":
+		return PersistentVolumeClaim
+	case "storageclasses", "storageclass", "sc", "storageclass.storage.k8s.io":
+		return StorageClass
 	default:
-		return false
+		return Unkwown
 	}
 }

@@ -9,32 +9,32 @@ import (
 )
 
 func Diagnose(logger logr.Logger, cfg *rest.Config, kind, namespace, name string) (bool, error) {
-	switch {
-	case IsRoute(kind):
+	switch Kind(kind) {
+	case Route:
 		r, err := getRoute(cfg, namespace, name)
 		if err != nil {
 			return false, err
 		}
 		return checkRoute(logger, cfg, r)
-	case IsService(kind):
+	case Service:
 		svc, err := getService(cfg, namespace, name)
 		if err != nil {
 			return false, err
 		}
 		return checkService(logger, cfg, svc)
-	case IsDeployment(kind):
+	case Deployment:
 		d, err := getDeployment(cfg, namespace, name)
 		if err != nil {
 			return false, err
 		}
 		return checkDeployment(logger, cfg, d)
-	case IsReplicaSet(kind):
+	case ReplicaSet:
 		rs, err := getReplicaSet(cfg, namespace, name)
 		if err != nil {
 			return false, err
 		}
 		return checkReplicaSet(logger, cfg, rs)
-	case IsPod(kind):
+	case Pod:
 		pod, err := getPod(cfg, namespace, name)
 		if err != nil {
 			return false, err
