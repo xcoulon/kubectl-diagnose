@@ -55,7 +55,7 @@ func checkDeployment(logger logr.Logger, cfg *rest.Config, d *appsv1.Deployment)
 		for _, ref := range rs.OwnerReferences {
 			if ref.UID == d.UID {
 				// rs is "owned" by this deployment
-				f, err := checkReplicaSet(logger, cfg, &rs)
+				f, err := diagnoseReplicaSet(logger, cfg, &rs)
 				if err != nil {
 					return false, err
 				}

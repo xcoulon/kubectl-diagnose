@@ -19,7 +19,7 @@ func getPersistentVolumeClaim(cfg *rest.Config, namespace, name string) (*corev1
 	return cl.CoreV1().PersistentVolumeClaims(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 }
 
-func checkPersistentVolumeClaim(logger logr.Logger, cfg *rest.Config, pvc *corev1.PersistentVolumeClaim) (bool, error) {
+func diagnosePersistentVolumeClaim(logger logr.Logger, cfg *rest.Config, pvc *corev1.PersistentVolumeClaim) (bool, error) {
 	logger.Infof("👀 checking persistentvolumeclaim '%s' in namespace '%s'...", pvc.Name, pvc.Namespace)
 	found := false
 	logger.Debugf("👀 checking persistentvolumeclaim status...")
