@@ -24,14 +24,13 @@ You can either:
 
 == Supported Cases
 
-`kubectl-diagnose` is able to detect the following cases:
+`kubectl-diagnose` may detect:
 
 - when the target service of an OpenShift route does not exist
 - when the target service of an OpenShift route has no matching port
 - when there is no pod matching the service selector 
 - when there is no port in the pod containers matching the service target port
-- when a persistent volume claim is pending
-- when one of the pod container is not running
+- when one of the pod container is not running 
 - when the statefulset replicas or deployment replicas is set to `0`
 - when a persistent volume claim is stuck in `pending` phase
 
