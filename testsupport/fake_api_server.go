@@ -69,14 +69,18 @@ func NewFakeAPIServer(logger logr.Logger, filenames ...string) (*httptest.Server
 	}
 	r := httprouter.New()
 	r.GET(`/api/v1/namespaces/:namespace/pods`, newPodsHandler(logger, allObjs))
-	r.GET(`/api/v1/namespaces/:namespace/pods/:name`, newObjectHandler(logger, allObjs, "pod"))
+	r.GET(`/api/v1/namespaces/:namespace/pods/:name`, newObjectHandler(logger, allObjs, "Pod"))
 	r.GET(`/api/v1/namespaces/:namespace/pods/:name/log`, newPodLogsHandler(logger, allLogs))
-	r.GET(`/api/v1/namespaces/:namespace/services/:name`, newObjectHandler(logger, allObjs, "service"))
+	r.GET(`/api/v1/namespaces/:namespace/services/:name`, newObjectHandler(logger, allObjs, "Service"))
 	r.GET(`/api/v1/namespaces/:namespace/events`, newEventsHandler(logger, allObjs))
+	r.GET(`/api/v1/namespaces/:namespace/persistentvolumeclaims`, newPersistentVolumeClaimsHandler(logger, allObjs))
+	r.GET(`/api/v1/namespaces/:namespace/persistentvolumeclaims/:name`, newObjectHandler(logger, allObjs, "PersistentVolumeClaim"))
 	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets`, newReplicaSetsHandler(logger, allObjs))
-	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, allObjs, "replicaset"))
-	r.GET(`/apis/apps/v1/namespaces/:namespace/deployments/:name`, newObjectHandler(logger, allObjs, "deployment"))
-	r.GET(`/apis/route.openshift.io/v1/namespaces/:namespace/routes/:name`, newObjectHandler(logger, allObjs, "route"))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, allObjs, "ReplicaSet"))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/deployments/:name`, newObjectHandler(logger, allObjs, "Deployment"))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/statefulsets`, newStatefulSetsHandler(logger, allObjs))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/statefulsets/:name`, newObjectHandler(logger, allObjs, "StatefulSet"))
+	r.GET(`/apis/route.openshift.io/v1/namespaces/:namespace/routes/:name`, newObjectHandler(logger, allObjs, "Route"))
 	r.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.Infof("no match for request with path='%s' and query='%s' ", r.URL.Path, r.URL.Query().Encode())
 		w.WriteHeader(http.StatusNotFound)
@@ -100,6 +104,10 @@ func parseObjects(filename string) ([]runtimeclient.Object, error) {
 			break
 		} else if err != nil {
 			return nil, err
+		}
+		if value == nil {
+			// skip commented out content
+			continue
 		}
 		data, err := yaml.Marshal(value)
 		if err != nil {
@@ -170,7 +178,7 @@ func (e NotFoundErr) Is(target error) bool {
 func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		logger.Debugf("handling object at '%s'", r.URL.Path)
-		namespace := params.ByName("namespace")
+		namespace := params.ByName("namespace") // unset for cluster-scoped resources (eg: storageclasses)
 		name := params.ByName("name")
 		obj, err := lookupObject(logger, kind, namespace, name, objs)
 		if err != nil {
@@ -184,7 +192,7 @@ func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind stri
 func lookupObject(logger logr.Logger, kind, namespace, name string, objs []runtimeclient.Object) (interface{}, error) {
 	logger.Debugf("looking up %s %s/%s", kind, namespace, name)
 	for _, obj := range objs {
-		if strings.ToLower(obj.GetObjectKind().GroupVersionKind().Kind) == kind &&
+		if obj.GetObjectKind().GroupVersionKind().Kind == kind &&
 			obj.GetNamespace() == namespace &&
 			obj.GetName() == name {
 			return obj, nil
@@ -231,6 +239,30 @@ func newPodsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.
 	}
 }
 
+func newPersistentVolumeClaimsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+		namespace := params.ByName("namespace")
+		labelSelector := r.URL.Query().Get("labelSelector")
+		logger.Debugf("listing persistent volumes claims in %s with labels %s", namespace, labelSelector)
+		s, err := labels.Parse(labelSelector)
+		if err != nil {
+			handleError(logger, w, err)
+			return
+		}
+		pvcs := &corev1.PersistentVolumeClaimList{
+			Items: []corev1.PersistentVolumeClaim{},
+		}
+		for _, obj := range objs {
+			if obj, ok := obj.(*corev1.PersistentVolumeClaim); ok &&
+				obj.GetNamespace() == namespace &&
+				s.Matches(labels.Set(obj.GetLabels())) {
+				pvcs.Items = append(pvcs.Items, *obj)
+			}
+		}
+		handleObject(logger, w, pvcs)
+	}
+}
+
 func newReplicaSetsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		namespace := params.ByName("namespace")
@@ -252,6 +284,30 @@ func newReplicaSetsHandler(logger logr.Logger, objs []runtimeclient.Object) http
 			}
 		}
 		handleObject(logger, w, rss)
+	}
+}
+
+func newStatefulSetsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+		namespace := params.ByName("namespace")
+		labelSelector := r.URL.Query().Get("labelSelector")
+		logger.Debugf("listing statefulsets in %s with label selector '%s'", namespace, labelSelector)
+		s, err := labels.Parse(labelSelector)
+		if err != nil {
+			handleError(logger, w, err)
+			return
+		}
+		stss := &appsv1.StatefulSetList{
+			Items: []appsv1.StatefulSet{},
+		}
+		for _, obj := range objs {
+			if obj, ok := obj.(*appsv1.StatefulSet); ok &&
+				obj.GetNamespace() == namespace &&
+				s.Matches(labels.Set(obj.Labels)) {
+				stss.Items = append(stss.Items, *obj)
+			}
+		}
+		handleObject(logger, w, stss)
 	}
 }
 

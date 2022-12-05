@@ -3,29 +3,29 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: image-pull-back-off
+  name: deploy-all-good
   labels:
-    app: image-pull-back-off
+    app: deploy-all-good
 spec:
   port:
     targetPort: http
   to:
     kind: Service
-    name: image-pull-back-off
+    name: deploy-all-good
     weight: 100
   wildcardPolicy: None
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: image-pull-back-off
+  name: deploy-all-good
   labels:
-    app: image-pull-back-off
+    app: deploy-all-good
 spec:
   type: ClusterIP
   sessionAffinity: None
   selector:
-    app: image-pull-back-off
+    app: deploy-all-good
   ports:
   - name: http
     port: 8080
@@ -35,22 +35,22 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: image-pull-back-off
+  name: deploy-all-good
   labels:
-    app: image-pull-back-off
+    app: deploy-all-good
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: image-pull-back-off
+      app: deploy-all-good
   template:
     metadata:
       labels:
-        app: image-pull-back-off
+        app: deploy-all-good
     spec:
       containers:
       - name: default
-        image: unknown:v0.0.0 # unknown image
+        image: caddy:2
         ports:
         - containerPort: 8080
           name: http
@@ -62,9 +62,31 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+        volumeMounts:
+        - name: caddy-config
+          mountPath: "/etc/caddy"
+        - name: caddy-config-cache
+          mountPath: "/config/caddy"
       securityContext:
-        runAsNonRoot: true # but caddy process needs to run as root for port 80
+        runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       serviceAccount: default
       serviceAccountName: default
+      volumes:
+      - name: caddy-config
+        configMap:
+          name: caddy-config-port-8080
+      - name: caddy-config-cache
+        emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config-port-8080
+data:
+  Caddyfile: |-
+    http://:8080
+
+    respond "Hello, world!"
+  

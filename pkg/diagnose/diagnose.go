@@ -40,6 +40,18 @@ func Diagnose(logger logr.Logger, cfg *rest.Config, kind, namespace, name string
 			return false, err
 		}
 		return checkPod(logger, cfg, pod)
+	case StatefulSet:
+		sts, err := getStatefulSet(cfg, namespace, name)
+		if err != nil {
+			return false, err
+		}
+		return checkStatefulSet(logger, cfg, sts)
+	case PersistentVolumeClaim:
+		pvc, err := getPersistentVolumeClaim(cfg, namespace, name)
+		if err != nil {
+			return false, err
+		}
+		return checkPersistentVolumeClaim(logger, cfg, pvc)
 	default:
 		return false, fmt.Errorf("🤷 unsupported kind of resource: '%s'", kind)
 	}

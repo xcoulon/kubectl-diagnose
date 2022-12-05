@@ -1,15 +1,18 @@
-package testsupport
+package testsupport_test
 
 import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
+
+	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
+	"github.com/xcoulon/kubectl-diagnose/testsupport"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	routev1 "github.com/openshift/api/route/v1"
-	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,7 +25,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get single pod", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -37,7 +40,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get no pod", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -52,7 +55,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should list 2 pods", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -67,7 +70,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should list no pod", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -82,12 +85,12 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get single replicaset", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/deployment-service-account-not-found.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-service-account-not-found.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/replicasets/sa-notfound-59b5d8468f")
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/replicasets/deploy-sa-notfound-59b5d8468f")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -97,7 +100,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get no replicaset", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -112,7 +115,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should list 2 replicasets", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -127,7 +130,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should list 1 replicaset by labelSelector", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -142,7 +145,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should list 2 replicasets by labelSelector", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -154,15 +157,45 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(resp).To(HaveReturnedReplicaSetCount(2))
 	})
 
-	It("should get single deployment", func() {
+	It("should list 2 statefulsets", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/deployment-service-account-not-found.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/deployments/sa-notfound")
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/statefulsets")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveReturnedStatefulSetCount(2))
+	})
+
+	It("should list 1 replicaset by labelSelector", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/statefulsets?labelSelector=app%3Dstatefulset-all-good")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveReturnedStatefulSetCount(1))
+	})
+
+	It("should get single deployment", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-service-account-not-found.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/deployments/deploy-sa-notfound")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -172,7 +205,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get single service", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -187,7 +220,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get no service", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -202,7 +235,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get single route", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -217,7 +250,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get no route", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -232,7 +265,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should list 1 event by fieldSelector", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/pod-readiness-probe-error.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -247,7 +280,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should list no events by fieldSelector", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/pod-readiness-probe-error.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -262,7 +295,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should retrieve logs", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger, "resources/fake-api-server.yaml", "resources/fake-api-server.logs")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml", "resources/all-good.logs")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -277,7 +310,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should not match any endpoint", func() {
 		// given
 		logger := logr.New(io.Discard)
-		s, err := NewFakeAPIServer(logger)
+		s, err := testsupport.NewFakeAPIServer(logger)
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -288,6 +321,53 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
 	})
+
+	It("should get 1 pvc", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/persistentvolumeclaims/caddy-config-cache-statefulset-all-good-0")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveBodyOfType(&corev1.PersistentVolumeClaim{}))
+	})
+
+	It("should list 1 pvc per label selector", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/persistentvolumeclaims?labelSelector=app%3Dunknown")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveReturnedPersistentVolumeClaimCount(0))
+	})
+
+	It("should list 1 pvc per label selector", func() {
+		// given
+		logger := logr.New(os.Stdout)
+		logger.SetLevel(logr.DebugLevel)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/persistentvolumeclaims?labelSelector=app%3Dstatefulset-all-good")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveReturnedPersistentVolumeClaimCount(1))
+	})
+
 })
 
 func HaveBodyOfType(expected runtime.Object) types.GomegaMatcher {
@@ -340,6 +420,24 @@ func HaveReturnedPodCount(expected int) types.GomegaMatcher {
 	)
 }
 
+func HaveReturnedPersistentVolumeClaimCount(expected int) types.GomegaMatcher {
+	return And(
+		HaveHTTPStatus(200),
+		HaveHTTPHeaderWithValue("Content-Type", "application/json"),
+		WithTransform(func(resp *http.Response) ([]corev1.PersistentVolumeClaim, error) {
+			deserializer := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
+			data, err := ioutil.ReadAll(resp.Body)
+			defer resp.Body.Close()
+			if err != nil {
+				return nil, err
+			}
+			list := &corev1.PersistentVolumeClaimList{}
+			_, _, err = deserializer.Decode(data, nil, list)
+			return list.Items, err
+		}, HaveLen(expected)),
+	)
+}
+
 func HaveReturnedReplicaSetCount(expected int) types.GomegaMatcher {
 	return And(
 		HaveHTTPStatus(200),
@@ -352,6 +450,24 @@ func HaveReturnedReplicaSetCount(expected int) types.GomegaMatcher {
 				return nil, err
 			}
 			list := &appsv1.ReplicaSetList{}
+			_, _, err = deserializer.Decode(data, nil, list)
+			return list.Items, err
+		}, HaveLen(expected)),
+	)
+}
+
+func HaveReturnedStatefulSetCount(expected int) types.GomegaMatcher {
+	return And(
+		HaveHTTPStatus(200),
+		HaveHTTPHeaderWithValue("Content-Type", "application/json"),
+		WithTransform(func(resp *http.Response) ([]appsv1.StatefulSet, error) {
+			deserializer := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
+			data, err := ioutil.ReadAll(resp.Body)
+			defer resp.Body.Close()
+			if err != nil {
+				return nil, err
+			}
+			list := &appsv1.StatefulSetList{}
 			_, _, err = deserializer.Decode(data, nil, list)
 			return list.Items, err
 		}, HaveLen(expected)),

@@ -1,4 +1,4 @@
-readiness-probe-error-6cb7664768-qlmns:
+deploy-readiness-probe-error-6cb7664768-qlmns:
   default: |-
     {"level":"info","ts":1668791096.6823626,"msg":"using provided configuration","config_file":"/etc/caddy/Caddyfile","config_adapter":"caddyfile"}
     {"level":"warn","ts":1668791096.6829545,"msg":"Caddyfile input is not formatted; run the 'caddy fmt' command to fix inconsistencies","adapter":"caddyfile","file":"/etc/caddy/Caddyfile","line":3}

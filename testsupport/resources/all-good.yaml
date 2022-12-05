@@ -1,0 +1,241 @@
+# vscode-kubernetes-tools: exclude
+# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  namespace: test
+  name: all-good
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: all-good
+    weight: 100
+  wildcardPolicy: None
+status:
+  ingress:
+  - conditions:
+    - status: "True"
+      type: Admitted
+    routerName: default
+    wildcardPolicy: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: test
+  name: all-good
+  labels:
+    app: all-good
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  selector:
+    app: all-good
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: test
+  name: all-good-785d8bcc5f-g92mn
+  labels:
+    app: all-good
+spec:
+  containers:
+  - name: unused
+    image: caddy:2
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 8079
+      name: unused
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
+    volumeMounts:
+    - name: caddy-config
+      mountPath: "/etc/caddy"
+    - name: caddy-config-cache
+      mountPath: "/config/caddy"
+  - name: default
+    image: caddy:2
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
+    volumeMounts:
+    - name: caddy-config
+      mountPath: "/etc/caddy"
+    - name: caddy-config-cache
+      mountPath: "/config/caddy"
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  serviceAccount: default
+  serviceAccountName: default
+  volumes:
+    - name: caddy-config
+      configMap:
+        name: caddy-config
+    - name: caddy-config-cache
+      emptyDir: {}
+status:
+  conditions:
+  - status: "True"
+    type: Ready
+  - status: "True"
+    type: ContainersReady
+  containerStatuses:
+  - containerID: cri-o://64e3a26a03c637f59812fc36dd000f2fd7f2807751ea28e852459bc50cb18e5e
+    image: docker.io/library/caddy:2
+    imageID: docker.io/library/caddy@sha256:7992b931b7da3cf0840dd69ea74b2c67d423faf03408da8abdc31b7590a239a7
+    name: default
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2022-10-30T17:44:26Z"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: test
+  name: all-good-785d8bcc5f-x85p2
+  labels:
+    app: all-good
+spec:
+  containers:
+  - image: caddy:2
+    imagePullPolicy: IfNotPresent
+    name: default
+    ports:
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
+    volumeMounts:
+    - name: caddy-config
+      mountPath: "/etc/caddy"
+    - name: caddy-config-cache
+      mountPath: "/config/caddy"
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  serviceAccount: default
+  serviceAccountName: default
+  volumes:
+    - name: caddy-config
+      configMap:
+        name: caddy-config
+    - name: caddy-config-cache
+      emptyDir: {}
+status:
+  conditions:
+  - status: "True"
+    type: Initialized
+  - status: "True"
+    type: Ready
+  - status: "True"
+    type: ContainersReady
+  - status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: cri-o://49b44cde9c692c119fe00766bb61af154175ccbdeee376c6b3a439b30e407be9
+    image: docker.io/library/caddy:2
+    imageID: docker.io/library/caddy@sha256:2b5eaec58eda7e9c2cbcf317c6e5fbfa5507a60d323967e24f686e3619330dc9
+    name: default
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2022-10-30T17:44:27Z"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: test
+  name: caddy-config
+data:
+  Caddyfile: |-
+    http://:8080
+
+    respond "Hello, world!"
+  
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  namespace: test
+  name: rs-1
+  labels:
+    app: rs-1
+    more: cookies
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rs-1
+  template:
+    metadata:
+      labels:
+        app: rs-1
+    spec:
+      containers:
+      - name: default
+        image: caddy:2
+        imagePullPolicy: Always
+      serviceAccount: default
+      serviceAccountName: default
+---      
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  namespace: test
+  name: rs-2
+  labels:
+    app: rs-2
+    more: cookies
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rs-2
+  template:
+    metadata:
+      labels:
+        app: rs-2
+    spec:
+      containers:
+      - name: default
+        image: caddy:2
+        imagePullPolicy: Always
+      serviceAccount: default
+      serviceAccountName: default

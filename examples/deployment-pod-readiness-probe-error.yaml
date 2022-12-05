@@ -3,29 +3,29 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: deploy-sa-notfound
+  name: deploy-readiness-probe-error
   labels:
-    app: deploy-sa-notfound
+    app: deploy-readiness-probe-error
 spec:
   port:
     targetPort: http
   to:
     kind: Service
-    name: deploy-sa-notfound
+    name: deploy-readiness-probe-error
     weight: 100
   wildcardPolicy: None
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: deploy-sa-notfound
+  name: deploy-readiness-probe-error
   labels:
-    app: deploy-sa-notfound
+    app: deploy-readiness-probe-error
 spec:
   type: ClusterIP
   sessionAffinity: None
   selector:
-    app: deploy-sa-notfound
+    app: deploy-readiness-probe-error
   ports:
   - name: http
     port: 8080
@@ -35,19 +35,19 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deploy-sa-notfound
+  name: deploy-readiness-probe-error
   labels:
-    app: deploy-sa-notfound
+    app: deploy-readiness-probe-error
 spec:
+  replicas: 1
   selector:
     matchLabels:
-      app: deploy-sa-notfound
+      app: deploy-readiness-probe-error
   template:
     metadata:
       labels:
-        app: deploy-sa-notfound
+        app: deploy-readiness-probe-error
     spec:
-      replicas: 1
       containers:
       - name: default
         image: caddy:2
@@ -55,6 +55,12 @@ spec:
         - containerPort: 8080
           name: http
           protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /unknown # endpoint does not exist
+            port: http
+          failureThreshold: 1
+          periodSeconds: 5
         resources:
           limits:
             cpu: 500m
@@ -71,24 +77,23 @@ spec:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
-      serviceAccount: deploy-sa-notfound # ServiceAccount does not exist (by default, only `default` exists)
-      serviceAccountName: deploy-sa-notfound 
+      serviceAccount: default
+      serviceAccountName: default
       volumes:
       - name: caddy-config
         configMap:
-          name: caddy-config-port-8080
+          name: caddy-config-port-8080-fileserver
       - name: caddy-config-cache
         emptyDir: {}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: caddy-config-port-8080
+  name: caddy-config-port-8080-fileserver
   labels:
-    app: unknown-configmap
+    app: deploy-readiness-probe-error
 data:
   Caddyfile: |-
     http://:8080
 
-    respond "Hello, world!"
-      
+    file_server

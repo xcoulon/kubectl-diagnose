@@ -8,7 +8,7 @@ import (
 )
 
 var _ = DescribeTable("resource kind",
-	func(kind string, expected int) {
+	func(kind string, expected diagnose.ResourceKind) {
 		Expect(diagnose.Kind(kind)).To(Equal(expected))
 	},
 	// routes

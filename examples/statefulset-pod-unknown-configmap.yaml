@@ -3,29 +3,29 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: all-good
+  name: sts-unknown-cm
   labels:
-    app: all-good
+    app: sts-unknown-cm
 spec:
   port:
     targetPort: http
   to:
     kind: Service
-    name: all-good
+    name: sts-unknown-cm
     weight: 100
   wildcardPolicy: None
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: all-good
+  name: sts-unknown-cm
   labels:
-    app: all-good
+    app: sts-unknown-cm
 spec:
   type: ClusterIP
   sessionAffinity: None
   selector:
-    app: all-good
+    app: sts-unknown-cm
   ports:
   - name: http
     port: 8080
@@ -33,24 +33,30 @@ spec:
     targetPort: http
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: all-good
+  name: sts-unknown-cm
   labels:
-    app: all-good
+    app: sts-unknown-cm
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: all-good
+      app: sts-unknown-cm
   template:
     metadata:
       labels:
-        app: all-good
+        app: sts-unknown-cm
     spec:
       containers:
       - name: default
         image: caddy:2
+        env:
+        - name: COOKIE
+          valueFrom:
+            configMapKeyRef:
+              name: sts-unknown-cm # unknown
+              key: cookie
         ports:
         - containerPort: 8080
           name: http
@@ -78,7 +84,17 @@ spec:
         configMap:
           name: caddy-config-port-8080
       - name: caddy-config-cache
-        emptyDir: {}
+        mountPath: "/config/caddy"
+  volumeClaimTemplates:
+  - metadata:
+      name: caddy-config-cache
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: gp2
+      volumeMode: Filesystem   
 ---
 apiVersion: v1
 kind: ConfigMap

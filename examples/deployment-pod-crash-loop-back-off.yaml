@@ -3,29 +3,29 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: deploy-sa-notfound
+  name: deploy-crash-loop-back-off
   labels:
-    app: deploy-sa-notfound
+    app: deploy-crash-loop-back-off
 spec:
   port:
     targetPort: http
   to:
     kind: Service
-    name: deploy-sa-notfound
+    name: deploy-crash-loop-back-off
     weight: 100
   wildcardPolicy: None
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: deploy-sa-notfound
+  name: deploy-crash-loop-back-off
   labels:
-    app: deploy-sa-notfound
+    app: deploy-crash-loop-back-off
 spec:
   type: ClusterIP
   sessionAffinity: None
   selector:
-    app: deploy-sa-notfound
+    app: deploy-crash-loop-back-off
   ports:
   - name: http
     port: 8080
@@ -35,24 +35,24 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deploy-sa-notfound
+  name: deploy-crash-loop-back-off
   labels:
-    app: deploy-sa-notfound
+    app: deploy-crash-loop-back-off
 spec:
+  replicas: 1
   selector:
     matchLabels:
-      app: deploy-sa-notfound
+      app: deploy-crash-loop-back-off
   template:
     metadata:
       labels:
-        app: deploy-sa-notfound
+        app: deploy-crash-loop-back-off
     spec:
-      replicas: 1
       containers:
       - name: default
         image: caddy:2
         ports:
-        - containerPort: 8080
+        - containerPort: 80 
           name: http
           protocol: TCP
         resources:
@@ -68,27 +68,24 @@ spec:
         - name: caddy-config-cache
           mountPath: "/config/caddy"
       securityContext:
-        runAsNonRoot: true
+        runAsNonRoot: true # but caddy needs to run as `root` to listen on port 80
         seccompProfile:
           type: RuntimeDefault
-      serviceAccount: deploy-sa-notfound # ServiceAccount does not exist (by default, only `default` exists)
-      serviceAccountName: deploy-sa-notfound 
+      serviceAccount: default
+      serviceAccountName: default
       volumes:
-      - name: caddy-config
-        configMap:
-          name: caddy-config-port-8080
-      - name: caddy-config-cache
-        emptyDir: {}
+        - name: caddy-config
+          configMap:
+            name: caddy-config-port-80
+        - name: caddy-config-cache
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: caddy-config-port-8080
-  labels:
-    app: unknown-configmap
+  name: caddy-config-port-80
 data:
   Caddyfile: |-
-    http://:8080
+    http://:80
 
     respond "Hello, world!"
-      

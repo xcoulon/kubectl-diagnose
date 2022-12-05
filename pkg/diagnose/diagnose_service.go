@@ -35,6 +35,7 @@ func checkService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) (bo
 	}
 	// if there is no pod matching the selector
 	if len(pods.Items) == 0 {
+		// TODO: try with Deployment first or instead of ReplicaSet
 		// attempt to find the ReplicaSet which was supposed to create the Pods (if there is one)
 		rss, err := cl.AppsV1().ReplicaSets(svc.Namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
@@ -56,6 +57,28 @@ func checkService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) (bo
 				}
 			}
 		}
+		// attempt to find the StatefulSet which was supposed to create the Pods (if there is one)
+		stss, err := cl.AppsV1().StatefulSets(svc.Namespace).List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			return false, err
+		}
+		for _, rs := range stss.Items {
+			s, err := labels.Parse(selector)
+			if err != nil {
+				return false, err
+			}
+			if s.Matches(labels.Set(rs.Spec.Selector.MatchLabels)) {
+				obj := rs
+				found, err := checkStatefulSet(logger, cfg, &obj)
+				if err != nil {
+					return false, err
+				}
+				if found {
+					return true, err
+				}
+			}
+		}
+
 		logger.Errorf("👻 no pods matching label selector '%s' found in namespace '%s'", selector, svc.Namespace)
 		logger.Infof("💡 you may want to verify that the pods exist and their labels match '%s'", selector)
 		return true, nil
