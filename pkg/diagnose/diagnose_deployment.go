@@ -38,7 +38,7 @@ func checkDeployment(logger logr.Logger, cfg *rest.Config, d *appsv1.Deployment)
 	// check the `.spec.replicas`
 	if d.Spec.Replicas != nil && *d.Spec.Replicas == 0 {
 		logger.Errorf("👻 number of desired replicas for deployment '%s' is set to 0", d.Name)
-		logger.Infof("💡 you may want run 'oc scale --replicas=1 deployment/%s -n %s' or increase the 'replicas' value in the deployment specs", d.Name, d.Namespace)
+		logger.Infof("💡 run 'oc scale --replicas=1 deployment/%s -n %s' or increase the 'replicas' value in the deployment specs", d.Name, d.Namespace)
 		// no need to check further (and avoid infinite loops if coming from service->replicaset->deployment)
 		return true, nil
 	}

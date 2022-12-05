@@ -1,0 +1,140 @@
+# vscode-kubernetes-tools: exclude
+# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: sts-zero-replica
+  name: sts-zero-replica
+  namespace: test
+  uid: 6928d5cb-cee8-43ee-9a55-cacd54bd3055
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: sts-zero-replica
+    weight: 100
+  wildcardPolicy: None
+status:
+  ingress:
+  - conditions:
+    - status: "True"
+      type: Admitted
+    routerName: default
+    wildcardPolicy: None
+--- 
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: sts-zero-replica
+  name: sts-zero-replica
+  namespace: test
+  uid: 61ff5cf0-9d38-4bd1-a18b-87e098bf917e
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: sts-zero-replica
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: sts-zero-replica
+  name: sts-zero-replica
+  namespace: test
+  uid: 27be4a71-6b03-4480-8010-47db10739ccb
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 0
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: sts-zero-replica
+  serviceName: ""
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: sts-zero-replica
+    spec:
+      containers:
+      - image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-port-8080
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      creationTimestamp: null
+      name: caddy-config-cache
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: gp2
+      volumeMode: Filesystem
+    status:
+      phase: Pending
+status:
+  availableReplicas: 0
+  collisionCount: 0
+  currentRevision: sts-zero-replica-84d7674894
+  observedGeneration: 1
+  replicas: 0
+  updateRevision: sts-zero-replica-84d7674894

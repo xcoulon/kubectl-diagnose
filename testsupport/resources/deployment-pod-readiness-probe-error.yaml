@@ -4,16 +4,16 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   labels:
-    app: readiness-probe-error
+    app: deploy-readiness-probe-error
   namespace: test
-  name: readiness-probe-error
+  name: deploy-readiness-probe-error
   uid: 61bce6b8-2c39-4fd7-befc-e69f024653e3
 spec:
   port:
     targetPort: http
   to:
     kind: Service
-    name: readiness-probe-error
+    name: deploy-readiness-probe-error
     weight: 100
   wildcardPolicy: None
 status:
@@ -26,9 +26,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: readiness-probe-error
+    app: deploy-readiness-probe-error
   namespace: test
-  name: readiness-probe-error
+  name: deploy-readiness-probe-error
   uid: 764b874e-cd1c-48f1-b94a-e2e60cb43726
 spec:
   progressDeadlineSeconds: 600
@@ -36,7 +36,7 @@ spec:
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: readiness-probe-error
+      app: deploy-readiness-probe-error
   strategy:
     rollingUpdate:
       maxSurge: 25%
@@ -45,7 +45,7 @@ spec:
   template:
     metadata:
       labels:
-        app: readiness-probe-error
+        app: deploy-readiness-probe-error
     spec:
       containers:
       - image: caddy:2
@@ -111,27 +111,27 @@ apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
   labels:
-    app: readiness-probe-error
+    app: deploy-readiness-probe-error
     pod-template-hash: 6cb7664768
   namespace: test
-  name: readiness-probe-error-6cb7664768
+  name: deploy-readiness-probe-error-6cb7664768
   ownerReferences:
   - apiVersion: apps/v1
     blockOwnerDeletion: true
     controller: true
     kind: Deployment
-    name: readiness-probe-error
+    name: deploy-readiness-probe-error
     uid: 764b874e-cd1c-48f1-b94a-e2e60cb43726
   uid: 8be8a2db-fca3-4da3-9a73-0f28396ebb77
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: readiness-probe-error
+      app: deploy-readiness-probe-error
   template:
     metadata:
       labels:
-        app: readiness-probe-error
+        app: deploy-readiness-probe-error
     spec:
       containers:
       - image: caddy:2
@@ -184,9 +184,9 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: readiness-probe-error
+    app: deploy-readiness-probe-error
   namespace: test
-  name: readiness-probe-error
+  name: deploy-readiness-probe-error
   uid: d288b597-9241-4d5c-83a6-a58d5f10c07d
 spec:
   ports:
@@ -195,7 +195,7 @@ spec:
     protocol: TCP
     targetPort: http
   selector:
-    app: readiness-probe-error
+    app: deploy-readiness-probe-error
   sessionAffinity: None
   type: ClusterIP
 status:
@@ -205,15 +205,15 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    app: readiness-probe-error
+    app: deploy-readiness-probe-error
   namespace: test
-  name: readiness-probe-error-6cb7664768-qlmns
+  name: deploy-readiness-probe-error-6cb7664768-qlmns
   ownerReferences:
   - apiVersion: apps/v1
     blockOwnerDeletion: true
     controller: true
     kind: ReplicaSet
-    name: readiness-probe-error-6cb7664768
+    name: deploy-readiness-probe-error-6cb7664768
     uid: 8be8a2db-fca3-4da3-9a73-0f28396ebb77
   uid: c188fba1-0304-4686-a67c-17db71548c6f
 spec:
@@ -300,7 +300,7 @@ apiVersion: v1
 kind: Event
 metadata:
   namespace: test
-  name: readiness-probe-error-6cb7664768-qlmns.17276445166d1359
+  name: deploy-readiness-probe-error-6cb7664768-qlmns.17276445166d1359
   resourceVersion: "1715384686"
   uid: 5fc5066a-216d-4ef5-a17e-5d70e5ba11d1
 type: Warning
@@ -313,5 +313,5 @@ involvedObject:
   fieldPath: spec.containers{default}
   kind: Pod
   namespace: test
-  name: readiness-probe-error-6cb7664768-qlmns
+  name: deploy-readiness-probe-error-6cb7664768-qlmns
   uid: c188fba1-0304-4686-a67c-17db71548c6f

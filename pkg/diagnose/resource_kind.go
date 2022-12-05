@@ -1,7 +1,9 @@
 package diagnose
 
+type ResourceKind int
+
 const (
-	Route = iota
+	Route ResourceKind = iota
 	Service
 	Deployment
 	ReplicaSet
@@ -12,7 +14,7 @@ const (
 	Unkwown
 )
 
-func Kind(kind string) int {
+func Kind(kind string) ResourceKind {
 	switch kind {
 	case "routes", "route", "route.route.openshift.io":
 		return Route

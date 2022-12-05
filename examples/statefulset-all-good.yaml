@@ -3,29 +3,29 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: crash-loop-back-off
+  name: sts-all-good
   labels:
-    app: crash-loop-back-off
+    app: sts-all-good
 spec:
   port:
     targetPort: http
   to:
     kind: Service
-    name: crash-loop-back-off
+    name: sts-all-good
     weight: 100
   wildcardPolicy: None
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: crash-loop-back-off
+  name: sts-all-good
   labels:
-    app: crash-loop-back-off
+    app: sts-all-good
 spec:
   type: ClusterIP
   sessionAffinity: None
   selector:
-    app: crash-loop-back-off
+    app: sts-all-good
   ports:
   - name: http
     port: 8080
@@ -33,26 +33,26 @@ spec:
     targetPort: http
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: crash-loop-back-off
+  name: sts-all-good
   labels:
-    app: crash-loop-back-off
+    app: sts-all-good
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: crash-loop-back-off
+      app: sts-all-good
   template:
     metadata:
       labels:
-        app: crash-loop-back-off
+        app: sts-all-good
     spec:
       containers:
       - name: default
         image: caddy:2
         ports:
-        - containerPort: 80 
+        - containerPort: 8080
           name: http
           protocol: TCP
         resources:
@@ -68,24 +68,35 @@ spec:
         - name: caddy-config-cache
           mountPath: "/config/caddy"
       securityContext:
-        runAsNonRoot: true # but caddy needs to run as `root` to listen on port 80
+        runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       serviceAccount: default
       serviceAccountName: default
       volumes:
-        - name: caddy-config
-          configMap:
-            name: caddy-config-port-80
-        - name: caddy-config-cache
-          emptyDir: {}
+      - name: caddy-config
+        configMap:
+          name: caddy-config-port-8080
+      - name: caddy-config-cache
+        mountPath: "/config/caddy"
+  volumeClaimTemplates:
+  - metadata:
+      name: caddy-config-cache
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: gp2
+      volumeMode: Filesystem   
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: caddy-config-port-80
+  name: caddy-config-port-8080
 data:
   Caddyfile: |-
-    http://:80
+    http://:8080
 
     respond "Hello, world!"
+  

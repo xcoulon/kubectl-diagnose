@@ -1,0 +1,333 @@
+# vscode-kubernetes-tools: exclude
+# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: sts-unknown-cm
+  name: sts-unknown-cm
+  namespace: test
+  uid: e042fd2f-a91a-4f8c-b46e-b6600ff2c2cd
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: sts-unknown-cm
+    weight: 100
+  wildcardPolicy: None
+status:
+  ingress:
+  - conditions:
+    - status: "True"
+      type: Admitted
+    routerName: default
+    wildcardPolicy: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: sts-unknown-cm
+  name: sts-unknown-cm
+  namespace: test
+  uid: e7b673ff-57f3-4963-aa73-297c919873af
+spec:
+  clusterIP: 172.30.195.183
+  clusterIPs:
+  - 172.30.195.183
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: sts-unknown-cm
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: sts-unknown-cm
+  name: sts-unknown-cm
+  namespace: test
+  uid: 0c58e4ba-f9d5-46f8-992c-c69e406a71bf
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: sts-unknown-cm
+  serviceName: ""
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: sts-unknown-cm
+    spec:
+      containers:
+      - env:
+        - name: COOKIE
+          valueFrom:
+            configMapKeyRef:
+              key: cookie
+              name: sts-unknown-cm
+        image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-port-8080
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      creationTimestamp: null
+      name: caddy-config-cache
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: gp2
+      volumeMode: Filesystem
+    status:
+      phase: Pending
+status:
+  availableReplicas: 0
+  collisionCount: 0
+  currentReplicas: 1
+  currentRevision: sts-unknown-cm-65cbfd59b7
+  observedGeneration: 1
+  replicas: 1
+  updateRevision: sts-unknown-cm-65cbfd59b7
+  updatedReplicas: 1
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  generateName: sts-unknown-cm-
+  labels:
+    app: sts-unknown-cm
+    controller-revision-hash: sts-unknown-cm-65cbfd59b7
+    statefulset.kubernetes.io/pod-name: sts-unknown-cm-0
+  name: sts-unknown-cm-0
+  namespace: test
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: StatefulSet
+    name: sts-unknown-cm
+    uid: 0c58e4ba-f9d5-46f8-992c-c69e406a71bf
+  uid: 5a42e49d-e7b8-4ec3-b776-a2d80fa029e2
+spec:
+  containers:
+  - env:
+    - name: COOKIE
+      valueFrom:
+        configMapKeyRef:
+          key: cookie
+          name: sts-unknown-cm
+    image: caddy:2
+    imagePullPolicy: IfNotPresent
+    name: default
+    ports:
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      runAsUser: 1003880000
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /etc/caddy
+      name: caddy-config
+    - mountPath: /config/caddy
+      name: caddy-config-cache
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-hhfvz
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  hostname: sts-unknown-cm-0
+  imagePullSecrets:
+  - name: default-dockercfg-jhpvm
+  nodeName: ip-10-0-182-196.us-east-2.compute.internal
+  preemptionPolicy: PreemptLowerPriority
+  priority: -3
+  priorityClassName: sandbox-users-pods
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext:
+    fsGroup: 1003880000
+    runAsNonRoot: true
+    seLinuxOptions:
+      level: s0:c62,c49
+    seccompProfile:
+      type: RuntimeDefault
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoSchedule
+    key: node.kubernetes.io/memory-pressure
+    operator: Exists
+  volumes:
+  - name: caddy-config-cache
+    persistentVolumeClaim:
+      claimName: caddy-config-cache-sts-unknown-cm-0
+  - configMap:
+      defaultMode: 420
+      name: caddy-config-port-8080
+    name: caddy-config
+  - name: kube-api-access-hhfvz
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+      - configMap:
+          items:
+          - key: service-ca.crt
+            path: service-ca.crt
+          name: openshift-service-ca.crt
+status:
+  conditions:
+  - status: "True"
+    type: Initialized
+  - message: 'containers with unready status: [default]'
+    reason: ContainersNotReady
+    status: "False"
+    type: Ready
+  - message: 'containers with unready status: [default]'
+    reason: ContainersNotReady
+    status: "False"
+    type: ContainersReady
+  - status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - image: caddy:2
+    imageID: ""
+    lastState: {}
+    name: default
+    ready: false
+    restartCount: 0
+    started: false
+    state:
+      waiting:
+        message: configmap "sts-unknown-cm" not found
+        reason: CreateContainerConfigError
+  hostIP: 10.0.182.196
+  phase: Pending
+  podIP: 10.129.5.33
+  podIPs:
+  - ip: 10.129.5.33
+  qosClass: Burstable
+---
+apiVersion: v1
+kind: Event
+metadata:
+  creationTimestamp: "2022-12-01T05:38:44Z"
+  name: sts-unknown-cm-0.172ca52143501292
+  namespace: test
+  resourceVersion: "1777502144"
+  uid: 34dc94d3-cd1c-461b-a4b0-c884c1e2ead0
+type: Warning
+reason: Failed
+eventTime: null
+firstTimestamp: "2022-12-01T05:38:44Z"
+lastTimestamp: "2022-12-01T05:40:55Z"
+message: 'Error: configmap "sts-unknown-cm" not found'
+count: 12
+involvedObject:
+  apiVersion: v1
+  fieldPath: spec.containers{default}
+  kind: Pod
+  name: sts-unknown-cm-0
+  namespace: test
+  resourceVersion: "1777496594"
+  uid: 5a42e49d-e7b8-4ec3-b776-a2d80fa029e2
+reportingComponent: ""
+reportingInstance: ""
+source:
+  component: kubelet
+  host: ip-10-0-182-196.us-east-2.compute.internal

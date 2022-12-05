@@ -2,9 +2,7 @@ package diagnose
 
 import (
 	"context"
-	"fmt"
 	"strings"
-	"time"
 
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
 
@@ -26,15 +24,16 @@ func checkPod(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, erro
 	logger.Infof("👀 checking pod '%s' in namespace '%s'...", pod.Name, pod.Namespace)
 	found := false
 	// check events associated with the pod
-	f, err := checkPodEvents(logger, cfg, pod)
+	f, err := checkEvents(logger, cfg, pod)
 	if err != nil {
 		return false, err
 	}
-	logger.Infof("👀 checking pod status...")
+	logger.Debugf("👀 checking pod status...")
 	found = found || f
 	// check the containers
 	for _, c := range pod.Status.Conditions {
-		if c.Type == corev1.ContainersReady && c.Status == corev1.ConditionFalse {
+		switch {
+		case c.Type == corev1.ContainersReady && c.Status == corev1.ConditionFalse:
 			if c.Message != "" {
 				logger.Errorf("👻 %s", c.Message)
 			}
@@ -44,6 +43,21 @@ func checkPod(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, erro
 				return false, err
 			}
 			found = found || f
+		case c.Type == corev1.PodScheduled && c.Status == corev1.ConditionFalse && c.Reason == corev1.PodReasonUnschedulable:
+			// check if there's a pending PVC
+			for _, v := range pod.Spec.Volumes {
+				if v.PersistentVolumeClaim != nil {
+					pvc, err := getPersistentVolumeClaim(cfg, pod.Namespace, v.PersistentVolumeClaim.ClaimName)
+					if err != nil {
+						return false, err
+					}
+					f, err := checkPersistentVolumeClaim(logger, cfg, pvc)
+					if err != nil {
+						return false, err
+					}
+					found = found || f
+				}
+			}
 		}
 	}
 	return found, nil
@@ -81,35 +95,13 @@ func checkContainer(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool
 	return found, nil
 }
 
-func checkPodEvents(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, error) {
-	logger.Infof("👀 checking pod events...")
-	cl, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return false, err
-	}
-	events, err := cl.CoreV1().Events(pod.Namespace).List(context.TODO(), metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("involvedObject.name=%s", pod.Name), // TODO: include 'kind'
-	})
-	if err != nil {
-		return false, err
-	}
-	found := false
-	for _, e := range events.Items {
-		if e.Type == corev1.EventTypeWarning {
-			logger.Errorf("⚡️ %s ago: %s", time.Since(e.LastTimestamp.Time).Truncate(time.Second), e.Message)
-			found = true
-		}
-	}
-	return found, nil
-}
-
 func checkContainerLogs(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod, container string) (bool, error) {
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return false, err
 	}
 	found := false
-	logger.Infof("👀 checking '%s' container logs...", container)
+	logger.Debugf("👀 checking '%s' container logs...", container)
 	logs, err := cl.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: container}).DoRaw(context.TODO())
 	if err != nil {
 		return false, err

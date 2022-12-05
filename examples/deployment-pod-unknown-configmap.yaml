@@ -3,29 +3,29 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: unknown-configmap
+  name: deploy-unknown-cm
   labels:
-    app: unknown-configmap
+    app: deploy-unknown-cm
 spec:
   port:
     targetPort: http
   to:
     kind: Service
-    name: unknown-configmap
+    name: deploy-unknown-cm
     weight: 100
   wildcardPolicy: None
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: unknown-configmap
+  name: deploy-unknown-cm
   labels:
-    app: unknown-configmap
+    app: deploy-unknown-cm
 spec:
   type: ClusterIP
   sessionAffinity: None
   selector:
-    app: unknown-configmap
+    app: deploy-unknown-cm
   ports:
   - name: http
     port: 8080
@@ -35,18 +35,18 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: unknown-configmap
+  name: deploy-unknown-cm
   labels:
-    app: unknown-configmap
+    app: deploy-unknown-cm
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: unknown-configmap
+      app: deploy-unknown-cm
   template:
     metadata:
       labels:
-        app: unknown-configmap
+        app: deploy-unknown-cm
     spec:
       containers:
       - name: default
@@ -55,7 +55,7 @@ spec:
         - name: COOKIE
           valueFrom:
             configMapKeyRef:
-              name: unknown-configmap # unknown
+              name: deploy-unknown-cm # unknown
               key: cookie
         ports:
         - containerPort: 8080
@@ -91,7 +91,7 @@ kind: ConfigMap
 metadata:
   name: caddy-config-port-8080
   labels:
-    app: unknown-configmap
+    app: deploy-unknown-cm
 data:
   Caddyfile: |-
     http://:8080

@@ -3,29 +3,29 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: readiness-probe-error
+  name: sts-zero-replica
   labels:
-    app: readiness-probe-error
+    app: sts-zero-replica
 spec:
   port:
     targetPort: http
   to:
     kind: Service
-    name: readiness-probe-error
+    name: sts-zero-replica
     weight: 100
   wildcardPolicy: None
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: readiness-probe-error
+  name: sts-zero-replica
   labels:
-    app: readiness-probe-error
+    app: sts-zero-replica
 spec:
   type: ClusterIP
   sessionAffinity: None
   selector:
-    app: readiness-probe-error
+    app: sts-zero-replica
   ports:
   - name: http
     port: 8080
@@ -33,20 +33,20 @@ spec:
     targetPort: http
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: readiness-probe-error
+  name: sts-zero-replica
   labels:
-    app: readiness-probe-error
+    app: sts-zero-replica
 spec:
-  replicas: 1
+  replicas: 0 # no pod will be created
   selector:
     matchLabels:
-      app: readiness-probe-error
+      app: sts-zero-replica
   template:
     metadata:
       labels:
-        app: readiness-probe-error
+        app: sts-zero-replica
     spec:
       containers:
       - name: default
@@ -55,12 +55,6 @@ spec:
         - containerPort: 8080
           name: http
           protocol: TCP
-        readinessProbe:
-          httpGet:
-            path: /unknown # endpoint does not exist
-            port: http
-          failureThreshold: 1
-          periodSeconds: 5
         resources:
           limits:
             cpu: 500m
@@ -82,18 +76,27 @@ spec:
       volumes:
       - name: caddy-config
         configMap:
-          name: caddy-config-port-8080-fileserver
+          name: caddy-config-port-8080
       - name: caddy-config-cache
-        emptyDir: {}
+        mountPath: "/config/caddy"
+  volumeClaimTemplates:
+  - metadata:
+      name: caddy-config-cache
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: gp2
+      volumeMode: Filesystem   
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: caddy-config-port-8080-fileserver
-  labels:
-    app: readiness-probe-error
+  name: caddy-config-port-8080
 data:
   Caddyfile: |-
     http://:8080
 
-    file_server
+    respond "Hello, world!"
+  
