@@ -23,7 +23,7 @@ func getRoute(cfg *rest.Config, namespace, name string) (*routev1.Route, error) 
 // checks:
 // - the route's target port on pods selected by the service this route points to.
 // (If this is a string, it will be looked up as a named port in the target endpoints port list)
-func checkRoute(logger logr.Logger, cfg *rest.Config, route *routev1.Route) (bool, error) {
+func diagnoseRoute(logger logr.Logger, cfg *rest.Config, route *routev1.Route) (bool, error) {
 	logger.Infof("👀 checking route '%s' in namespace '%s'...", route.Name, route.Namespace)
 	svc, err := getService(cfg, route.Namespace, route.Spec.To.Name)
 	if apierrors.IsNotFound(err) {
@@ -38,7 +38,7 @@ func checkRoute(logger logr.Logger, cfg *rest.Config, route *routev1.Route) (boo
 	case intstr.Int:
 		for _, port := range svc.Spec.Ports {
 			if port.Port == targetPort.IntVal {
-				return checkService(logger, cfg, svc)
+				return diagnoseService(logger, cfg, svc)
 			}
 		}
 		logger.Errorf("👻 route target port '%d' is not defined in service '%s'", targetPort.IntVal, svc.Name)
@@ -46,7 +46,7 @@ func checkRoute(logger logr.Logger, cfg *rest.Config, route *routev1.Route) (boo
 	default:
 		for _, port := range svc.Spec.Ports {
 			if port.Name == targetPort.StrVal {
-				return checkService(logger, cfg, svc)
+				return diagnoseService(logger, cfg, svc)
 			}
 		}
 		logger.Errorf("👻 route target port '%s' is not defined in service '%s'", targetPort.StrVal, svc.Name)

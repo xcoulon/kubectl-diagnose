@@ -20,7 +20,7 @@ func getStatefulSet(cfg *rest.Config, namespace, name string) (*appsv1.StatefulS
 	return cl.AppsV1().StatefulSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 }
 
-func checkStatefulSet(logger logr.Logger, cfg *rest.Config, sts *appsv1.StatefulSet) (bool, error) {
+func diagnoseStatefulSet(logger logr.Logger, cfg *rest.Config, sts *appsv1.StatefulSet) (bool, error) {
 	logger.Infof("👀 checking statefulset '%s' in namespace '%s'...", sts.Name, sts.Namespace)
 	found := false
 	// check the replicas
@@ -61,7 +61,7 @@ func checkStatefulSet(logger logr.Logger, cfg *rest.Config, sts *appsv1.Stateful
 		for _, ownerRef := range pod.OwnerReferences {
 			if ownerRef.UID == sts.UID {
 				// pod is "owned" by this sts
-				if found, err := checkPod(logger, cfg, &pod); err != nil {
+				if found, err := diagnosePod(logger, cfg, &pod); err != nil {
 					return false, err
 				} else if found {
 					return true, nil
