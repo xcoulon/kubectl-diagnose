@@ -52,6 +52,21 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
 	})
 
+	It("should fail to get single pod", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/pods/error")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusInternalServerError))
+	})
+
 	It("should list 2 pods", func() {
 		// given
 		logger := logr.New(io.Discard)
@@ -110,6 +125,21 @@ var _ = Describe("fake api-server endpoints", func() {
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
+	})
+
+	It("should fail to get single replicaset", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/replicasets/error")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusInternalServerError))
 	})
 
 	It("should list 2 replicasets", func() {
@@ -202,6 +232,36 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(resp).To(HaveBodyOfType(&appsv1.Deployment{}))
 	})
 
+	It("should get no deployment", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/deployments/unknown")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
+	})
+
+	It("should fail to get single deployment", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/deployments/error")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusInternalServerError))
+	})
+
 	It("should get single service", func() {
 		// given
 		logger := logr.New(io.Discard)
@@ -232,6 +292,21 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
 	})
 
+	It("should fail to get single service", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/services/error")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusInternalServerError))
+	})
+
 	It("should get single route", func() {
 		// given
 		logger := logr.New(io.Discard)
@@ -260,6 +335,21 @@ var _ = Describe("fake api-server endpoints", func() {
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
+	})
+
+	It("should fail to get single route", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/route.openshift.io/v1/namespaces/test/routes/error")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusInternalServerError))
 	})
 
 	It("should list 1 event by fieldSelector", func() {
@@ -322,7 +412,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
 	})
 
-	It("should get 1 pvc", func() {
+	It("should get single pvc", func() {
 		// given
 		logger := logr.New(io.Discard)
 		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
@@ -335,6 +425,36 @@ var _ = Describe("fake api-server endpoints", func() {
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp).To(HaveBodyOfType(&corev1.PersistentVolumeClaim{}))
+	})
+
+	It("should get no pvc", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/persistentvolumeclaims/unknown")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
+	})
+
+	It("should fail to get single pvc", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/persistentvolumeclaims/error")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusInternalServerError))
 	})
 
 	It("should list 1 pvc per label selector", func() {

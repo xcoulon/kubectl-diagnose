@@ -191,6 +191,9 @@ func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind stri
 
 func lookupObject(logger logr.Logger, kind, namespace, name string, objs []runtimeclient.Object) (interface{}, error) {
 	logger.Debugf("looking up %s %s/%s", kind, namespace, name)
+	if name == "error" { // special case to test errors on the client side
+		return nil, fmt.Errorf("mock error")
+	}
 	for _, obj := range objs {
 		if obj.GetObjectKind().GroupVersionKind().Kind == kind &&
 			obj.GetNamespace() == namespace &&
