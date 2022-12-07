@@ -3,6 +3,7 @@ package diagnose_test
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"time"
 
 	"github.com/xcoulon/kubectl-diagnose/pkg/diagnose"
@@ -11,6 +12,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // ----------------------------
@@ -542,4 +545,31 @@ var _ = DescribeTable("should detect statefulset pod container with unknown conf
 	Entry("from statefulset", "statefulset", "test", "sts-unknown-cm"),
 	Entry("from service", "service", "test", "sts-unknown-cm"),
 	Entry("from route", "route", "test", "sts-unknown-cm"),
+)
+
+// ----------------------------
+// Errors
+// ----------------------------
+
+var _ = DescribeTable("should handle errors",
+	func(gr, kind, namespace, name string) {
+		// given
+		logger := logr.New(io.Discard)
+		apiserver, err := testsupport.NewFakeAPIServer(logger)
+		Expect(err).NotTo(HaveOccurred())
+		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+
+		// when
+		_, err = diagnose.Diagnose(logger, cfg, kind, namespace, name)
+
+		// then
+		qualifiedResource := schema.ParseGroupResource(gr)
+		Expect(err).To(MatchError(errors.NewGenericServerResponse(http.StatusInternalServerError, "get", qualifiedResource, name, "mock error", 0, true)))
+	},
+	Entry("from pod", "pods", "pod", "test", "error"),
+	Entry("from persistentvolumeclaim", "persistentvolumeclaims", "persistentvolumeclaim", "test", "error"),
+	Entry("from statefulset", "statefulsets.apps", "statefulset", "test", "error"),
+	Entry("from deployment", "deployments.apps", "deployment", "test", "error"),
+	Entry("from service", "services", "service", "test", "error"),
+	Entry("from route", "routes.route.openshift.io", "route", "test", "error"),
 )
