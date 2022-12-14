@@ -62,9 +62,9 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+        securityContext:
+          runAsNonRoot: true # but caddy process needs to run as root for port 80
       securityContext:
-        runAsNonRoot: true # but caddy process needs to run as root for port 80
-        seccompProfile:
-          type: RuntimeDefault
+        runAsUser: 1003870000
       serviceAccount: default
       serviceAccountName: default

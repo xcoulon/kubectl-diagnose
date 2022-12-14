@@ -81,15 +81,15 @@ spec:
       requests:
         cpu: 100m
         memory: 20Mi
+    securityContext:
+      runAsNonRoot: true
     volumeMounts:
     - name: caddy-config
       mountPath: "/etc/caddy"
     - name: caddy-config-cache
       mountPath: "/config/caddy"
   securityContext:
-    runAsNonRoot: true
-    seccompProfile:
-      type: RuntimeDefault
+    runAsUser: 1003870000
   serviceAccount: default
   serviceAccountName: default
   volumes:
@@ -139,15 +139,15 @@ spec:
       requests:
         cpu: 100m
         memory: 20Mi
+    securityContext:
+      runAsNonRoot: true
     volumeMounts:
     - name: caddy-config
       mountPath: "/etc/caddy"
     - name: caddy-config-cache
       mountPath: "/config/caddy"
   securityContext:
-    runAsNonRoot: true
-    seccompProfile:
-      type: RuntimeDefault
+    runAsUser: 1003870000
   serviceAccount: default
   serviceAccountName: default
   volumes:
@@ -279,6 +279,8 @@ spec:
             memory: 20Mi
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
+        securityContext:
+          runAsNonRoot: true
         volumeMounts:
         - mountPath: /etc/caddy
           name: caddy-config
@@ -288,9 +290,7 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
+        runAsUser: 1003870000
       serviceAccount: default
       serviceAccountName: default
       terminationGracePeriodSeconds: 30
@@ -370,6 +370,8 @@ spec:
             memory: 20Mi
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
+        securityContext:
+          runAsNonRoot: true
         volumeMounts:
         - mountPath: /etc/caddy
           name: caddy-config
@@ -379,9 +381,7 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
+        runAsUser: 1003870000
       serviceAccount: unknown
       serviceAccountName: unknown
       terminationGracePeriodSeconds: 30
