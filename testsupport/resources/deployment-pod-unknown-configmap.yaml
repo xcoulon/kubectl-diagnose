@@ -77,15 +77,15 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+        securityContext:
+          runAsNonRoot: true
         volumeMounts:
         - mountPath: /etc/caddy
           name: caddy-config
         - mountPath: /config/caddy
           name: caddy-config-cache
       securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
+        runAsUser: 1003870000
       serviceAccount: default
       serviceAccountName: default
       terminationGracePeriodSeconds: 30
@@ -153,15 +153,15 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+        securityContext:
+          runAsNonRoot: true
         volumeMounts:
         - mountPath: /etc/caddy
           name: caddy-config
         - mountPath: /config/caddy
           name: caddy-config-cache
       securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
+        runAsUser: 1003870000
       serviceAccount: default
       serviceAccountName: default
       volumes:

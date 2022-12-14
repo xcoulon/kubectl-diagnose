@@ -77,10 +77,10 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+        securityContext:
+          runAsNonRoot: true
       securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
+        runAsUser: 1003870000
       serviceAccount: default
       serviceAccountName: default
 status:
@@ -138,10 +138,10 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+        securityContext:
+          runAsNonRoot: true
       securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
+        runAsUser: 1003870000
       serviceAccount: default
       serviceAccountName: default
 status:

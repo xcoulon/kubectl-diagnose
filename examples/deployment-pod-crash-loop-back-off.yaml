@@ -62,15 +62,15 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+        securityContext:
+          runAsNonRoot: true # but caddy needs to run as `root` to listen on port 80
         volumeMounts:
         - name: caddy-config
           mountPath: "/etc/caddy"
         - name: caddy-config-cache
           mountPath: "/config/caddy"
       securityContext:
-        runAsNonRoot: true # but caddy needs to run as `root` to listen on port 80
-        seccompProfile:
-          type: RuntimeDefault
+        runAsUser: 1003870000
       serviceAccount: default
       serviceAccountName: default
       volumes:
