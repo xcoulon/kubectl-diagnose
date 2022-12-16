@@ -22,7 +22,7 @@ func getDeployment(cfg *rest.Config, namespace, name string) (*appsv1.Deployment
 
 }
 
-func checkDeployment(logger logr.Logger, cfg *rest.Config, d *appsv1.Deployment) (bool, error) {
+func diagnoseDeployment(logger logr.Logger, cfg *rest.Config, d *appsv1.Deployment) (bool, error) {
 	logger.Infof("👀 checking deployment '%s' in namespace '%s'...", d.Name, d.Namespace)
 	found := false
 	for _, c := range d.Status.Conditions {

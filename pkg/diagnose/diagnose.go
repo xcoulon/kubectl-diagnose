@@ -27,7 +27,7 @@ func Diagnose(logger logr.Logger, cfg *rest.Config, kind, namespace, name string
 		if err != nil {
 			return false, err
 		}
-		return checkDeployment(logger, cfg, d)
+		return diagnoseDeployment(logger, cfg, d)
 	case ReplicaSet:
 		rs, err := getReplicaSet(cfg, namespace, name)
 		if err != nil {
