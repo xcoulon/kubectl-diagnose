@@ -44,7 +44,7 @@ func diagnoseReplicaSet(logger logr.Logger, cfg *rest.Config, rs *appsv1.Replica
 				if err != nil {
 					return false, err
 				}
-				return checkDeployment(logger, cfg, d)
+				return diagnoseDeployment(logger, cfg, d)
 			}
 		}
 	}

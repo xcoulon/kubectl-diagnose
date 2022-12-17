@@ -38,7 +38,7 @@ func diagnosePod(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, e
 				logger.Errorf("👻 %s", c.Message)
 			}
 			// also, check the container statuses
-			f, err := checkContainer(logger, cfg, pod)
+			f, err := diagnoseContainer(logger, cfg, pod)
 			if err != nil {
 				return false, err
 			}
@@ -65,7 +65,7 @@ func diagnosePod(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, e
 
 // check the status of the pod containers
 // return the list of containers' name whose status is `waiting`
-func checkContainer(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, error) {
+func diagnoseContainer(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, error) {
 	found := false
 	for _, s := range pod.Status.ContainerStatuses {
 		// if container not in `Running` state
