@@ -20,7 +20,7 @@ import (
 // Routes
 // ----------------------------
 var _ = DescribeTable("should detect missing route target service",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/route-unknown-target-service.yaml")
@@ -36,11 +36,11 @@ var _ = DescribeTable("should detect missing route target service",
 		Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'unknown-target-service' in namespace 'test'...`))
 		Expect(logger.Output()).To(ContainSubstring("👻 unable to find service 'unknown'"))
 	},
-	Entry("from route", "route", "test", "unknown-target-service"),
+	Entry("from route", diagnose.Route, "test", "unknown-target-service"),
 )
 
 var _ = DescribeTable("should detect invalid route target port as string",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/route-invalid-target-port-str.yaml")
@@ -56,11 +56,11 @@ var _ = DescribeTable("should detect invalid route target port as string",
 		Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'invalid-route-target-port-str' in namespace 'test'...`))
 		Expect(logger.Output()).To(ContainSubstring("👻 route target port 'https' is not defined in service 'invalid-route-target-port-str'"))
 	},
-	Entry("from route", "route", "test", "invalid-route-target-port-str"),
+	Entry("from route", diagnose.Route, "test", "invalid-route-target-port-str"),
 )
 
 var _ = DescribeTable("should detect invalid route target port as int",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/route-invalid-target-port-int.yaml")
@@ -76,7 +76,7 @@ var _ = DescribeTable("should detect invalid route target port as int",
 		Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'invalid-route-target-port-int' in namespace 'test'...`))
 		Expect(logger.Output()).To(ContainSubstring("👻 route target port '8443' is not defined in service 'invalid-route-target-port-int'"))
 	},
-	Entry("from route", "route", "test", "invalid-route-target-port-int"),
+	Entry("from route", diagnose.Route, "test", "invalid-route-target-port-int"),
 )
 
 // ----------------------------
@@ -84,7 +84,7 @@ var _ = DescribeTable("should detect invalid route target port as int",
 // ----------------------------
 
 var _ = DescribeTable("should detect no matching pods",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/service-no-matching-pods.yaml")
@@ -97,7 +97,7 @@ var _ = DescribeTable("should detect no matching pods",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		if diagnose.Kind(kind) == diagnose.Route {
+		if kind == diagnose.Route {
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'no-matching-pods' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -105,12 +105,12 @@ var _ = DescribeTable("should detect no matching pods",
 		Expect(logger.Output()).To(ContainSubstring(`👻 no pods matching label selector 'app=invalid' found in namespace 'test'`))
 		Expect(logger.Output()).To(ContainSubstring(`💡 you may want to verify that the pods exist and their labels match 'app=invalid'`))
 	},
-	Entry("from service", "service", "test", "no-matching-pods"),
-	Entry("from route", "route", "test", "no-matching-pods"),
+	Entry("from service", diagnose.Service, "test", "no-matching-pods"),
+	Entry("from route", diagnose.Route, "test", "no-matching-pods"),
 )
 
 var _ = DescribeTable("should detect invalid service target port as string",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/service-invalid-target-port-str.yaml")
@@ -123,19 +123,19 @@ var _ = DescribeTable("should detect invalid service target port as string",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		if diagnose.Kind(kind) == diagnose.Route {
+		if kind == diagnose.Route {
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'invalid-service-target-port-str' in namespace 'test'...`))
 		}
 		// in all cases:
 		Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'invalid-service-target-port-str' in namespace 'test'...`))
 		Expect(logger.Output()).To(ContainSubstring(`👻 no container with port 'https' in pod 'invalid-service-target-port-str-76d5db5c9b-s8wpq'`))
 	},
-	Entry("from service", "service", "test", "invalid-service-target-port-str"),
-	Entry("from route", "route", "test", "invalid-service-target-port-str"),
+	Entry("from service", diagnose.Service, "test", "invalid-service-target-port-str"),
+	Entry("from route", diagnose.Route, "test", "invalid-service-target-port-str"),
 )
 
 var _ = DescribeTable("should detect invalid service target port as int",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/service-invalid-target-port-int.yaml")
@@ -148,22 +148,22 @@ var _ = DescribeTable("should detect invalid service target port as int",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		if diagnose.Kind(kind) == diagnose.Route {
+		if kind == diagnose.Route {
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'invalid-service-target-port-int' in namespace 'test'...`))
 		}
 		// in all cases:
 		Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'invalid-service-target-port-int' in namespace 'test'...`))
 		Expect(logger.Output()).To(ContainSubstring(`👻 no container with port '8443' in pod 'invalid-service-target-port-int-bbcb4fd5d-k8kg8'`))
 	},
-	Entry("from service", "service", "test", "invalid-service-target-port-int"),
-	Entry("from route", "route", "test", "invalid-service-target-port-int"),
+	Entry("from service", diagnose.Service, "test", "invalid-service-target-port-int"),
+	Entry("from route", diagnose.Route, "test", "invalid-service-target-port-int"),
 )
 
 // ----------------------------
 // Deployments / ReplicaSets
 // ----------------------------
 var _ = DescribeTable("should detect zero replicas specified in deployment",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-zero-replica.yaml")
@@ -176,14 +176,12 @@ var _ = DescribeTable("should detect zero replicas specified in deployment",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		k := diagnose.Kind(kind)
 		switch {
-		case k == diagnose.Route:
+		case kind == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'deploy-zero-replica' in namespace 'test'...`))
-		case k == diagnose.Route || k == diagnose.Service:
+		case kind == diagnose.Route || kind == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'deploy-zero-replica' in namespace 'test'...`))
-		}
-		if k == diagnose.Route || k == diagnose.Service || k == diagnose.ReplicaSet {
+		case kind == diagnose.Route || kind == diagnose.Service || kind == diagnose.ReplicaSet:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'deploy-zero-replica-9bccf7d88' in namespace 'test'...`))
 		}
 		// in all cases
@@ -192,14 +190,14 @@ var _ = DescribeTable("should detect zero replicas specified in deployment",
 		Expect(logger.Output()).To(ContainSubstring(`💡 run 'oc scale --replicas=1 deployment/deploy-zero-replica -n test' or increase the 'replicas' value in the deployment specs`))
 		Expect(logger.Output()).NotTo(ContainSubstring("👻 no pods matching label selector")) // should not appear, other messages are enough
 	},
-	Entry("from replicaset", "replicaset", "test", "deploy-zero-replica-9bccf7d88"),
-	Entry("from deployment", "deployment", "test", "deploy-zero-replica"),
-	Entry("from service", "service", "test", "deploy-zero-replica"),
-	Entry("from route", "route", "test", "deploy-zero-replica"),
+	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-zero-replica-9bccf7d88"),
+	Entry("from deployment", diagnose.Deployment, "test", "deploy-zero-replica"),
+	Entry("from service", diagnose.Service, "test", "deploy-zero-replica"),
+	Entry("from route", diagnose.Route, "test", "deploy-zero-replica"),
 )
 
 var _ = DescribeTable("should detect invalid serviceaccount specified in deployment",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-service-account-not-found.yaml")
@@ -212,13 +210,12 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in deploym
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		k := diagnose.Kind(kind)
 		switch {
-		case k == diagnose.Route:
+		case kind == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'deploy-sa-notfound' in namespace 'test'...`))
-		case k == diagnose.Route || k == diagnose.Service:
+		case kind == diagnose.Route || kind == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'deploy-sa-notfound' in namespace 'test'...`))
-		case k == diagnose.Deployment:
+		case kind == diagnose.Deployment:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'deploy-sa-notfound' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -226,10 +223,10 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in deploym
 		Expect(logger.Output()).To(ContainSubstring(`👻 replicaset 'deploy-sa-notfound-59b5d8468f' failed to create pods: pods "deploy-sa-notfound-59b5d8468f-" is forbidden: error looking up service account test/deploy-sa-notfound: serviceaccount "deploy-sa-notfound" not found`))
 		Expect(logger.Output()).NotTo(ContainSubstring("👻 no pods matching label selector")) // should not appear, other messages are enough
 	},
-	Entry("from replicaset", "replicaset", "test", "deploy-sa-notfound-59b5d8468f"),
-	Entry("from deployment", "deployment", "test", "deploy-sa-notfound"),
-	Entry("from service", "service", "test", "deploy-sa-notfound"),
-	Entry("from route", "route", "test", "deploy-sa-notfound"),
+	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-sa-notfound-59b5d8468f"),
+	Entry("from deployment", diagnose.Deployment, "test", "deploy-sa-notfound"),
+	Entry("from service", diagnose.Service, "test", "deploy-sa-notfound"),
+	Entry("from route", diagnose.Route, "test", "deploy-sa-notfound"),
 )
 
 // ----------------------------
@@ -237,7 +234,7 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in deploym
 // ----------------------------
 
 var _ = DescribeTable("should detect zero replicas specified in deployment",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/statefulset-zero-replica.yaml")
@@ -250,13 +247,12 @@ var _ = DescribeTable("should detect zero replicas specified in deployment",
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		k := diagnose.Kind(kind)
 		switch {
-		case k == diagnose.Route:
+		case kind == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'sts-zero-replica' in namespace 'test'...`))
-		case k == diagnose.Route || k == diagnose.Service:
+		case kind == diagnose.Route || kind == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'sts-zero-replica' in namespace 'test'...`))
-		case k == diagnose.StatefulSet:
+		case kind == diagnose.StatefulSet:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking statefulset 'sts-zero-replica' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -265,13 +261,13 @@ var _ = DescribeTable("should detect zero replicas specified in deployment",
 		Expect(logger.Output()).NotTo(ContainSubstring("👻 no pods matching label selector")) // should not appear, other messages are enough
 
 	},
-	Entry("from statefulset", "statefulset", "test", "sts-zero-replica"),
-	Entry("from service", "service", "test", "sts-zero-replica"),
-	Entry("from route", "route", "test", "sts-zero-replica"),
+	Entry("from statefulset", diagnose.StatefulSet, "test", "sts-zero-replica"),
+	Entry("from service", diagnose.Service, "test", "sts-zero-replica"),
+	Entry("from route", diagnose.Route, "test", "sts-zero-replica"),
 )
 
 var _ = DescribeTable("should detect invalid serviceaccount specified in statefulset",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/statefulset-service-account-not-found.yaml")
@@ -284,13 +280,12 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in statefu
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		k := diagnose.Kind(kind)
 		switch {
-		case k == diagnose.Route:
+		case kind == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'sts-sa-notfound' in namespace 'test'...`))
-		case k == diagnose.Route || k == diagnose.Service:
+		case kind == diagnose.Route || kind == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'sts-sa-notfound' in namespace 'test'...`))
-		case k == diagnose.StatefulSet:
+		case kind == diagnose.StatefulSet:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking statefulset 'sts-sa-notfound' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -299,13 +294,13 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in statefu
 		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: FailedCreate: create Pod sts-sa-notfound-0 in StatefulSet sts-sa-notfound failed error: pods "sts-sa-notfound-0" is forbidden: error looking up service account test/unknown: serviceaccount "unknown" not found`, time.Since(lastTimestamp).Truncate(time.Second))))
 		Expect(logger.Output()).NotTo(ContainSubstring("👻 no pods matching label selector")) // should not appear, other messages are enough
 	},
-	Entry("from statefulset", "statefulset", "test", "sts-sa-notfound"),
-	Entry("from service", "service", "test", "sts-sa-notfound"),
-	Entry("from route", "route", "test", "sts-sa-notfound"),
+	Entry("from statefulset", diagnose.StatefulSet, "test", "sts-sa-notfound"),
+	Entry("from service", diagnose.Service, "test", "sts-sa-notfound"),
+	Entry("from route", diagnose.Route, "test", "sts-sa-notfound"),
 )
 
 var _ = DescribeTable("should detect invalid storageclass specified in statefulset",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/statefulset-invalid-storageclass.yaml")
@@ -318,13 +313,12 @@ var _ = DescribeTable("should detect invalid storageclass specified in statefuls
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		k := diagnose.Kind(kind)
 		switch {
-		case k == diagnose.Route:
+		case kind == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'sts-invalid-sc' in namespace 'test'...`))
-		case k == diagnose.Route || k == diagnose.Service:
+		case kind == diagnose.Route || kind == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'sts-invalid-sc' in namespace 'test'...`))
-		case k == diagnose.StatefulSet:
+		case kind == diagnose.StatefulSet:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking statefulset 'sts-invalid-sc' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -336,10 +330,10 @@ var _ = DescribeTable("should detect invalid storageclass specified in statefuls
 		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: ProvisioningFailed: storageclass.storage.k8s.io "unknown" not found`, time.Since(lastTimestamp).Truncate(time.Second))))
 
 	},
-	Entry("from pod", "pod", "test", "sts-invalid-sc-0"),
-	Entry("from statefulset", "statefulset", "test", "sts-invalid-sc"),
-	Entry("from service", "service", "test", "sts-invalid-sc"),
-	Entry("from route", "route", "test", "sts-invalid-sc"),
+	Entry("from pod", diagnose.Pod, "test", "sts-invalid-sc-0"),
+	Entry("from statefulset", diagnose.StatefulSet, "test", "sts-invalid-sc"),
+	Entry("from service", diagnose.Service, "test", "sts-invalid-sc"),
+	Entry("from route", diagnose.Route, "test", "sts-invalid-sc"),
 )
 
 // ----------------------------
@@ -347,7 +341,7 @@ var _ = DescribeTable("should detect invalid storageclass specified in statefuls
 // ----------------------------
 
 var _ = DescribeTable("should detect deployment pod container in CrashLoopBackOff status",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-crash-loop-back-off.yaml", "resources/deployment-pod-crash-loop-back-off.logs")
@@ -360,15 +354,14 @@ var _ = DescribeTable("should detect deployment pod container in CrashLoopBackOf
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		k := diagnose.Kind(kind)
 		switch {
-		case k == diagnose.Route:
+		case kind == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'deploy-crash-loop-back-off' in namespace 'test'...`))
-		case k == diagnose.Route || k == diagnose.Service:
+		case kind == diagnose.Route || kind == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'deploy-crash-loop-back-off' in namespace 'test'...`))
-		case k == diagnose.Deployment:
+		case kind == diagnose.Deployment:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'deploy-crash-loop-back-off' in namespace 'test'...`))
-		case k == diagnose.Deployment || k == diagnose.ReplicaSet:
+		case kind == diagnose.Deployment || kind == diagnose.ReplicaSet:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'deploy-crash-loop-back-off-7994787459' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -380,15 +373,15 @@ var _ = DescribeTable("should detect deployment pod container in CrashLoopBackOf
 		// logs
 		Expect(logger.Output()).To(ContainSubstring(`🗒  Error: loading initial config: loading new config: http app module: start: listening on :80: listen tcp :80: bind: permission denied`))
 	},
-	Entry("from pod", "pod", "test", "deploy-crash-loop-back-off-7994787459-2nrz5"),
-	Entry("from replicaset", "replicaset", "test", "deploy-crash-loop-back-off-7994787459"),
-	Entry("from deployment", "deployment", "test", "deploy-crash-loop-back-off"),
-	Entry("from service", "service", "test", "deploy-crash-loop-back-off"),
-	Entry("from route", "route", "test", "deploy-crash-loop-back-off"),
+	Entry("from pod", diagnose.Pod, "test", "deploy-crash-loop-back-off-7994787459-2nrz5"),
+	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-crash-loop-back-off-7994787459"),
+	Entry("from deployment", diagnose.Deployment, "test", "deploy-crash-loop-back-off"),
+	Entry("from service", diagnose.Service, "test", "deploy-crash-loop-back-off"),
+	Entry("from route", diagnose.Route, "test", "deploy-crash-loop-back-off"),
 )
 
 var _ = DescribeTable("should detect deployment pod container in ImagePullBackOff status",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-image-pull-back-off.yaml")
@@ -401,15 +394,14 @@ var _ = DescribeTable("should detect deployment pod container in ImagePullBackOf
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		k := diagnose.Kind(kind)
 		switch {
-		case k == diagnose.Route:
+		case kind == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'deploy-image-pull-back-off' in namespace 'test'...`))
-		case k == diagnose.Route || k == diagnose.Service:
+		case kind == diagnose.Route || kind == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'deploy-image-pull-back-off' in namespace 'test'...`))
-		case k == diagnose.Deployment:
+		case kind == diagnose.Deployment:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'deploy-image-pull-back-off' in namespace 'test'...`))
-		case k == diagnose.Deployment || k == diagnose.ReplicaSet:
+		case kind == diagnose.Deployment || kind == diagnose.ReplicaSet:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'deploy-image-pull-back-off-9bbb4f9bd' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -419,15 +411,15 @@ var _ = DescribeTable("should detect deployment pod container in ImagePullBackOf
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-13T07:59:04Z")
 		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Failed: Error: ImagePullBackOff`, time.Since(lastTimestamp).Truncate(time.Second))))
 	},
-	Entry("from pod", "pod", "test", "deploy-image-pull-back-off-9bbb4f9bd-pjj55"),
-	Entry("from replicaset", "replicaset", "test", "deploy-image-pull-back-off-9bbb4f9bd"),
-	Entry("from deployment", "deployment", "test", "deploy-image-pull-back-off"),
-	Entry("from service", "service", "test", "deploy-image-pull-back-off"),
-	Entry("from route", "route", "test", "deploy-image-pull-back-off"),
+	Entry("from pod", diagnose.Pod, "test", "deploy-image-pull-back-off-9bbb4f9bd-pjj55"),
+	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-image-pull-back-off-9bbb4f9bd"),
+	Entry("from deployment", diagnose.Deployment, "test", "deploy-image-pull-back-off"),
+	Entry("from service", diagnose.Service, "test", "deploy-image-pull-back-off"),
+	Entry("from route", diagnose.Route, "test", "deploy-image-pull-back-off"),
 )
 
 var _ = DescribeTable("should detect deployment pod container with readiness probe error",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-readiness-probe-error.yaml", "resources/deployment-pod-readiness-probe-error.logs")
@@ -440,15 +432,14 @@ var _ = DescribeTable("should detect deployment pod container with readiness pro
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		k := diagnose.Kind(kind)
 		switch {
-		case k == diagnose.Route:
+		case kind == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'deploy-readiness-probe-error' in namespace 'test'...`))
-		case k == diagnose.Route || k == diagnose.Service:
+		case kind == diagnose.Route || kind == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'deploy-readiness-probe-error' in namespace 'test'...`))
-		case k == diagnose.Deployment:
+		case kind == diagnose.Deployment:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'deploy-readiness-probe-error' in namespace 'test'...`))
-		case k == diagnose.Deployment || k == diagnose.ReplicaSet:
+		case kind == diagnose.Deployment || kind == diagnose.ReplicaSet:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'deploy-readiness-probe-error-6cb7664768' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -461,15 +452,15 @@ var _ = DescribeTable("should detect deployment pod container with readiness pro
 		// logs
 		Expect(logger.Output()).To(ContainSubstring("🤷 no 'error'/'fatal'/'panic'/'emerg' messages found in the container logs"))
 	},
-	Entry("from pod", "pod", "test", "deploy-readiness-probe-error-6cb7664768-qlmns"),
-	Entry("from replicaset", "replicaset", "test", "deploy-readiness-probe-error-6cb7664768"),
-	Entry("from deployment", "deployment", "test", "deploy-readiness-probe-error"),
-	Entry("from service", "service", "test", "deploy-readiness-probe-error"),
-	Entry("from route", "route", "test", "deploy-readiness-probe-error"),
+	Entry("from pod", diagnose.Pod, "test", "deploy-readiness-probe-error-6cb7664768-qlmns"),
+	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-readiness-probe-error-6cb7664768"),
+	Entry("from deployment", diagnose.Deployment, "test", "deploy-readiness-probe-error"),
+	Entry("from service", diagnose.Service, "test", "deploy-readiness-probe-error"),
+	Entry("from route", diagnose.Route, "test", "deploy-readiness-probe-error"),
 )
 
 var _ = DescribeTable("should detect deployment pod container with unknown configmap mount",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-unknown-configmap.yaml") // no logs, container is not created
@@ -482,15 +473,14 @@ var _ = DescribeTable("should detect deployment pod container with unknown confi
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		k := diagnose.Kind(kind)
 		switch {
-		case k == diagnose.Route:
+		case kind == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'deploy-unknown-cm' in namespace 'test'...`))
-		case k == diagnose.Route || k == diagnose.Service:
+		case kind == diagnose.Route || kind == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'deploy-unknown-cm' in namespace 'test'...`))
-		case k == diagnose.Deployment:
+		case kind == diagnose.Deployment:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'deploy-unknown-cm' in namespace 'test'...`))
-		case k == diagnose.Deployment || k == diagnose.ReplicaSet:
+		case kind == diagnose.Deployment || kind == diagnose.ReplicaSet:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'deploy-unknown-cm-76476b7d5' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -503,15 +493,15 @@ var _ = DescribeTable("should detect deployment pod container with unknown confi
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-13T17:19:34Z")
 		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: FailedMount: Unable to attach or mount volumes: unmounted volumes=[caddy-config], unattached volumes=[caddy-config caddy-config-cache kube-api-access-62xrc]: timed out waiting for the condition`, time.Since(lastTimestamp).Truncate(time.Second))))
 	},
-	Entry("from pod", "pod", "test", "deploy-unknown-cm-76476b7d5-q2khp"),
-	Entry("from replicaset", "replicaset", "test", "deploy-unknown-cm-76476b7d5"),
-	Entry("from deployment", "deployment", "test", "deploy-unknown-cm"),
-	Entry("from service", "service", "test", "deploy-unknown-cm"),
-	Entry("from route", "route", "test", "deploy-unknown-cm"),
+	Entry("from pod", diagnose.Pod, "test", "deploy-unknown-cm-76476b7d5-q2khp"),
+	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-unknown-cm-76476b7d5"),
+	Entry("from deployment", diagnose.Deployment, "test", "deploy-unknown-cm"),
+	Entry("from service", diagnose.Service, "test", "deploy-unknown-cm"),
+	Entry("from route", diagnose.Route, "test", "deploy-unknown-cm"),
 )
 
 var _ = DescribeTable("should detect statefulset pod container with unknown configmap mount",
-	func(kind, namespace, name string) {
+	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/statefulset-pod-unknown-configmap.yaml") // no logs, container is not created
@@ -524,13 +514,12 @@ var _ = DescribeTable("should detect statefulset pod container with unknown conf
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
-		k := diagnose.Kind(kind)
 		switch {
-		case k == diagnose.Route:
+		case kind == diagnose.Route:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'sts-unknown-cm' in namespace 'test'...`))
-		case k == diagnose.Route || k == diagnose.Service:
+		case kind == diagnose.Route || kind == diagnose.Service:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'sts-unknown-cm' in namespace 'test'...`))
-		case k == diagnose.StatefulSet:
+		case kind == diagnose.StatefulSet:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking statefulset 'sts-unknown-cm' in namespace 'test'...`))
 		}
 		// in all cases:
@@ -542,9 +531,9 @@ var _ = DescribeTable("should detect statefulset pod container with unknown conf
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-12-01T05:40:55Z")
 		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Failed: Error: configmap "sts-unknown-cm" not found`, time.Since(lastTimestamp).Truncate(time.Second))))
 	},
-	Entry("from statefulset", "statefulset", "test", "sts-unknown-cm"),
-	Entry("from service", "service", "test", "sts-unknown-cm"),
-	Entry("from route", "route", "test", "sts-unknown-cm"),
+	Entry("from statefulset", diagnose.StatefulSet, "test", "sts-unknown-cm"),
+	Entry("from service", diagnose.Service, "test", "sts-unknown-cm"),
+	Entry("from route", diagnose.Route, "test", "sts-unknown-cm"),
 )
 
 // ----------------------------
@@ -552,7 +541,7 @@ var _ = DescribeTable("should detect statefulset pod container with unknown conf
 // ----------------------------
 
 var _ = DescribeTable("should handle errors",
-	func(gr, kind, namespace, name string) {
+	func(gr string, kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
 		apiserver, err := testsupport.NewFakeAPIServer(logger)
@@ -566,10 +555,10 @@ var _ = DescribeTable("should handle errors",
 		qualifiedResource := schema.ParseGroupResource(gr)
 		Expect(err).To(MatchError(errors.NewGenericServerResponse(http.StatusInternalServerError, "get", qualifiedResource, name, "mock error", 0, true)))
 	},
-	Entry("from pod", "pods", "pod", "test", "error"),
-	Entry("from persistentvolumeclaim", "persistentvolumeclaims", "persistentvolumeclaim", "test", "error"),
-	Entry("from statefulset", "statefulsets.apps", "statefulset", "test", "error"),
-	Entry("from deployment", "deployments.apps", "deployment", "test", "error"),
-	Entry("from service", "services", "service", "test", "error"),
-	Entry("from route", "routes.route.openshift.io", "route", "test", "error"),
+	Entry("from pod", "pods", diagnose.Pod, "test", "error"),
+	Entry("from persistentvolumeclaim", "persistentvolumeclaims", diagnose.PersistentVolumeClaim, "test", "error"),
+	Entry("from statefulset", "statefulsets.apps", diagnose.StatefulSet, "test", "error"),
+	Entry("from deployment", "deployments.apps", diagnose.Deployment, "test", "error"),
+	Entry("from service", "services", diagnose.Service, "test", "error"),
+	Entry("from route", "routes.route.openshift.io", diagnose.Route, "test", "error"),
 )

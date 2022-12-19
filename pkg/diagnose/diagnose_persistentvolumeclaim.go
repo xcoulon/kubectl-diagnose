@@ -11,6 +11,14 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+func diagnosePersistentVolumeClaim(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+	pvc, err := getPersistentVolumeClaim(cfg, namespace, name)
+	if err != nil {
+		return false, err
+	}
+	return checkPersistentVolumeClaim(logger, cfg, pvc)
+}
+
 func getPersistentVolumeClaim(cfg *rest.Config, namespace, name string) (*corev1.PersistentVolumeClaim, error) {
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
@@ -19,7 +27,7 @@ func getPersistentVolumeClaim(cfg *rest.Config, namespace, name string) (*corev1
 	return cl.CoreV1().PersistentVolumeClaims(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 }
 
-func diagnosePersistentVolumeClaim(logger logr.Logger, cfg *rest.Config, pvc *corev1.PersistentVolumeClaim) (bool, error) {
+func checkPersistentVolumeClaim(logger logr.Logger, cfg *rest.Config, pvc *corev1.PersistentVolumeClaim) (bool, error) {
 	logger.Infof("👀 checking persistentvolumeclaim '%s' in namespace '%s'...", pvc.Name, pvc.Namespace)
 	found := false
 	logger.Debugf("👀 checking persistentvolumeclaim status...")

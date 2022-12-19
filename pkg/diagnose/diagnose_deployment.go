@@ -13,16 +13,23 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+func diagnoseDeployment(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+	d, err := getDeployment(cfg, namespace, name)
+	if err != nil {
+		return false, err
+	}
+	return checkDeployment(logger, cfg, d)
+}
+
 func getDeployment(cfg *rest.Config, namespace, name string) (*appsv1.Deployment, error) {
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
 	return cl.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-
 }
 
-func diagnoseDeployment(logger logr.Logger, cfg *rest.Config, d *appsv1.Deployment) (bool, error) {
+func checkDeployment(logger logr.Logger, cfg *rest.Config, d *appsv1.Deployment) (bool, error) {
 	logger.Infof("👀 checking deployment '%s' in namespace '%s'...", d.Name, d.Namespace)
 	found := false
 	for _, c := range d.Status.Conditions {
@@ -55,7 +62,7 @@ func diagnoseDeployment(logger logr.Logger, cfg *rest.Config, d *appsv1.Deployme
 		for _, ref := range rs.OwnerReferences {
 			if ref.UID == d.UID {
 				// rs is "owned" by this deployment
-				f, err := diagnoseReplicaSet(logger, cfg, &rs)
+				f, err := checkReplicaSet(logger, cfg, &rs)
 				if err != nil {
 					return false, err
 				}

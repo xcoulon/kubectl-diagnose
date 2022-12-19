@@ -75,17 +75,17 @@ func NewDiagnoseCmd() *cobra.Command {
 	return cmd
 }
 
-func getResourceTypeName(args []string) (string, string, error) {
+func getResourceTypeName(args []string) (diagnose.ResourceKind, string, error) {
 	switch len(args) {
 	case 1:
 		s := strings.Split(args[0], "/")
 		if len(s) != 2 {
 			return "", "", fmt.Errorf("missing resource name in '%s' (expected 'pod/cookie' or 'pod cookie')", args[0])
 		}
-		return strings.ToLower(s[0]), s[1], nil
+		return diagnose.NewResourceKind(s[0]), s[1], nil
 	case 2:
 		if !strings.Contains(args[0], "/") && !strings.Contains(args[1], "/") {
-			return strings.ToLower(args[0]), args[1], nil
+			return diagnose.NewResourceKind(args[0]), args[1], nil
 		}
 	}
 	return "", "", fmt.Errorf("invalid args: %v", args)

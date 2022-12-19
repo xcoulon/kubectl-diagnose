@@ -11,6 +11,14 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+func diagnoseService(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+	svc, err := getService(cfg, namespace, name)
+	if err != nil {
+		return false, err
+	}
+	return checkService(logger, cfg, svc)
+}
+
 func getService(cfg *rest.Config, namespace, name string) (*corev1.Service, error) {
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
@@ -19,7 +27,7 @@ func getService(cfg *rest.Config, namespace, name string) (*corev1.Service, erro
 	return cl.CoreV1().Services(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 }
 
-func diagnoseService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) (bool, error) {
+func checkService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) (bool, error) {
 	logger.Infof("👀 checking service '%s' in namespace '%s'...", svc.Name, svc.Namespace)
 	// find all pods with the associated label selector in the same namespace
 	cl, err := kubernetes.NewForConfig(cfg)
@@ -48,7 +56,7 @@ func diagnoseService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) 
 			}
 			if s.Matches(labels.Set(rs.Spec.Selector.MatchLabels)) {
 				obj := rs
-				found, err := diagnoseReplicaSet(logger, cfg, &obj)
+				found, err := checkReplicaSet(logger, cfg, &obj)
 				if err != nil {
 					return false, err
 				}
@@ -69,7 +77,7 @@ func diagnoseService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) 
 			}
 			if s.Matches(labels.Set(rs.Spec.Selector.MatchLabels)) {
 				obj := rs
-				found, err := diagnoseStatefulSet(logger, cfg, &obj)
+				found, err := checkStatefulSet(logger, cfg, &obj)
 				if err != nil {
 					return false, err
 				}
@@ -104,7 +112,7 @@ pods:
 				return true, nil
 			}
 			p := pod
-			if found, err := diagnosePod(logger, cfg, &p); err != nil {
+			if found, err := checkPod(logger, cfg, &p); err != nil {
 				return false, err
 			} else if found {
 				return true, nil
