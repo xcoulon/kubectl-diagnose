@@ -20,6 +20,7 @@ import (
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
@@ -158,24 +159,6 @@ func parseLogs(filename string) (map[string]map[string][]string, error) {
 // Endpoint Handlers
 // ----------------------------------
 
-type NotFoundErr struct {
-	msg string
-}
-
-func NewNotFoundErr(msg string) error {
-	return NotFoundErr{
-		msg: msg,
-	}
-}
-
-func (e NotFoundErr) Error() string {
-	return e.msg
-}
-
-func (e NotFoundErr) Is(target error) bool {
-	return target == NotFoundErr{}
-}
-
 func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind diagnose.ResourceKind) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		logger.Debugf("handling object at '%s'", r.URL.Path)
@@ -203,7 +186,7 @@ func lookupObject(logger logr.Logger, kind diagnose.ResourceKind, namespace, nam
 		}
 	}
 	logger.Debugf("%s %s/%s not found", kind, namespace, name)
-	return nil, NewNotFoundErr(fmt.Sprintf("no match for %s %s/%s (missing resource?)", kind, namespace, name))
+	return nil, NewNotFoundError(kind, namespace, name)
 }
 
 func newPodLogsHandler(logger logr.Logger, logs map[string]map[string][]string) httprouter.Handle {
@@ -361,12 +344,45 @@ func handleObject(logger logr.Logger, w http.ResponseWriter, obj interface{}) {
 
 func handleError(logger logr.Logger, w http.ResponseWriter, err error) {
 	logger.Errorf(err.Error())
-	switch {
-	case errors.Is(err, NotFoundErr{}):
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(err.Error())) //nolint: errcheck
-	default:
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error())) //nolint: errcheck
+	if e := apierrors.APIStatus(nil); errors.As(err, &e) {
+		w.WriteHeader(int(e.Status().Code))
+		w.Write([]byte(e.Status().Message)) //nolint: errcheck
+		return
+	}
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte(err.Error())) //nolint: errcheck
+}
+
+// ----------------------------------
+// Errors
+// ----------------------------------
+
+func NewNotFoundError(kind diagnose.ResourceKind, namespace, name string) error {
+	return &apierrors.StatusError{
+		ErrStatus: metav1.Status{
+			Code:    http.StatusNotFound,
+			Reason:  metav1.StatusReasonNotFound,
+			Message: fmt.Sprintf("no match for %s %s/%s (missing resource?)", kind, namespace, name),
+		},
+	}
+}
+
+func NewForbiddenError(kind diagnose.ResourceKind, namespace, name string) error {
+	return &apierrors.StatusError{
+		ErrStatus: metav1.Status{
+			Code:    http.StatusForbidden,
+			Reason:  metav1.StatusReasonForbidden,
+			Message: fmt.Sprintf("access to %s %s/%s is not permitted", kind, namespace, name),
+		},
+	}
+}
+
+func NewInternalServerError(kind diagnose.ResourceKind, namespace, name string) error {
+	return &apierrors.StatusError{
+		ErrStatus: metav1.Status{
+			Code:    http.StatusInternalServerError,
+			Reason:  metav1.StatusReasonInternalError,
+			Message: fmt.Sprintf("internal error while accessing %s %s/%s", kind, namespace, name),
+		},
 	}
 }
