@@ -1,6 +1,7 @@
 package diagnose_test
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,8 +13,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	"github.com/onsi/gomega/types"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // ----------------------------
@@ -540,7 +541,7 @@ var _ = DescribeTable("should detect statefulset pod container with unknown conf
 // Errors
 // ----------------------------
 
-var _ = DescribeTable("should handle errors",
+var _ = DescribeTable("should handle internal server errors",
 	func(gr string, kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := logr.New(io.Discard)
@@ -552,8 +553,7 @@ var _ = DescribeTable("should handle errors",
 		_, err = diagnose.Diagnose(logger, cfg, kind, namespace, name)
 
 		// then
-		qualifiedResource := schema.ParseGroupResource(gr)
-		Expect(err).To(MatchError(errors.NewGenericServerResponse(http.StatusInternalServerError, "get", qualifiedResource, name, "mock error", 0, true)))
+		Expect(apierrors.IsInternalError(err)).To(BeTrue())
 	},
 	Entry("from pod", "pods", diagnose.Pod, "test", "error"),
 	Entry("from persistentvolumeclaim", "persistentvolumeclaims", diagnose.PersistentVolumeClaim, "test", "error"),
@@ -562,3 +562,36 @@ var _ = DescribeTable("should handle errors",
 	Entry("from service", "services", diagnose.Service, "test", "error"),
 	Entry("from route", "routes.route.openshift.io", diagnose.Route, "test", "error"),
 )
+
+var _ = DescribeTable("should handle not found errors",
+	func(gr string, kind diagnose.ResourceKind, namespace, name string) {
+		// given
+		logger := logr.New(io.Discard)
+		apiserver, err := testsupport.NewFakeAPIServer(logger)
+		Expect(err).NotTo(HaveOccurred())
+		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+
+		// when
+		_, err = diagnose.Diagnose(logger, cfg, kind, namespace, name)
+
+		// then
+		Expect(err).To(BeANotFoundError())
+	},
+	Entry("from pod", "pods", diagnose.Pod, "test", "notfound"),
+	Entry("from persistentvolumeclaim", "persistentvolumeclaims", diagnose.PersistentVolumeClaim, "test", "notfound"),
+	Entry("from statefulset", "statefulsets.apps", diagnose.StatefulSet, "test", "notfound"),
+	Entry("from deployment", "deployments.apps", diagnose.Deployment, "test", "notfound"),
+	Entry("from service", "services", diagnose.Service, "test", "notfound"),
+	Entry("from route", "routes.route.openshift.io", diagnose.Route, "test", "notfound"),
+)
+
+func BeANotFoundError() types.GomegaMatcher {
+	return And(
+		WithTransform(func(err error) (int, error) {
+			if e := apierrors.APIStatus(nil); errors.As(err, &e) {
+				return int(e.Status().Code), nil
+			}
+			return -1, fmt.Errorf("wrong type of error")
+		}, Equal(http.StatusNotFound)),
+	)
+}
