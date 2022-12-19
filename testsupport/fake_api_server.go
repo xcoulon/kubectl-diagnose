@@ -15,6 +15,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	routev1 "github.com/openshift/api/route/v1"
+	"github.com/xcoulon/kubectl-diagnose/pkg/diagnose"
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
@@ -69,18 +70,18 @@ func NewFakeAPIServer(logger logr.Logger, filenames ...string) (*httptest.Server
 	}
 	r := httprouter.New()
 	r.GET(`/api/v1/namespaces/:namespace/pods`, newPodsHandler(logger, allObjs))
-	r.GET(`/api/v1/namespaces/:namespace/pods/:name`, newObjectHandler(logger, allObjs, "Pod"))
+	r.GET(`/api/v1/namespaces/:namespace/pods/:name`, newObjectHandler(logger, allObjs, diagnose.Pod))
 	r.GET(`/api/v1/namespaces/:namespace/pods/:name/log`, newPodLogsHandler(logger, allLogs))
-	r.GET(`/api/v1/namespaces/:namespace/services/:name`, newObjectHandler(logger, allObjs, "Service"))
+	r.GET(`/api/v1/namespaces/:namespace/services/:name`, newObjectHandler(logger, allObjs, diagnose.Service))
 	r.GET(`/api/v1/namespaces/:namespace/events`, newEventsHandler(logger, allObjs))
 	r.GET(`/api/v1/namespaces/:namespace/persistentvolumeclaims`, newPersistentVolumeClaimsHandler(logger, allObjs))
-	r.GET(`/api/v1/namespaces/:namespace/persistentvolumeclaims/:name`, newObjectHandler(logger, allObjs, "PersistentVolumeClaim"))
+	r.GET(`/api/v1/namespaces/:namespace/persistentvolumeclaims/:name`, newObjectHandler(logger, allObjs, diagnose.PersistentVolumeClaim))
 	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets`, newReplicaSetsHandler(logger, allObjs))
-	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, allObjs, "ReplicaSet"))
-	r.GET(`/apis/apps/v1/namespaces/:namespace/deployments/:name`, newObjectHandler(logger, allObjs, "Deployment"))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, allObjs, diagnose.ReplicaSet))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/deployments/:name`, newObjectHandler(logger, allObjs, diagnose.Deployment))
 	r.GET(`/apis/apps/v1/namespaces/:namespace/statefulsets`, newStatefulSetsHandler(logger, allObjs))
-	r.GET(`/apis/apps/v1/namespaces/:namespace/statefulsets/:name`, newObjectHandler(logger, allObjs, "StatefulSet"))
-	r.GET(`/apis/route.openshift.io/v1/namespaces/:namespace/routes/:name`, newObjectHandler(logger, allObjs, "Route"))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/statefulsets/:name`, newObjectHandler(logger, allObjs, diagnose.StatefulSet))
+	r.GET(`/apis/route.openshift.io/v1/namespaces/:namespace/routes/:name`, newObjectHandler(logger, allObjs, diagnose.Route))
 	r.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.Infof("no match for request with path='%s' and query='%s' ", r.URL.Path, r.URL.Query().Encode())
 		w.WriteHeader(http.StatusNotFound)
@@ -175,7 +176,7 @@ func (e NotFoundErr) Is(target error) bool {
 	return target == NotFoundErr{}
 }
 
-func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind string) httprouter.Handle {
+func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind diagnose.ResourceKind) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		logger.Debugf("handling object at '%s'", r.URL.Path)
 		namespace := params.ByName("namespace") // unset for cluster-scoped resources (eg: storageclasses)
@@ -189,13 +190,13 @@ func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind stri
 	}
 }
 
-func lookupObject(logger logr.Logger, kind, namespace, name string, objs []runtimeclient.Object) (interface{}, error) {
+func lookupObject(logger logr.Logger, kind diagnose.ResourceKind, namespace, name string, objs []runtimeclient.Object) (interface{}, error) {
 	logger.Debugf("looking up %s %s/%s", kind, namespace, name)
 	if name == "error" { // special case to test errors on the client side
 		return nil, fmt.Errorf("mock error")
 	}
 	for _, obj := range objs {
-		if obj.GetObjectKind().GroupVersionKind().Kind == kind &&
+		if kind.Matches(obj.GetObjectKind()) &&
 			obj.GetNamespace() == namespace &&
 			obj.GetName() == name {
 			return obj, nil

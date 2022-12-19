@@ -12,6 +12,14 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+func diagnoseRoute(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+	r, err := getRoute(cfg, namespace, name)
+	if err != nil {
+		return false, err
+	}
+	return checkRoute(logger, cfg, r)
+}
+
 func getRoute(cfg *rest.Config, namespace, name string) (*routev1.Route, error) {
 	cl, err := routeclient.NewForConfig(cfg)
 	if err != nil {
@@ -23,7 +31,7 @@ func getRoute(cfg *rest.Config, namespace, name string) (*routev1.Route, error) 
 // checks:
 // - the route's target port on pods selected by the service this route points to.
 // (If this is a string, it will be looked up as a named port in the target endpoints port list)
-func diagnoseRoute(logger logr.Logger, cfg *rest.Config, route *routev1.Route) (bool, error) {
+func checkRoute(logger logr.Logger, cfg *rest.Config, route *routev1.Route) (bool, error) {
 	logger.Infof("👀 checking route '%s' in namespace '%s'...", route.Name, route.Namespace)
 	svc, err := getService(cfg, route.Namespace, route.Spec.To.Name)
 	if apierrors.IsNotFound(err) {
@@ -38,7 +46,7 @@ func diagnoseRoute(logger logr.Logger, cfg *rest.Config, route *routev1.Route) (
 	case intstr.Int:
 		for _, port := range svc.Spec.Ports {
 			if port.Port == targetPort.IntVal {
-				return diagnoseService(logger, cfg, svc)
+				return checkService(logger, cfg, svc)
 			}
 		}
 		logger.Errorf("👻 route target port '%d' is not defined in service '%s'", targetPort.IntVal, svc.Name)
@@ -46,7 +54,7 @@ func diagnoseRoute(logger logr.Logger, cfg *rest.Config, route *routev1.Route) (
 	default:
 		for _, port := range svc.Spec.Ports {
 			if port.Name == targetPort.StrVal {
-				return diagnoseService(logger, cfg, svc)
+				return checkService(logger, cfg, svc)
 			}
 		}
 		logger.Errorf("👻 route target port '%s' is not defined in service '%s'", targetPort.StrVal, svc.Name)

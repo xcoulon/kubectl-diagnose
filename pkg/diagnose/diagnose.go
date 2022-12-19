@@ -8,50 +8,22 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func Diagnose(logger logr.Logger, cfg *rest.Config, kind, namespace, name string) (bool, error) {
-	switch Kind(kind) {
+func Diagnose(logger logr.Logger, cfg *rest.Config, kind ResourceKind, namespace, name string) (bool, error) {
+	switch kind {
 	case Route:
-		r, err := getRoute(cfg, namespace, name)
-		if err != nil {
-			return false, err
-		}
-		return diagnoseRoute(logger, cfg, r)
+		return diagnoseRoute(logger, cfg, namespace, name)
 	case Service:
-		svc, err := getService(cfg, namespace, name)
-		if err != nil {
-			return false, err
-		}
-		return diagnoseService(logger, cfg, svc)
+		return diagnoseService(logger, cfg, namespace, name)
 	case Deployment:
-		d, err := getDeployment(cfg, namespace, name)
-		if err != nil {
-			return false, err
-		}
-		return diagnoseDeployment(logger, cfg, d)
+		return diagnoseDeployment(logger, cfg, namespace, name)
 	case ReplicaSet:
-		rs, err := getReplicaSet(cfg, namespace, name)
-		if err != nil {
-			return false, err
-		}
-		return diagnoseReplicaSet(logger, cfg, rs)
+		return diagnoseReplicaSet(logger, cfg, namespace, name)
 	case Pod:
-		pod, err := getPod(cfg, namespace, name)
-		if err != nil {
-			return false, err
-		}
-		return diagnosePod(logger, cfg, pod)
+		return diagnosePod(logger, cfg, namespace, name)
 	case StatefulSet:
-		sts, err := getStatefulSet(cfg, namespace, name)
-		if err != nil {
-			return false, err
-		}
-		return diagnoseStatefulSet(logger, cfg, sts)
+		return diagnoseStatefulSet(logger, cfg, namespace, name)
 	case PersistentVolumeClaim:
-		pvc, err := getPersistentVolumeClaim(cfg, namespace, name)
-		if err != nil {
-			return false, err
-		}
-		return diagnosePersistentVolumeClaim(logger, cfg, pvc)
+		return diagnosePersistentVolumeClaim(logger, cfg, namespace, name)
 	default:
 		return false, fmt.Errorf("🤷 unsupported kind of resource: '%s'", kind)
 	}

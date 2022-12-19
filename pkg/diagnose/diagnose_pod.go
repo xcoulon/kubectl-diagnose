@@ -12,6 +12,14 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+func diagnosePod(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+	pod, err := getPod(cfg, namespace, name)
+	if err != nil {
+		return false, err
+	}
+	return checkPod(logger, cfg, pod)
+}
+
 func getPod(cfg *rest.Config, namespace, name string) (*corev1.Pod, error) {
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
@@ -20,7 +28,7 @@ func getPod(cfg *rest.Config, namespace, name string) (*corev1.Pod, error) {
 	return cl.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 }
 
-func diagnosePod(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, error) {
+func checkPod(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, error) {
 	logger.Infof("👀 checking pod '%s' in namespace '%s'...", pod.Name, pod.Namespace)
 	found := false
 	// check events associated with the pod
@@ -51,7 +59,7 @@ func diagnosePod(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, e
 					if err != nil {
 						return false, err
 					}
-					f, err := diagnosePersistentVolumeClaim(logger, cfg, pvc)
+					f, err := checkPersistentVolumeClaim(logger, cfg, pvc)
 					if err != nil {
 						return false, err
 					}

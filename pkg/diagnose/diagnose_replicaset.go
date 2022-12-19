@@ -13,6 +13,14 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+func diagnoseReplicaSet(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+	rs, err := getReplicaSet(cfg, namespace, name)
+	if err != nil {
+		return false, err
+	}
+	return checkReplicaSet(logger, cfg, rs)
+}
+
 func getReplicaSet(cfg *rest.Config, namespace, name string) (*appsv1.ReplicaSet, error) {
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
@@ -22,7 +30,7 @@ func getReplicaSet(cfg *rest.Config, namespace, name string) (*appsv1.ReplicaSet
 
 }
 
-func diagnoseReplicaSet(logger logr.Logger, cfg *rest.Config, rs *appsv1.ReplicaSet) (bool, error) {
+func checkReplicaSet(logger logr.Logger, cfg *rest.Config, rs *appsv1.ReplicaSet) (bool, error) {
 	logger.Infof("👀 checking replicaset '%s' in namespace '%s'...", rs.Name, rs.Namespace)
 	for _, c := range rs.Status.Conditions {
 		if c.Type == appsv1.ReplicaSetReplicaFailure &&
@@ -40,11 +48,7 @@ func diagnoseReplicaSet(logger logr.Logger, cfg *rest.Config, rs *appsv1.Replica
 	if rs.Spec.Replicas != nil && *rs.Spec.Replicas == 0 {
 		for _, ownerRef := range rs.OwnerReferences {
 			if ownerRef.Kind == "Deployment" {
-				d, err := getDeployment(cfg, rs.Namespace, ownerRef.Name)
-				if err != nil {
-					return false, err
-				}
-				return diagnoseDeployment(logger, cfg, d)
+				return diagnoseDeployment(logger, cfg, rs.Namespace, ownerRef.Name)
 			}
 		}
 	}
@@ -68,7 +72,7 @@ func diagnoseReplicaSet(logger logr.Logger, cfg *rest.Config, rs *appsv1.Replica
 		for _, ownerRef := range pod.OwnerReferences {
 			if ownerRef.UID == rs.UID {
 				// pod is "owned" by this replicaset
-				if found, err := diagnosePod(logger, cfg, &pod); err != nil {
+				if found, err := checkPod(logger, cfg, &pod); err != nil {
 					return false, err
 				} else if found {
 					return true, nil

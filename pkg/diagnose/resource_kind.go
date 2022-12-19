@@ -1,21 +1,27 @@
 package diagnose
 
-type ResourceKind int
+import (
+	"strings"
 
-const (
-	Route ResourceKind = iota
-	Service
-	Deployment
-	ReplicaSet
-	Pod
-	StatefulSet
-	PersistentVolumeClaim
-	StorageClass
-	Unkwown
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func Kind(kind string) ResourceKind {
-	switch kind {
+type ResourceKind string
+
+const (
+	Route                 = ResourceKind("Route")
+	Service               = ResourceKind("Service")
+	Deployment            = ResourceKind("Deployment")
+	ReplicaSet            = ResourceKind("ReplicaSet")
+	Pod                   = ResourceKind("Pod")
+	StatefulSet           = ResourceKind("StatefulSet")
+	PersistentVolumeClaim = ResourceKind("PersistentVolumeClaim")
+	StorageClass          = ResourceKind("StorageClass")
+	Unknown               = ResourceKind("Unknown")
+)
+
+func NewResourceKind(kind string) ResourceKind {
+	switch strings.ToLower(kind) {
 	case "routes", "route", "route.route.openshift.io":
 		return Route
 	case "services", "service", "svc":
@@ -33,6 +39,14 @@ func Kind(kind string) ResourceKind {
 	case "storageclasses", "storageclass", "sc", "storageclass.storage.k8s.io":
 		return StorageClass
 	default:
-		return Unkwown
+		return Unknown
 	}
+}
+
+func (k ResourceKind) Matches(kind schema.ObjectKind) bool {
+	return k == ResourceKind(kind.GroupVersionKind().Kind)
+}
+
+func (k ResourceKind) String() string {
+	return string(k)
 }

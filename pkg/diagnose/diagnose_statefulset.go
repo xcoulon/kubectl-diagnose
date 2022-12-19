@@ -12,6 +12,14 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+func diagnoseStatefulSet(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+	sts, err := getStatefulSet(cfg, namespace, name)
+	if err != nil {
+		return false, err
+	}
+	return checkStatefulSet(logger, cfg, sts)
+}
+
 func getStatefulSet(cfg *rest.Config, namespace, name string) (*appsv1.StatefulSet, error) {
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
@@ -20,7 +28,7 @@ func getStatefulSet(cfg *rest.Config, namespace, name string) (*appsv1.StatefulS
 	return cl.AppsV1().StatefulSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 }
 
-func diagnoseStatefulSet(logger logr.Logger, cfg *rest.Config, sts *appsv1.StatefulSet) (bool, error) {
+func checkStatefulSet(logger logr.Logger, cfg *rest.Config, sts *appsv1.StatefulSet) (bool, error) {
 	logger.Infof("👀 checking statefulset '%s' in namespace '%s'...", sts.Name, sts.Namespace)
 	found := false
 	// check the replicas
@@ -61,7 +69,7 @@ func diagnoseStatefulSet(logger logr.Logger, cfg *rest.Config, sts *appsv1.State
 		for _, ownerRef := range pod.OwnerReferences {
 			if ownerRef.UID == sts.UID {
 				// pod is "owned" by this sts
-				if found, err := diagnosePod(logger, cfg, &pod); err != nil {
+				if found, err := checkPod(logger, cfg, &pod); err != nil {
 					return false, err
 				} else if found {
 					return true, nil

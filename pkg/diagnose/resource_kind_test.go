@@ -9,7 +9,7 @@ import (
 
 var _ = DescribeTable("resource kind",
 	func(kind string, expected diagnose.ResourceKind) {
-		Expect(diagnose.Kind(kind)).To(Equal(expected))
+		Expect(diagnose.NewResourceKind(kind)).To(Equal(expected))
 	},
 	// routes
 	Entry("routes", "routes", diagnose.Route),
@@ -49,11 +49,9 @@ var _ = DescribeTable("resource kind",
 	Entry("persistentvolumeclaim", "persistentvolumeclaim", diagnose.PersistentVolumeClaim),
 	Entry("pvc", "pvc", diagnose.PersistentVolumeClaim),
 
-	// storage classe
+	// storage classes
 	Entry("storageclass", "storageclass", diagnose.StorageClass),
 	Entry("storageclasses", "storageclasses", diagnose.StorageClass),
 	Entry("sc", "sc", diagnose.StorageClass),
 	Entry("storageclass.storage.k8s.io", "storageclass.storage.k8s.io", diagnose.StorageClass),
-	// unknown
-	Entry("other", "other", diagnose.Unkwown),
 )
