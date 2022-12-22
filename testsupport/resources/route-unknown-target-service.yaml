@@ -1,5 +1,4 @@
 # vscode-kubernetes-tools: exclude
-# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
@@ -13,7 +12,7 @@ spec:
     targetPort: http
   to:
     kind: Service
-    name: unknown
+    name: unknown # invalid
     weight: 100
   wildcardPolicy: None
 status:

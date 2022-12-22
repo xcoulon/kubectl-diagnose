@@ -1,5 +1,4 @@
 # vscode-kubernetes-tools: exclude
-# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
@@ -211,7 +210,6 @@ spec:
   hostname: sts-unknown-cm-0
   imagePullSecrets:
   - name: default-dockercfg-jhpvm
-  nodeName: ip-10-0-182-196.us-east-2.compute.internal
   preemptionPolicy: PreemptLowerPriority
   priority: -3
   priorityClassName: sandbox-users-pods

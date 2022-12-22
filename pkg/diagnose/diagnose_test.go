@@ -81,6 +81,110 @@ var _ = DescribeTable("should detect invalid route target port as int",
 )
 
 // ----------------------------
+// Ingresses
+// ----------------------------
+var _ = DescribeTable("should detect missing target service",
+	func(kind diagnose.ResourceKind, namespace, name string) {
+		// given
+		logger := logr.New(io.Discard)
+		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/ingress-unknown-target-service.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+
+		// when
+		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(found).To(BeTrue())
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking ingress 'unknown-target-service' in namespace 'test'...`))
+		Expect(logger.Output()).To(ContainSubstring("👻 unable to find service 'unknown' associated with host 'unknown-target-service.test' and path '/'"))
+	},
+	Entry("from ingress", diagnose.Ingress, "test", "unknown-target-service"),
+)
+
+var _ = DescribeTable("should detect invalid service port",
+	func(kind diagnose.ResourceKind, namespace, name string) {
+		// given
+		logger := logr.New(io.Discard)
+		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/ingress-invalid-service-port.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+
+		// when
+		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(found).To(BeTrue())
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking ingress 'invalid-service-port' in namespace 'test'...`))
+		Expect(logger.Output()).To(ContainSubstring("👻 port '8081' is not defined in service 'invalid-service-port'"))
+	},
+	Entry("from ingress", diagnose.Ingress, "test", "invalid-service-port"),
+)
+
+var _ = DescribeTable("should detect invalid service name",
+	func(kind diagnose.ResourceKind, namespace, name string) {
+		// given
+		logger := logr.New(io.Discard)
+		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/ingress-invalid-service-name.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+
+		// when
+		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(found).To(BeTrue())
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking ingress 'invalid-service-name' in namespace 'test'...`))
+		Expect(logger.Output()).To(ContainSubstring("👻 port 'https' is not defined in service 'invalid-service-name'"))
+	},
+	Entry("from ingress", diagnose.Ingress, "test", "invalid-service-name"),
+)
+
+var _ = DescribeTable("should detect invalid ingressclassname",
+	func(kind diagnose.ResourceKind, namespace, name string) {
+		// given
+		logger := logr.New(io.Discard)
+		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/ingress-invalid-ingressclassname.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+
+		// when
+		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(found).To(BeTrue())
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking ingress 'invalid-ingressclassname' in namespace 'test'...`))
+		Expect(logger.Output()).To(ContainSubstring("👻 unable to find ingressclass 'invalid'"))
+	},
+	Entry("from ingress", diagnose.Ingress, "test", "invalid-ingressclassname"),
+)
+
+var _ = DescribeTable("should not fail when get ingressclass is forbidden", // ingressclasses are cluster-scoped resources and user may not be allowed to get/list such resources
+	func(kind diagnose.ResourceKind, namespace, name string) {
+		// given
+		logger := logr.New(io.Discard)
+		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/ingress-forbidden-ingressclassname.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+
+		// when
+		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(found).To(BeFalse()) // cound not find the culprit: the error is in the ingress classname but user is missing permissions for this resource kind ¯\_(ツ)_/¯
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking ingress 'forbidden-ingressclassname' in namespace 'test'...`))
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking ingressclass 'forbidden' at cluster level...`))
+		Expect(logger.Output()).To(ContainSubstring("🤷 unable to verify ingressclass 'forbidden': ingressclass 'forbidden' is forbidden: User cannot get ingressclass resources at the cluster level (get ingressclasses.networking.k8s.io forbidden"))
+	},
+	Entry("from ingress", diagnose.Ingress, "test", "forbidden-ingressclassname"),
+)
+
+// ----------------------------
 // Services
 // ----------------------------
 

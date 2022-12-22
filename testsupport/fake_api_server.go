@@ -20,6 +20,7 @@ import (
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -37,6 +38,8 @@ func init() {
 	corev1.AddToScheme(scheme.Scheme) //nolint:errcheck
 	// Kubernetes ReplicaSets
 	appsv1.AddToScheme(scheme.Scheme) //nolint:errcheck
+	// Kubernetes Ingresses
+	networkingv1.AddToScheme(scheme.Scheme) //nolint:errcheck
 	// OpenShift Routes
 	routev1.AddToScheme(scheme.Scheme) //nolint:errcheck
 }
@@ -83,6 +86,9 @@ func NewFakeAPIServer(logger logr.Logger, filenames ...string) (*httptest.Server
 	r.GET(`/apis/apps/v1/namespaces/:namespace/statefulsets`, newStatefulSetsHandler(logger, allObjs))
 	r.GET(`/apis/apps/v1/namespaces/:namespace/statefulsets/:name`, newObjectHandler(logger, allObjs, diagnose.StatefulSet))
 	r.GET(`/apis/route.openshift.io/v1/namespaces/:namespace/routes/:name`, newObjectHandler(logger, allObjs, diagnose.Route))
+	r.GET(`/apis/networking.k8s.io/v1/namespaces/:namespace/ingresses/:name`, newObjectHandler(logger, allObjs, diagnose.Ingress))
+	r.GET(`/apis/networking.k8s.io/v1/ingressclasses/:name`, newObjectHandler(logger, allObjs, diagnose.IngressClass))
+	// other paths/resources are not supported ¯\_(ツ)_/¯
 	r.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.Infof("no match for request with path='%s' and query='%s' ", r.URL.Path, r.URL.Query().Encode())
 		w.WriteHeader(http.StatusNotFound)
@@ -175,18 +181,30 @@ func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind diag
 
 func lookupObject(logger logr.Logger, kind diagnose.ResourceKind, namespace, name string, objs []runtimeclient.Object) (interface{}, error) {
 	logger.Debugf("looking up %s %s/%s", kind, namespace, name)
-	if name == "error" { // special case to test errors on the client side
-		return nil, fmt.Errorf("mock error")
-	}
-	for _, obj := range objs {
-		if kind.Matches(obj.GetObjectKind()) &&
-			obj.GetNamespace() == namespace &&
-			obj.GetName() == name {
-			return obj, nil
+	switch name {
+	// special cases to test errors on the client side
+	case "error":
+		return nil, NewInternalServerError(fmt.Sprintf("internal error cannot get %s resources", kind))
+	case "forbidden":
+		if namespace == "" {
+			return nil, NewForbiddenError(fmt.Sprintf("%s '%s' is forbidden: User cannot get %s resources at the cluster level", kind, name, kind))
 		}
+		return nil, NewForbiddenError(fmt.Sprintf("%s '%s' is forbidden: User cannot get %s resources in namespace '%s'", kind, name, kind, namespace))
+	default:
+		for _, obj := range objs {
+			if kind.Matches(obj.GetObjectKind()) &&
+				obj.GetNamespace() == namespace &&
+				obj.GetName() == name {
+				return obj, nil
+			}
+		}
+		logger.Debugf("%s %s/%s not found", kind, namespace, name)
+		if namespace == "" {
+			return nil, NewNotFoundError(fmt.Sprintf("%s '%s' not found at cluster level", kind, name))
+		}
+		return nil, NewNotFoundError(fmt.Sprintf("%s '%s' not found in namespace '%s'", kind, name, namespace))
+
 	}
-	logger.Debugf("%s %s/%s not found", kind, namespace, name)
-	return nil, NewNotFoundError(kind, namespace, name)
 }
 
 func newPodLogsHandler(logger logr.Logger, logs map[string]map[string][]string) httprouter.Handle {
@@ -357,32 +375,32 @@ func handleError(logger logr.Logger, w http.ResponseWriter, err error) {
 // Errors
 // ----------------------------------
 
-func NewNotFoundError(kind diagnose.ResourceKind, namespace, name string) error {
+func NewNotFoundError(msg string) error {
 	return &apierrors.StatusError{
 		ErrStatus: metav1.Status{
 			Code:    http.StatusNotFound,
 			Reason:  metav1.StatusReasonNotFound,
-			Message: fmt.Sprintf("no match for %s %s/%s (missing resource?)", kind, namespace, name),
+			Message: msg,
 		},
 	}
 }
 
-func NewForbiddenError(kind diagnose.ResourceKind, namespace, name string) error {
+func NewForbiddenError(msg string) error {
 	return &apierrors.StatusError{
 		ErrStatus: metav1.Status{
 			Code:    http.StatusForbidden,
 			Reason:  metav1.StatusReasonForbidden,
-			Message: fmt.Sprintf("access to %s %s/%s is not permitted", kind, namespace, name),
+			Message: msg,
 		},
 	}
 }
 
-func NewInternalServerError(kind diagnose.ResourceKind, namespace, name string) error {
+func NewInternalServerError(msg string) error {
 	return &apierrors.StatusError{
 		ErrStatus: metav1.Status{
 			Code:    http.StatusInternalServerError,
 			Reason:  metav1.StatusReasonInternalError,
-			Message: fmt.Sprintf("internal error while accessing %s %s/%s", kind, namespace, name),
+			Message: msg,
 		},
 	}
 }

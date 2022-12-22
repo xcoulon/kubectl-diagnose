@@ -31,13 +31,15 @@ func getPod(cfg *rest.Config, namespace, name string) (*corev1.Pod, error) {
 func checkPod(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, error) {
 	logger.Infof("👀 checking pod '%s' in namespace '%s'...", pod.Name, pod.Namespace)
 	found := false
-	// check events associated with the pod
-	f, err := checkEvents(logger, cfg, pod)
-	if err != nil {
-		return false, err
+	if pod.Status.Phase != corev1.PodRunning {
+		// check events associated with the pod
+		f, err := checkEvents(logger, cfg, pod)
+		if err != nil {
+			return false, err
+		}
+		found = found || f
 	}
 	logger.Debugf("👀 checking pod status...")
-	found = found || f
 	// check the containers
 	for _, c := range pod.Status.Conditions {
 		switch {

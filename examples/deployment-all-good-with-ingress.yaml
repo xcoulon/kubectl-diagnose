@@ -1,0 +1,274 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: deploy-all-good
+  labels:
+    app: deploy-all-good
+spec:
+  rules:
+  - host: all-good.test
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: deploy-all-good-en
+            port:
+              number: 8080
+      - path: /fr
+        pathType: Prefix
+        backend:
+          service:
+            name: deploy-all-good-fr
+            port:
+              number: 8080
+      - path: /es
+        pathType: Prefix
+        backend:
+          service:
+            name: deploy-all-good-es
+            port:
+              number: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deploy-all-good-en
+  labels:
+    app: deploy-all-good
+    lang: en
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  selector:
+    app: deploy-all-good
+    lang: en
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-all-good-en
+  labels:
+    app: deploy-all-good
+    lang: en
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deploy-all-good
+      lang: en
+  template:
+    metadata:
+      labels:
+        app: deploy-all-good
+        lang: en
+    spec:
+      containers:
+      - name: default
+        image: caddy:2
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        securityContext:
+          runAsNonRoot: true
+        volumeMounts:
+        - name: caddy-config
+          mountPath: "/etc/caddy"
+        - name: caddy-config-cache
+          mountPath: "/config/caddy"
+      serviceAccount: default
+      serviceAccountName: default
+      securityContext:
+        runAsUser: 1003870000
+      volumes:
+      - name: caddy-config
+        configMap:
+          name: caddy-config-en
+      - name: caddy-config-cache
+        emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config-en
+data:
+  Caddyfile: |-
+    http://:8080
+
+    respond "Everything is fine!"
+---
+# spanish version
+apiVersion: v1
+kind: Service
+metadata:
+  name: deploy-all-good-es
+  labels:
+    app: deploy-all-good
+    lang: es
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  selector:
+    app: deploy-all-good
+    lang: es
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-all-good-es
+  labels:
+    app: deploy-all-good
+    lang: es
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deploy-all-good
+      lang: es
+  template:
+    metadata:
+      labels:
+        app: deploy-all-good
+        lang: es
+    spec:
+      containers:
+      - name: default
+        image: caddy:2
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        securityContext:
+          runAsNonRoot: true
+        volumeMounts:
+        - name: caddy-config
+          mountPath: "/etc/caddy"
+        - name: caddy-config-cache
+          mountPath: "/config/caddy"
+      serviceAccount: default
+      serviceAccountName: default
+      securityContext:
+        runAsUser: 1003870000
+      volumes:
+      - name: caddy-config
+        configMap:
+          name: caddy-config-es
+      - name: caddy-config-cache
+        emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config-es
+data:
+  Caddyfile: |-
+    http://:8080
+
+    respond "¡Todo está bien!"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deploy-all-good-fr
+  labels:
+    app: deploy-all-good
+    lang: fr
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  selector:
+    app: deploy-all-good
+    lang: fr
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-all-good-fr
+  labels:
+    app: deploy-all-good
+    lang: fr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deploy-all-good
+      lang: fr
+  template:
+    metadata:
+      labels:
+        app: deploy-all-good
+        lang: fr
+    spec:
+      containers:
+      - name: default
+        image: caddy:2
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        securityContext:
+          runAsNonRoot: true
+        volumeMounts:
+        - name: caddy-config
+          mountPath: "/etc/caddy"
+        - name: caddy-config-cache
+          mountPath: "/config/caddy"
+      serviceAccount: default
+      serviceAccountName: default
+      securityContext:
+        runAsUser: 1003870000
+      volumes:
+      - name: caddy-config
+        configMap:
+          name: caddy-config-fr
+      - name: caddy-config-cache
+        emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config-fr
+data:
+  Caddyfile: |-
+    http://:8080
+
+    respond "Tout va bien!"
+  

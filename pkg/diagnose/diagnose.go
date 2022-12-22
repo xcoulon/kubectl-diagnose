@@ -12,6 +12,8 @@ func Diagnose(logger logr.Logger, cfg *rest.Config, kind ResourceKind, namespace
 	switch kind {
 	case Route:
 		return diagnoseRoute(logger, cfg, namespace, name)
+	case Ingress:
+		return diagnoseIngress(logger, cfg, namespace, name)
 	case Service:
 		return diagnoseService(logger, cfg, namespace, name)
 	case Deployment:
