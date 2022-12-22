@@ -1,0 +1,1020 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: deploy-all-good
+  name: deploy-all-good
+  namespace: default
+  uid: 4af0fd56-7871-410d-9ed5-98aed0012e5d
+spec:
+  rules:
+  - host: all-good.test
+    http:
+      paths:
+      - backend:
+          service:
+            name: deploy-all-good-en
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix
+      - backend:
+          service:
+            name: deploy-all-good-fr
+            port:
+              number: 8080
+        path: /fr
+        pathType: Prefix
+      - backend:
+          service:
+            name: deploy-all-good-es
+            port:
+              number: 8080
+        path: /es
+        pathType: Prefix
+status:
+  loadBalancer:
+    ingress:
+    - hostname: router-default.apps.xcoulon-20221222a.devcluster.openshift.com
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: deploy-all-good
+    lang: en
+  name: deploy-all-good-en
+  namespace: default
+  uid: 29aa1945-6b75-47b8-bb8d-36f6bf1e15d8
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: deploy-all-good
+      lang: en
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: deploy-all-good
+        lang: en
+    spec:
+      containers:
+      - image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        securityContext:
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsUser: 1003870000
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-en
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+status:
+  availableReplicas: 1
+  conditions:
+  - message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - message: ReplicaSet "deploy-all-good-en-768687b6cd" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: deploy-all-good
+    lang: es
+  name: deploy-all-good-es
+  namespace: default
+  uid: 4b69d4bb-a5a9-42d3-b20a-86766a6ceba7
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: deploy-all-good
+      lang: es
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: deploy-all-good
+        lang: es
+    spec:
+      containers:
+      - image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        securityContext:
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsUser: 1003870000
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-es
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+status:
+  availableReplicas: 1
+  conditions:
+  - message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - message: ReplicaSet "deploy-all-good-es-7b698b489b" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: deploy-all-good
+    lang: fr
+  name: deploy-all-good-fr
+  namespace: default
+  uid: 4fad2176-4ebd-4810-bb7e-4b199a38ae61
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: deploy-all-good
+      lang: fr
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: deploy-all-good
+        lang: fr
+    spec:
+      containers:
+      - image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        securityContext:
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsUser: 1003870000
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-fr
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+status:
+  availableReplicas: 1
+  conditions:
+  - message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - message: ReplicaSet "deploy-all-good-fr-7cb55f4c44" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: deploy-all-good
+    lang: en
+  name: deploy-all-good-en
+  namespace: default
+  uid: d29afd2b-3c39-4271-a523-76f91f9645bb
+spec:
+  clusterIP: 172.30.226.239
+  clusterIPs:
+  - 172.30.226.239
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: deploy-all-good
+    lang: en
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: deploy-all-good
+    lang: es
+  name: deploy-all-good-es
+  namespace: default
+  uid: 1b9b7a7d-fb31-434d-a02e-ff5b86f36342
+spec:
+  clusterIP: 172.30.84.118
+  clusterIPs:
+  - 172.30.84.118
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: deploy-all-good
+    lang: es
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: deploy-all-good
+    lang: fr
+  name: deploy-all-good-fr
+  namespace: default
+  uid: 17395b8b-fcbc-479e-812b-49424238fa97
+spec:
+  clusterIP: 172.30.146.225
+  clusterIPs:
+  - 172.30.146.225
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: deploy-all-good
+    lang: fr
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "1"
+    deployment.kubernetes.io/max-replicas: "2"
+    deployment.kubernetes.io/revision: "1"
+  labels:
+    app: deploy-all-good
+    lang: en
+    pod-template-hash: 768687b6cd
+  name: deploy-all-good-en-768687b6cd
+  namespace: default
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: deploy-all-good-en
+    uid: 29aa1945-6b75-47b8-bb8d-36f6bf1e15d8
+  uid: 625d170c-ea61-4932-9560-8fd33d396a4a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deploy-all-good
+      lang: en
+      pod-template-hash: 768687b6cd
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: deploy-all-good
+        lang: en
+        pod-template-hash: 768687b6cd
+    spec:
+      containers:
+      - image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        securityContext:
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsUser: 1003870000
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-en
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+status:
+  availableReplicas: 1
+  fullyLabeledReplicas: 1
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "1"
+    deployment.kubernetes.io/max-replicas: "2"
+    deployment.kubernetes.io/revision: "1"
+  labels:
+    app: deploy-all-good
+    lang: es
+    pod-template-hash: 7b698b489b
+  name: deploy-all-good-es-7b698b489b
+  namespace: default
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: deploy-all-good-es
+    uid: 4b69d4bb-a5a9-42d3-b20a-86766a6ceba7
+  uid: 7bcc1edd-5716-4112-a427-92ea167c7a30
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deploy-all-good
+      lang: es
+      pod-template-hash: 7b698b489b
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: deploy-all-good
+        lang: es
+        pod-template-hash: 7b698b489b
+    spec:
+      containers:
+      - image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        securityContext:
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsUser: 1003870000
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-es
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+status:
+  availableReplicas: 1
+  fullyLabeledReplicas: 1
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "1"
+    deployment.kubernetes.io/max-replicas: "2"
+    deployment.kubernetes.io/revision: "1"
+  labels:
+    app: deploy-all-good
+    lang: fr
+    pod-template-hash: 7cb55f4c44
+  name: deploy-all-good-fr-7cb55f4c44
+  namespace: default
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: deploy-all-good-fr
+    uid: 4fad2176-4ebd-4810-bb7e-4b199a38ae61
+  uid: 9a216ff2-6ef2-4fd5-a352-4c571209c963
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deploy-all-good
+      lang: fr
+      pod-template-hash: 7cb55f4c44
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: deploy-all-good
+        lang: fr
+        pod-template-hash: 7cb55f4c44
+    spec:
+      containers:
+      - image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        securityContext:
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsUser: 1003870000
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-fr
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+status:
+  availableReplicas: 1
+  fullyLabeledReplicas: 1
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  generateName: deploy-all-good-en-768687b6cd-
+  labels:
+    app: deploy-all-good
+    lang: en
+    pod-template-hash: 768687b6cd
+  name: deploy-all-good-en-768687b6cd-4zffk
+  namespace: default
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: deploy-all-good-en-768687b6cd
+    uid: 625d170c-ea61-4932-9560-8fd33d396a4a
+  uid: 63945651-81fd-4ee8-b91e-aeee4ad1028c
+spec:
+  containers:
+  - image: caddy:2
+    imagePullPolicy: IfNotPresent
+    name: default
+    ports:
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
+    securityContext:
+      runAsNonRoot: true
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /etc/caddy
+      name: caddy-config
+    - mountPath: /config/caddy
+      name: caddy-config-cache
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-qdplm
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  imagePullSecrets:
+  - name: default-dockercfg-zvszn
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext:
+    runAsUser: 1003870000
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoSchedule
+    key: node.kubernetes.io/memory-pressure
+    operator: Exists
+  volumes:
+  - configMap:
+      defaultMode: 420
+      name: caddy-config-en
+    name: caddy-config
+  - emptyDir: {}
+    name: caddy-config-cache
+  - name: kube-api-access-qdplm
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+      - configMap:
+          items:
+          - key: service-ca.crt
+            path: service-ca.crt
+          name: openshift-service-ca.crt
+status:
+  conditions:
+  - status: "True"
+    type: Initialized
+  - status: "True"
+    type: Ready
+  - status: "True"
+    type: ContainersReady
+  - status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: cri-o://a879e8b5308308366fa409639a4f4ca376adab3b22e3ffa3eba8a6619923d37d
+    image: docker.io/library/caddy:2
+    imageID: docker.io/library/caddy@sha256:39f1da8bd9f6405dc7f085062d532aee5abb3cb64a7526c5f468e15aa2525f89
+    lastState: {}
+    name: default
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2022-12-22T05:30:52Z"
+  hostIP: 10.0.139.87
+  phase: Running
+  podIP: 10.129.2.11
+  podIPs:
+  - ip: 10.129.2.11
+  qosClass: Burstable
+  startTime: "2022-12-22T05:30:47Z"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  generateName: deploy-all-good-es-7b698b489b-
+  labels:
+    app: deploy-all-good
+    lang: es
+    pod-template-hash: 7b698b489b
+  name: deploy-all-good-es-7b698b489b-wcgzm
+  namespace: default
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: deploy-all-good-es-7b698b489b
+    uid: 7bcc1edd-5716-4112-a427-92ea167c7a30
+  uid: a64a40b0-8d5a-4fbc-8d0e-e27d8157e580
+spec:
+  containers:
+  - image: caddy:2
+    imagePullPolicy: IfNotPresent
+    name: default
+    ports:
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
+    securityContext:
+      runAsNonRoot: true
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /etc/caddy
+      name: caddy-config
+    - mountPath: /config/caddy
+      name: caddy-config-cache
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-dc5nm
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  imagePullSecrets:
+  - name: default-dockercfg-zvszn
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext:
+    runAsUser: 1003870000
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoSchedule
+    key: node.kubernetes.io/memory-pressure
+    operator: Exists
+  volumes:
+  - configMap:
+      defaultMode: 420
+      name: caddy-config-es
+    name: caddy-config
+  - emptyDir: {}
+    name: caddy-config-cache
+  - name: kube-api-access-dc5nm
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+      - configMap:
+          items:
+          - key: service-ca.crt
+            path: service-ca.crt
+          name: openshift-service-ca.crt
+status:
+  conditions:
+  - status: "True"
+    type: Initialized
+  - status: "True"
+    type: Ready
+  - status: "True"
+    type: ContainersReady
+  - status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: cri-o://230081dd2cccd7985689fed3b7d1f1900baee91b4a95cdaad0e85aa1b58f7fb1
+    image: docker.io/library/caddy:2
+    imageID: docker.io/library/caddy@sha256:39f1da8bd9f6405dc7f085062d532aee5abb3cb64a7526c5f468e15aa2525f89
+    lastState: {}
+    name: default
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2022-12-22T05:30:52Z"
+  hostIP: 10.0.179.205
+  phase: Running
+  podIP: 10.128.2.15
+  podIPs:
+  - ip: 10.128.2.15
+  qosClass: Burstable
+  startTime: "2022-12-22T05:30:48Z"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  generateName: deploy-all-good-fr-7cb55f4c44-
+  labels:
+    app: deploy-all-good
+    lang: fr
+    pod-template-hash: 7cb55f4c44
+  name: deploy-all-good-fr-7cb55f4c44-hwflc
+  namespace: default
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: deploy-all-good-fr-7cb55f4c44
+    uid: 9a216ff2-6ef2-4fd5-a352-4c571209c963
+  uid: 8011ca65-6b96-40b3-9783-995122bf6bc5
+spec:
+  containers:
+  - image: caddy:2
+    imagePullPolicy: IfNotPresent
+    name: default
+    ports:
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
+    securityContext:
+      runAsNonRoot: true
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /etc/caddy
+      name: caddy-config
+    - mountPath: /config/caddy
+      name: caddy-config-cache
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-6m44g
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  imagePullSecrets:
+  - name: default-dockercfg-zvszn
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext:
+    runAsUser: 1003870000
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoSchedule
+    key: node.kubernetes.io/memory-pressure
+    operator: Exists
+  volumes:
+  - configMap:
+      defaultMode: 420
+      name: caddy-config-fr
+    name: caddy-config
+  - emptyDir: {}
+    name: caddy-config-cache
+  - name: kube-api-access-6m44g
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+      - configMap:
+          items:
+          - key: service-ca.crt
+            path: service-ca.crt
+          name: openshift-service-ca.crt
+status:
+  conditions:
+  - status: "True"
+    type: Initialized
+  - status: "True"
+    type: Ready
+  - status: "True"
+    type: ContainersReady
+  - status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: cri-o://73cc5968926aaa7d6dfe36d74d05ce5ee1dc5a7fafc150941b3ba550c72622b6
+    image: docker.io/library/caddy:2
+    imageID: docker.io/library/caddy@sha256:39f1da8bd9f6405dc7f085062d532aee5abb3cb64a7526c5f468e15aa2525f89
+    lastState: {}
+    name: default
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2022-12-22T05:30:52Z"
+  hostIP: 10.0.219.66
+  phase: Running
+  podIP: 10.131.0.21
+  podIPs:
+  - ip: 10.131.0.21
+  qosClass: Burstable
+  startTime: "2022-12-22T05:30:48Z"

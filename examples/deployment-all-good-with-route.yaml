@@ -2,29 +2,29 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: deploy-zero-replica
+  name: deploy-all-good
   labels:
-    app: deploy-zero-replica
+    app: deploy-all-good
 spec:
   port:
     targetPort: http
   to:
     kind: Service
-    name: deploy-zero-replica
+    name: deploy-all-good
     weight: 100
   wildcardPolicy: None
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: deploy-zero-replica
+  name: deploy-all-good
   labels:
-    app: deploy-zero-replica
+    app: deploy-all-good
 spec:
   type: ClusterIP
   sessionAffinity: None
   selector:
-    app: deploy-zero-replica
+    app: deploy-all-good
   ports:
   - name: http
     port: 8080
@@ -34,18 +34,18 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deploy-zero-replica
+  name: deploy-all-good
   labels:
-    app: deploy-zero-replica
+    app: deploy-all-good
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
-      app: deploy-zero-replica
+      app: deploy-all-good
   template:
     metadata:
       labels:
-        app: deploy-zero-replica
+        app: deploy-all-good
     spec:
       containers:
       - name: default
@@ -68,6 +68,7 @@ spec:
           mountPath: "/etc/caddy"
         - name: caddy-config-cache
           mountPath: "/config/caddy"
+        allowPrivilegeEscalation: false
       securityContext:
         runAsUser: 1003870000
       serviceAccount: default

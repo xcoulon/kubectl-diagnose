@@ -1,5 +1,4 @@
 # vscode-kubernetes-tools: exclude
-# (because OpenShift routes seem to be interpreted as pods ¯\_(ツ)_/¯)
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
@@ -88,5 +87,5 @@ data:
   Caddyfile: |-
     http://:8080
 
-    respond "Hello, world!"
+    respond "Everything is fine!"
   

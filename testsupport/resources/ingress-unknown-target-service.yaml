@@ -1,65 +1,46 @@
-# vscode-kubernetes-tools: exclude
---- 
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  labels:
-    app: invalid-service-target-port-int
-  name: invalid-service-target-port-int
-  namespace: test
-  uid: 00216abe-1452-4d1d-9ad9-48b68bf9096e
-spec:
-  port:
-    targetPort: http
-  to:
-    kind: Service
-    name: invalid-service-target-port-int
-    weight: 100
-  wildcardPolicy: None
-status:
-  ingress:
-  - conditions:
-    - status: "True"
-      type: Admitted
-    routerName: default
-    wildcardPolicy: None
 ---
-apiVersion: v1
-kind: Service
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
+  generation: 1
   labels:
-    app: invalid-service-target-port-int
-  name: invalid-service-target-port-int
+    app: unknown-target-service
+  name: unknown-target-service
   namespace: test
-  uid: c35030e4-a4fb-49b8-bbba-13d77908e8db
+  uid: b70d5692-60bf-4a2a-9d6d-e2ab08cdc740
 spec:
-  ports:
-  - name: http
-    port: 8080
-    protocol: TCP
-    targetPort: 8443
-  selector:
-    app: invalid-service-target-port-int
-  sessionAffinity: None
-  type: ClusterIP
+  rules:
+  - host: unknown-target-service.test
+    http:
+      paths:
+      - backend:
+          service:
+            name: unknown #invalid
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix
 status:
-  loadBalancer: {}
+  loadBalancer:
+    ingress:
+    - hostname: router-default.cluster.com
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  generation: 1
   labels:
-    app: invalid-service-target-port-int
-  name: invalid-service-target-port-int
+    app: unknown-target-service
+  name: unknown-target-service
   namespace: test
-  uid: e6ef5d6e-d3a4-4ee6-a198-a8b40f4d062a
+  uid: f94be8cb-3dab-410e-be45-c6a479594d9a
 spec:
   progressDeadlineSeconds: 600
   replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: invalid-service-target-port-int
+      app: unknown-target-service
   strategy:
     rollingUpdate:
       maxSurge: 25%
@@ -67,8 +48,9 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      creationTimestamp: null
       labels:
-        app: invalid-service-target-port-int
+        app: unknown-target-service
     spec:
       containers:
       - image: caddy:2
@@ -85,10 +67,10 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         securityContext:
           runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/caddy
           name: caddy-config
@@ -112,46 +94,80 @@ spec:
 status:
   availableReplicas: 1
   conditions:
+  - message: ReplicaSet "unknown-target-service-5ffc9c56cd" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
   - message: Deployment has minimum availability.
     reason: MinimumReplicasAvailable
     status: "True"
     type: Available
-  - message: ReplicaSet "invalid-service-target-port-int-bbcb4fd5d" has successfully progressed.
-    reason: NewReplicaSetAvailable
-    status: "True"
-    type: Progressing
-  observedGeneration: 1
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: unknown-target-service
+  name: unknown-target-service
+  namespace: test
+  uid: 64491c67-561f-4367-9d62-e50bf73ae307
+spec:
+  clusterIP: 172.30.109.7
+  clusterIPs:
+  - 172.30.109.7
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: unknown-target-service
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "1"
+    deployment.kubernetes.io/max-replicas: "2"
+    deployment.kubernetes.io/revision: "1"
+  generation: 1
   labels:
-    app: invalid-service-target-port-int
-    pod-template-hash: bbcb4fd5d
-  name: invalid-service-target-port-int-bbcb4fd5d
+    app: unknown-target-service
+    pod-template-hash: 5ffc9c56cd
+  name: unknown-target-service-5ffc9c56cd
   namespace: test
   ownerReferences:
   - apiVersion: apps/v1
     blockOwnerDeletion: true
     controller: true
     kind: Deployment
-    name: invalid-service-target-port-int
-    uid: e6ef5d6e-d3a4-4ee6-a198-a8b40f4d062a
-  uid: 16fcbf78-18b6-4261-87d5-a49f6dece5dd
+    name: unknown-target-service
+    uid: f94be8cb-3dab-410e-be45-c6a479594d9a
+  uid: 1431366e-ebfa-4f47-9255-e550eb1f214e
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: invalid-service-target-port-int
-      pod-template-hash: bbcb4fd5d
+      app: unknown-target-service
+      pod-template-hash: 5ffc9c56cd
   template:
     metadata:
+      creationTimestamp: null
       labels:
-        app: invalid-service-target-port-int
-        pod-template-hash: bbcb4fd5d
+        app: unknown-target-service
+        pod-template-hash: 5ffc9c56cd
     spec:
       containers:
       - image: caddy:2
@@ -168,10 +184,10 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         securityContext:
           runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/caddy
           name: caddy-config
@@ -195,26 +211,27 @@ spec:
 status:
   availableReplicas: 1
   fullyLabeledReplicas: 1
-  observedGeneration: 1
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
 ---
 apiVersion: v1
 kind: Pod
 metadata:
+  generateName: unknown-target-service-5ffc9c56cd-
   labels:
-    app: invalid-service-target-port-int
-    pod-template-hash: bbcb4fd5d
-  name: invalid-service-target-port-int-bbcb4fd5d-k8kg8
+    app: unknown-target-service
+    pod-template-hash: 5ffc9c56cd
+  name: unknown-target-service-5ffc9c56cd-zxjw6
   namespace: test
   ownerReferences:
   - apiVersion: apps/v1
     blockOwnerDeletion: true
     controller: true
     kind: ReplicaSet
-    name: invalid-service-target-port-int-bbcb4fd5d
-    uid: 16fcbf78-18b6-4261-87d5-a49f6dece5dd
-  uid: 8debbb7a-930b-4282-88c4-8a0d9b903275
+    name: unknown-target-service-5ffc9c56cd
+    uid: 1431366e-ebfa-4f47-9255-e550eb1f214e
+  uid: b7db2635-02e4-4dd0-a18e-ace0c0a8215a
 spec:
   containers:
   - image: caddy:2
@@ -236,7 +253,7 @@ spec:
       capabilities:
         drop:
         - ALL
-      runAsUser: 1003880000
+      runAsNonRoot: true
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
     volumeMounts:
@@ -245,27 +262,39 @@ spec:
     - mountPath: /config/caddy
       name: caddy-config-cache
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      name: kube-api-access-8x5pg
+      name: kube-api-access-td7j2
       readOnly: true
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
   imagePullSecrets:
-  - name: default-dockercfg-jhpvm
+  - name: default-dockercfg-r6jhg
   preemptionPolicy: PreemptLowerPriority
   priority: -3
   priorityClassName: sandbox-users-pods
   restartPolicy: Always
   schedulerName: default-scheduler
   securityContext:
-    fsGroup: 1003880000
-    runAsNonRoot: true
+    fsGroup: 1003870000
+    runAsUser: 1003870000
     seLinuxOptions:
-      level: s0:c62,c49
+      level: s0:c62,c44
     seccompProfile:
       type: RuntimeDefault
   serviceAccount: default
   serviceAccountName: default
   terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoSchedule
+    key: node.kubernetes.io/memory-pressure
+    operator: Exists
   volumes:
   - configMap:
       defaultMode: 420
@@ -273,6 +302,29 @@ spec:
     name: caddy-config
   - emptyDir: {}
     name: caddy-config-cache
+  - name: kube-api-access-td7j2
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+      - configMap:
+          items:
+          - key: service-ca.crt
+            path: service-ca.crt
+          name: openshift-service-ca.crt
 status:
   conditions:
   - status: "True"
@@ -284,7 +336,7 @@ status:
   - status: "True"
     type: PodScheduled
   containerStatuses:
-  - containerID: cri-o://e809a65c66c24c994417e35cab6538653167d6ad26c0257649346360b9e527e2
+  - containerID: cri-o://bf8c41bb6f918f1aca7b94c4de83e3a193b16b0f756f25bff50e5adfe15d9fa5
     image: docker.io/library/caddy:2
     imageID: docker.io/library/caddy@sha256:50743fc6130295e9e8feccd8b2f437d8c472f626bf277dc873734ed98219f44f
     lastState: {}
@@ -294,4 +346,16 @@ status:
     started: true
     state:
       running:
-        startedAt: "2022-11-16T05:58:25Z"
+        startedAt: "2022-12-16T06:37:55Z"
+  phase: Running
+  startTime: "2022-12-16T06:37:52Z"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config-port-8080
+data:
+  Caddyfile: |-
+    http://:8080
+
+    respond "Everything is fine!"

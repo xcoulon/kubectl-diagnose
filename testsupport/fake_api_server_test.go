@@ -15,6 +15,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -350,6 +351,96 @@ var _ = Describe("fake api-server endpoints", func() {
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp).To(HaveHTTPStatus(http.StatusInternalServerError))
+	})
+
+	It("should get single ingress", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/networking.k8s.io/v1/namespaces/test/ingresses/all-good")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveBodyOfType(&networkingv1.Ingress{}))
+	})
+
+	It("should get no ingress", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/networking.k8s.io/v1/namespaces/test/ingresses/unknown")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
+	})
+
+	It("should fail to get single ingress", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/networking.k8s.io/v1/namespaces/test/ingresses/error")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusInternalServerError))
+	})
+
+	It("should get single ingressclass", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/networking.k8s.io/v1/ingressclasses/nginx")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveBodyOfType(&networkingv1.IngressClass{}))
+	})
+
+	It("should get no ingressclass", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/networking.k8s.io/v1/namespaces/test/ingresses/unknown")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusNotFound))
+	})
+
+	It("should fail to get single ingressclass", func() {
+		// given
+		logger := logr.New(io.Discard)
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/networking.k8s.io/v1/namespaces/test/ingresses/forbidden")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusForbidden))
 	})
 
 	It("should list 1 event by fieldSelector", func() {

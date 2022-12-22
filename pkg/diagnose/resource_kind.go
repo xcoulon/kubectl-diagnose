@@ -10,6 +10,8 @@ type ResourceKind string
 
 const (
 	Route                 = ResourceKind("Route")
+	Ingress               = ResourceKind("Ingress")
+	IngressClass          = ResourceKind("IngressClass")
 	Service               = ResourceKind("Service")
 	Deployment            = ResourceKind("Deployment")
 	ReplicaSet            = ResourceKind("ReplicaSet")
@@ -24,6 +26,10 @@ func NewResourceKind(kind string) ResourceKind {
 	switch strings.ToLower(kind) {
 	case "routes", "route", "route.route.openshift.io":
 		return Route
+	case "ingresses", "ingress", "ing", "ingress.networking.k8s.io":
+		return Ingress
+	case "ingressclasses", "ingressclass", "ingressclass.networking.k8s.io":
+		return IngressClass
 	case "services", "service", "svc":
 		return Service
 	case "deployments", "deployment", "deploy", "deployment.apps":
@@ -48,5 +54,5 @@ func (k ResourceKind) Matches(kind schema.ObjectKind) bool {
 }
 
 func (k ResourceKind) String() string {
-	return string(k)
+	return strings.ToLower(string(k))
 }
