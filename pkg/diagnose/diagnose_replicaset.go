@@ -14,23 +14,15 @@ import (
 )
 
 func diagnoseReplicaSet(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
-	rs, err := getReplicaSet(cfg, namespace, name)
+	cl := kubernetes.NewForConfigOrDie(cfg)
+	rs, err := cl.AppsV1().ReplicaSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
-	return checkReplicaSet(logger, cfg, rs)
+	return checkReplicaSet(logger, cl, rs)
 }
 
-func getReplicaSet(cfg *rest.Config, namespace, name string) (*appsv1.ReplicaSet, error) {
-	cl, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-	return cl.AppsV1().ReplicaSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-
-}
-
-func checkReplicaSet(logger logr.Logger, cfg *rest.Config, rs *appsv1.ReplicaSet) (bool, error) {
+func checkReplicaSet(logger logr.Logger, cl *kubernetes.Clientset, rs *appsv1.ReplicaSet) (bool, error) {
 	logger.Infof("👀 checking replicaset '%s' in namespace '%s'...", rs.Name, rs.Namespace)
 	for _, c := range rs.Status.Conditions {
 		if c.Type == appsv1.ReplicaSetReplicaFailure &&
@@ -40,15 +32,15 @@ func checkReplicaSet(logger logr.Logger, cfg *rest.Config, rs *appsv1.ReplicaSet
 			return true, nil
 		}
 	}
-	cl, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return false, err
-	}
 	// check the `.spec.replicas`
 	if rs.Spec.Replicas != nil && *rs.Spec.Replicas == 0 {
 		for _, ownerRef := range rs.OwnerReferences {
 			if ownerRef.Kind == "Deployment" {
-				return diagnoseDeployment(logger, cfg, rs.Namespace, ownerRef.Name)
+				d, err := cl.AppsV1().Deployments(rs.Namespace).Get(context.TODO(), ownerRef.Name, metav1.GetOptions{})
+				if err != nil {
+					return false, err
+				}
+				return checkDeployment(logger, cl, d)
 			}
 		}
 	}
@@ -72,7 +64,7 @@ func checkReplicaSet(logger logr.Logger, cfg *rest.Config, rs *appsv1.ReplicaSet
 		for _, ownerRef := range pod.OwnerReferences {
 			if ownerRef.UID == rs.UID {
 				// pod is "owned" by this replicaset
-				if found, err := checkPod(logger, cfg, &pod); err != nil {
+				if found, err := checkPod(logger, cl, &pod); err != nil {
 					return false, err
 				} else if found {
 					return true, nil

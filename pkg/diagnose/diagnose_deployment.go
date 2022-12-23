@@ -14,22 +14,15 @@ import (
 )
 
 func diagnoseDeployment(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
-	d, err := getDeployment(cfg, namespace, name)
+	cl := kubernetes.NewForConfigOrDie(cfg)
+	d, err := cl.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
-	return checkDeployment(logger, cfg, d)
+	return checkDeployment(logger, cl, d)
 }
 
-func getDeployment(cfg *rest.Config, namespace, name string) (*appsv1.Deployment, error) {
-	cl, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-	return cl.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-}
-
-func checkDeployment(logger logr.Logger, cfg *rest.Config, d *appsv1.Deployment) (bool, error) {
+func checkDeployment(logger logr.Logger, cl *kubernetes.Clientset, d *appsv1.Deployment) (bool, error) {
 	logger.Infof("👀 checking deployment '%s' in namespace '%s'...", d.Name, d.Namespace)
 	found := false
 	for _, c := range d.Status.Conditions {
@@ -37,10 +30,6 @@ func checkDeployment(logger logr.Logger, cfg *rest.Config, d *appsv1.Deployment)
 			logger.Errorf("👻 %s", c.Message)
 			found = true
 		}
-	}
-	cl, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return false, err
 	}
 	// check the `.spec.replicas`
 	if d.Spec.Replicas != nil && *d.Spec.Replicas == 0 {
@@ -62,7 +51,7 @@ func checkDeployment(logger logr.Logger, cfg *rest.Config, d *appsv1.Deployment)
 		for _, ref := range rs.OwnerReferences {
 			if ref.UID == d.UID {
 				// rs is "owned" by this deployment
-				f, err := checkReplicaSet(logger, cfg, &rs)
+				f, err := checkReplicaSet(logger, cl, &rs)
 				if err != nil {
 					return false, err
 				}

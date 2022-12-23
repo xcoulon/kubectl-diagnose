@@ -8,32 +8,37 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
 func diagnosePod(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
-	pod, err := getPod(cfg, namespace, name)
+	cl := kubernetes.NewForConfigOrDie(cfg)
+	pod, err := cl.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
-	return checkPod(logger, cfg, pod)
+	return checkPod(logger, cl, pod)
 }
 
-func getPod(cfg *rest.Config, namespace, name string) (*corev1.Pod, error) {
-	cl, err := kubernetes.NewForConfig(cfg)
+func findPods(cl *kubernetes.Clientset, namespace string, selector map[string]string) ([]corev1.Pod, error) {
+	// find all pods with the associated label selector in the same namespace
+	pods, err := cl.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labels.Set(selector).String(),
+	})
 	if err != nil {
 		return nil, err
 	}
-	return cl.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	return pods.Items, nil
 }
 
-func checkPod(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, error) {
+func checkPod(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bool, error) {
 	logger.Infof("👀 checking pod '%s' in namespace '%s'...", pod.Name, pod.Namespace)
 	found := false
 	if pod.Status.Phase != corev1.PodRunning {
 		// check events associated with the pod
-		f, err := checkEvents(logger, cfg, pod)
+		f, err := checkEvents(logger, cl, pod)
 		if err != nil {
 			return false, err
 		}
@@ -48,7 +53,7 @@ func checkPod(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, erro
 				logger.Errorf("👻 %s", c.Message)
 			}
 			// also, check the container statuses
-			f, err := diagnoseContainer(logger, cfg, pod)
+			f, err := diagnoseContainer(logger, cl, pod)
 			if err != nil {
 				return false, err
 			}
@@ -57,11 +62,11 @@ func checkPod(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, erro
 			// check if there's a pending PVC
 			for _, v := range pod.Spec.Volumes {
 				if v.PersistentVolumeClaim != nil {
-					pvc, err := getPersistentVolumeClaim(cfg, pod.Namespace, v.PersistentVolumeClaim.ClaimName)
+					pvc, err := cl.CoreV1().PersistentVolumeClaims(pod.Namespace).Get(context.TODO(), v.PersistentVolumeClaim.ClaimName, metav1.GetOptions{})
 					if err != nil {
 						return false, err
 					}
-					f, err := checkPersistentVolumeClaim(logger, cfg, pvc)
+					f, err := checkPersistentVolumeClaim(logger, cl, pvc)
 					if err != nil {
 						return false, err
 					}
@@ -75,7 +80,7 @@ func checkPod(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, erro
 
 // check the status of the pod containers
 // return the list of containers' name whose status is `waiting`
-func diagnoseContainer(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (bool, error) {
+func diagnoseContainer(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bool, error) {
 	found := false
 	for _, s := range pod.Status.ContainerStatuses {
 		// if container not in `Running` state
@@ -92,7 +97,7 @@ func diagnoseContainer(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (b
 			s.LastTerminationState.Running != nil ||
 			s.LastTerminationState.Terminated != nil ||
 			s.LastTerminationState.Waiting != nil {
-			f, err := checkContainerLogs(logger, cfg, pod, s.Name)
+			f, err := checkContainerLogs(logger, cl, pod, s.Name)
 			if err != nil {
 				return false, err
 			}
@@ -105,11 +110,7 @@ func diagnoseContainer(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod) (b
 	return found, nil
 }
 
-func checkContainerLogs(logger logr.Logger, cfg *rest.Config, pod *corev1.Pod, container string) (bool, error) {
-	cl, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return false, err
-	}
+func checkContainerLogs(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod, container string) (bool, error) {
 	found := false
 	logger.Debugf("👀 checking '%s' container logs...", container)
 	logs, err := cl.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: container}).DoRaw(context.TODO())
