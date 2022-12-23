@@ -1,7 +1,6 @@
 package logr
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 
@@ -15,44 +14,52 @@ type Logger interface {
 }
 
 type DefaultLogger struct {
-	buff     *bytes.Buffer
 	out      io.Writer
-	loglevel int
+	loglevel Level
 }
 
-func New(out io.Writer) *DefaultLogger {
-	buff := bytes.NewBuffer(nil)
+func New(out io.Writer, level Level) Logger {
 	return &DefaultLogger{
-		buff:     buff,
-		out:      io.MultiWriter(out, buff),
-		loglevel: 0,
+		out:      out,
+		loglevel: level,
 	}
 }
 
+type Level string
+
 const (
-	DebugLevel int = 1
+	DebugLevel Level = "debug"
+	InfoLevel  Level = "info"
+	ErrorLevel Level = "error"
 )
 
-func (l *DefaultLogger) SetLevel(level int) {
-	l.loglevel = level
+func ParseLevel(level string) (Level, error) {
+	switch level {
+	case "debug":
+		return DebugLevel, nil
+	case "info":
+		return InfoLevel, nil
+	case "error":
+		return ErrorLevel, nil
+	default:
+		var l Level
+		return l, fmt.Errorf("invalid level: '%s'", l)
+	}
 }
 
 func (l *DefaultLogger) Debugf(msg string, args ...interface{}) {
-	if l.loglevel == 0 {
-		return
+	if l.loglevel == DebugLevel {
+		fmt.Fprintln(l.out, fmt.Sprintf(msg, args...))
 	}
-	fmt.Fprintln(l.out, fmt.Sprintf(msg, args...))
 }
 
 func (l *DefaultLogger) Infof(msg string, args ...interface{}) {
-	fmt.Fprintln(l.out, fmt.Sprintf(msg, args...))
+	if l.loglevel == DebugLevel || l.loglevel == InfoLevel {
+		fmt.Fprintln(l.out, fmt.Sprintf(msg, args...))
+	}
 }
 
 func (l *DefaultLogger) Errorf(msg string, args ...interface{}) {
 	c := color.New(color.FgRed)
 	c.Fprintln(l.out, fmt.Sprintf(msg, args...))
-}
-
-func (l *DefaultLogger) Output() string {
-	return l.buff.String()
 }

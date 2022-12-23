@@ -27,7 +27,7 @@ func NewDiagnoseCmd() *cobra.Command {
 
 	var kubeconfig string
 	var namespace string
-	var loglevel int
+	var loglevel string
 
 	cmd := &cobra.Command{
 		Use:           "kubectl-diagnose (TYPE NAME | TYPE/NAME)",
@@ -37,8 +37,11 @@ func NewDiagnoseCmd() *cobra.Command {
 		Args:          cobra.RangeArgs(1, 2),
 		Version:       version(),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			logger := logr.New(cmd.OutOrStdout())
-			logger.SetLevel(loglevel)
+			l, err := logr.ParseLevel(loglevel)
+			if err != nil {
+				return err
+			}
+			logger := logr.New(cmd.OutOrStdout(), l)
 			kind, name, err := getResourceTypeName(args)
 			if err != nil {
 				return err
@@ -70,7 +73,7 @@ func NewDiagnoseCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&kubeconfig, "kubeconfig", "", "", "(optional) absolute path to the kubeconfig file")
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "(optional) the namespace scope for this CLI request")
-	cmd.Flags().IntVarP(&loglevel, "loglevel", "v", 0, "log level for V logs (set to 1 or higher to display DEBUG messages)")
+	cmd.Flags().StringVar(&loglevel, "loglevel", "info", "log level to set [debug|info|error|]")
 
 	return cmd
 }

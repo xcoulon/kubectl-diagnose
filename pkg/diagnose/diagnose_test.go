@@ -3,12 +3,10 @@ package diagnose_test
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 
 	"github.com/xcoulon/kubectl-diagnose/pkg/diagnose"
-	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
 	"github.com/xcoulon/kubectl-diagnose/testsupport"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -23,7 +21,7 @@ import (
 var _ = DescribeTable("should detect missing route target service",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/route-unknown-target-service.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -43,7 +41,7 @@ var _ = DescribeTable("should detect missing route target service",
 var _ = DescribeTable("should detect invalid route target port as string",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/route-invalid-target-port-str.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -63,7 +61,7 @@ var _ = DescribeTable("should detect invalid route target port as string",
 var _ = DescribeTable("should detect invalid route target port as int",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/route-invalid-target-port-int.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -86,7 +84,7 @@ var _ = DescribeTable("should detect invalid route target port as int",
 var _ = DescribeTable("should detect missing target service",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/ingress-unknown-target-service.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -106,7 +104,7 @@ var _ = DescribeTable("should detect missing target service",
 var _ = DescribeTable("should detect invalid service port",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/ingress-invalid-service-port.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -126,7 +124,7 @@ var _ = DescribeTable("should detect invalid service port",
 var _ = DescribeTable("should detect invalid service name",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/ingress-invalid-service-name.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -146,7 +144,7 @@ var _ = DescribeTable("should detect invalid service name",
 var _ = DescribeTable("should detect invalid ingressclassname",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/ingress-invalid-ingressclassname.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -166,7 +164,7 @@ var _ = DescribeTable("should detect invalid ingressclassname",
 var _ = DescribeTable("should not fail when get ingressclass is forbidden", // ingressclasses are cluster-scoped resources and user may not be allowed to get/list such resources
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/ingress-forbidden-ingressclassname.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -191,7 +189,7 @@ var _ = DescribeTable("should not fail when get ingressclass is forbidden", // i
 var _ = DescribeTable("should detect no matching pods",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/service-no-matching-pods.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -217,7 +215,7 @@ var _ = DescribeTable("should detect no matching pods",
 var _ = DescribeTable("should detect invalid service target port as string",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/service-invalid-target-port-str.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -242,7 +240,7 @@ var _ = DescribeTable("should detect invalid service target port as string",
 var _ = DescribeTable("should detect invalid service target port as int",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/service-invalid-target-port-int.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -270,7 +268,7 @@ var _ = DescribeTable("should detect invalid service target port as int",
 var _ = DescribeTable("should detect zero replicas specified in deployment",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-zero-replica.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -304,7 +302,7 @@ var _ = DescribeTable("should detect zero replicas specified in deployment",
 var _ = DescribeTable("should detect invalid serviceaccount specified in deployment",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-service-account-not-found.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -341,7 +339,7 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in deploym
 var _ = DescribeTable("should detect zero replicas specified in deployment",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/statefulset-zero-replica.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -374,7 +372,7 @@ var _ = DescribeTable("should detect zero replicas specified in deployment",
 var _ = DescribeTable("should detect invalid serviceaccount specified in statefulset",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/statefulset-service-account-not-found.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -407,7 +405,7 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in statefu
 var _ = DescribeTable("should detect invalid storageclass specified in statefulset",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/statefulset-invalid-storageclass.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -448,7 +446,7 @@ var _ = DescribeTable("should detect invalid storageclass specified in statefuls
 var _ = DescribeTable("should detect deployment pod container in CrashLoopBackOff status",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-crash-loop-back-off.yaml", "resources/deployment-pod-crash-loop-back-off.logs")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -488,7 +486,7 @@ var _ = DescribeTable("should detect deployment pod container in CrashLoopBackOf
 var _ = DescribeTable("should detect deployment pod container in ImagePullBackOff status",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-image-pull-back-off.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -526,7 +524,7 @@ var _ = DescribeTable("should detect deployment pod container in ImagePullBackOf
 var _ = DescribeTable("should detect deployment pod container with readiness probe error",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-readiness-probe-error.yaml", "resources/deployment-pod-readiness-probe-error.logs")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -567,7 +565,7 @@ var _ = DescribeTable("should detect deployment pod container with readiness pro
 var _ = DescribeTable("should detect deployment pod container with unknown configmap mount",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-unknown-configmap.yaml") // no logs, container is not created
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -608,7 +606,7 @@ var _ = DescribeTable("should detect deployment pod container with unknown confi
 var _ = DescribeTable("should detect statefulset pod container with unknown configmap mount",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/statefulset-pod-unknown-configmap.yaml") // no logs, container is not created
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -648,7 +646,7 @@ var _ = DescribeTable("should detect statefulset pod container with unknown conf
 var _ = DescribeTable("should handle internal server errors",
 	func(gr string, kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger)
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -670,7 +668,7 @@ var _ = DescribeTable("should handle internal server errors",
 var _ = DescribeTable("should handle not found errors",
 	func(gr string, kind diagnose.ResourceKind, namespace, name string) {
 		// given
-		logger := logr.New(io.Discard)
+		logger := testsupport.NewLogger()
 		apiserver, err := testsupport.NewFakeAPIServer(logger)
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
