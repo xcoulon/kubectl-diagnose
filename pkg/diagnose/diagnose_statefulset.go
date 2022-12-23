@@ -13,22 +13,15 @@ import (
 )
 
 func diagnoseStatefulSet(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
-	sts, err := getStatefulSet(cfg, namespace, name)
+	cl := kubernetes.NewForConfigOrDie(cfg)
+	sts, err := cl.AppsV1().StatefulSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
-	return checkStatefulSet(logger, cfg, sts)
+	return checkStatefulSet(logger, cl, sts)
 }
 
-func getStatefulSet(cfg *rest.Config, namespace, name string) (*appsv1.StatefulSet, error) {
-	cl, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-	return cl.AppsV1().StatefulSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-}
-
-func checkStatefulSet(logger logr.Logger, cfg *rest.Config, sts *appsv1.StatefulSet) (bool, error) {
+func checkStatefulSet(logger logr.Logger, cl *kubernetes.Clientset, sts *appsv1.StatefulSet) (bool, error) {
 	logger.Infof("👀 checking statefulset '%s' in namespace '%s'...", sts.Name, sts.Namespace)
 	found := false
 	// check the replicas
@@ -39,16 +32,12 @@ func checkStatefulSet(logger logr.Logger, cfg *rest.Config, sts *appsv1.Stateful
 		return true, nil
 	}
 	// check events associated with the statefulset
-	if found, err := checkEvents(logger, cfg, sts); found || err != nil {
+	if found, err := checkEvents(logger, cl, sts); found || err != nil {
 		return found, err
 	}
 
 	logger.Debugf("👀 checking statefulset status...")
 	// checking the pods
-	cl, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return false, err
-	}
 	// TODO: remove code duplication with ReplicaSet checks
 	selector := labels.Set(sts.Spec.Selector.MatchLabels).String()
 	pods, err := cl.CoreV1().Pods(sts.Namespace).List(context.TODO(), metav1.ListOptions{
@@ -69,7 +58,7 @@ func checkStatefulSet(logger logr.Logger, cfg *rest.Config, sts *appsv1.Stateful
 		for _, ownerRef := range pod.OwnerReferences {
 			if ownerRef.UID == sts.UID {
 				// pod is "owned" by this sts
-				if found, err := checkPod(logger, cfg, &pod); err != nil {
+				if found, err := checkPod(logger, cl, &pod); err != nil {
 					return false, err
 				} else if found {
 					return true, nil

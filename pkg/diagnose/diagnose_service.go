@@ -12,37 +12,25 @@ import (
 )
 
 func diagnoseService(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
-	svc, err := getService(cfg, namespace, name)
+	cl := kubernetes.NewForConfigOrDie(cfg)
+	svc, err := cl.CoreV1().Services(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
-	return checkService(logger, cfg, svc)
+	return checkService(logger, cl, svc)
 }
 
-func getService(cfg *rest.Config, namespace, name string) (*corev1.Service, error) {
-	cl, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-	return cl.CoreV1().Services(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-}
-
-func checkService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) (bool, error) {
+func checkService(logger logr.Logger, cl *kubernetes.Clientset, svc *corev1.Service) (bool, error) {
 	logger.Infof("👀 checking service '%s' in namespace '%s'...", svc.Name, svc.Namespace)
-	// find all pods with the associated label selector in the same namespace
-	cl, err := kubernetes.NewForConfig(cfg)
+
+	pods, err := findPods(cl, svc.Namespace, svc.Spec.Selector)
 	if err != nil {
 		return false, err
 	}
-	selector := labels.Set(svc.Spec.Selector).String()
-	pods, err := cl.CoreV1().Pods(svc.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: selector,
-	})
-	if err != nil {
-		return false, err
-	}
+
 	// if there is no pod matching the selector
-	if len(pods.Items) == 0 {
+	if len(pods) == 0 {
+		sel := labels.Set(svc.Spec.Selector).AsSelector()
 		// TODO: try with Deployment first or instead of ReplicaSet
 		// attempt to find the ReplicaSet which was supposed to create the Pods (if there is one)
 		rss, err := cl.AppsV1().ReplicaSets(svc.Namespace).List(context.TODO(), metav1.ListOptions{})
@@ -50,13 +38,9 @@ func checkService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) (bo
 			return false, err
 		}
 		for _, rs := range rss.Items {
-			s, err := labels.Parse(selector)
-			if err != nil {
-				return false, err
-			}
-			if s.Matches(labels.Set(rs.Spec.Selector.MatchLabels)) {
+			if sel.Matches(labels.Set(rs.Spec.Selector.MatchLabels)) {
 				obj := rs
-				found, err := checkReplicaSet(logger, cfg, &obj)
+				found, err := checkReplicaSet(logger, cl, &obj)
 				if err != nil {
 					return false, err
 				}
@@ -71,13 +55,10 @@ func checkService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) (bo
 			return false, err
 		}
 		for _, rs := range stss.Items {
-			s, err := labels.Parse(selector)
-			if err != nil {
-				return false, err
-			}
-			if s.Matches(labels.Set(rs.Spec.Selector.MatchLabels)) {
+			sel := labels.Set(svc.Spec.Selector).AsSelector()
+			if sel.Matches(labels.Set(rs.Spec.Selector.MatchLabels)) {
 				obj := rs
-				found, err := checkStatefulSet(logger, cfg, &obj)
+				found, err := checkStatefulSet(logger, cl, &obj)
 				if err != nil {
 					return false, err
 				}
@@ -87,12 +68,12 @@ func checkService(logger logr.Logger, cfg *rest.Config, svc *corev1.Service) (bo
 			}
 		}
 
-		logger.Errorf("👻 no pods matching label selector '%s' found in namespace '%s'", selector, svc.Namespace)
-		logger.Infof("💡 you may want to verify that the pods exist and their labels match '%s'", selector)
+		logger.Errorf("👻 no pods matching label selector '%s' found in namespace '%s'", sel.String(), svc.Namespace)
+		logger.Infof("💡 you may want to verify that the pods exist and their labels match '%s'", sel.String())
 		return true, nil
 	}
 pods:
-	for _, pod := range pods.Items {
+	for _, pod := range pods {
 		logger.Debugf("checking pod '%s'...", pod.Name)
 		for _, sp := range svc.Spec.Ports {
 			// check the svc/pod port bindings
@@ -112,7 +93,7 @@ pods:
 				return true, nil
 			}
 			p := pod
-			if found, err := checkPod(logger, cfg, &p); err != nil {
+			if found, err := checkPod(logger, cl, &p); err != nil {
 				return false, err
 			} else if found {
 				return true, nil

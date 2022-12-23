@@ -5,7 +5,7 @@ metadata:
   labels:
     app: deploy-all-good
   name: deploy-all-good
-  namespace: default
+  namespace: test
   uid: 4af0fd56-7871-410d-9ed5-98aed0012e5d
 spec:
   rules:
@@ -45,7 +45,7 @@ metadata:
     app: deploy-all-good
     lang: en
   name: deploy-all-good-en
-  namespace: default
+  namespace: test
   uid: 29aa1945-6b75-47b8-bb8d-36f6bf1e15d8
 spec:
   progressDeadlineSeconds: 600
@@ -129,7 +129,7 @@ metadata:
     app: deploy-all-good
     lang: es
   name: deploy-all-good-es
-  namespace: default
+  namespace: test
   uid: 4b69d4bb-a5a9-42d3-b20a-86766a6ceba7
 spec:
   progressDeadlineSeconds: 600
@@ -213,7 +213,7 @@ metadata:
     app: deploy-all-good
     lang: fr
   name: deploy-all-good-fr
-  namespace: default
+  namespace: test
   uid: 4fad2176-4ebd-4810-bb7e-4b199a38ae61
 spec:
   progressDeadlineSeconds: 600
@@ -297,7 +297,7 @@ metadata:
     app: deploy-all-good
     lang: en
   name: deploy-all-good-en
-  namespace: default
+  namespace: test
   uid: d29afd2b-3c39-4271-a523-76f91f9645bb
 spec:
   clusterIP: 172.30.226.239
@@ -327,7 +327,7 @@ metadata:
     app: deploy-all-good
     lang: es
   name: deploy-all-good-es
-  namespace: default
+  namespace: test
   uid: 1b9b7a7d-fb31-434d-a02e-ff5b86f36342
 spec:
   clusterIP: 172.30.84.118
@@ -357,7 +357,7 @@ metadata:
     app: deploy-all-good
     lang: fr
   name: deploy-all-good-fr
-  namespace: default
+  namespace: test
   uid: 17395b8b-fcbc-479e-812b-49424238fa97
 spec:
   clusterIP: 172.30.146.225
@@ -392,7 +392,7 @@ metadata:
     lang: en
     pod-template-hash: 768687b6cd
   name: deploy-all-good-en-768687b6cd
-  namespace: default
+  namespace: test
   ownerReferences:
   - apiVersion: apps/v1
     blockOwnerDeletion: true
@@ -474,7 +474,7 @@ metadata:
     lang: es
     pod-template-hash: 7b698b489b
   name: deploy-all-good-es-7b698b489b
-  namespace: default
+  namespace: test
   ownerReferences:
   - apiVersion: apps/v1
     blockOwnerDeletion: true
@@ -556,7 +556,7 @@ metadata:
     lang: fr
     pod-template-hash: 7cb55f4c44
   name: deploy-all-good-fr-7cb55f4c44
-  namespace: default
+  namespace: test
   ownerReferences:
   - apiVersion: apps/v1
     blockOwnerDeletion: true
@@ -635,7 +635,7 @@ metadata:
     lang: en
     pod-template-hash: 768687b6cd
   name: deploy-all-good-en-768687b6cd-4zffk
-  namespace: default
+  namespace: test
   ownerReferences:
   - apiVersion: apps/v1
     blockOwnerDeletion: true
@@ -766,7 +766,7 @@ metadata:
     lang: es
     pod-template-hash: 7b698b489b
   name: deploy-all-good-es-7b698b489b-wcgzm
-  namespace: default
+  namespace: test
   ownerReferences:
   - apiVersion: apps/v1
     blockOwnerDeletion: true
@@ -897,7 +897,7 @@ metadata:
     lang: fr
     pod-template-hash: 7cb55f4c44
   name: deploy-all-good-fr-7cb55f4c44-hwflc
-  namespace: default
+  namespace: test
   ownerReferences:
   - apiVersion: apps/v1
     blockOwnerDeletion: true

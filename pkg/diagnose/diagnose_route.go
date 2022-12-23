@@ -9,31 +9,25 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
 func diagnoseRoute(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
-	r, err := getRoute(cfg, namespace, name)
+	r, err := routeclient.NewForConfigOrDie(cfg).RouteV1().Routes(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
-	return checkRoute(logger, cfg, r)
-}
-
-func getRoute(cfg *rest.Config, namespace, name string) (*routev1.Route, error) {
-	cl, err := routeclient.NewForConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-	return cl.RouteV1().Routes(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	cl := kubernetes.NewForConfigOrDie(cfg)
+	return checkRoute(logger, cl, r)
 }
 
 // checks:
 // - the route's target port on pods selected by the service this route points to.
 // (If this is a string, it will be looked up as a named port in the target endpoints port list)
-func checkRoute(logger logr.Logger, cfg *rest.Config, route *routev1.Route) (bool, error) {
+func checkRoute(logger logr.Logger, cl *kubernetes.Clientset, route *routev1.Route) (bool, error) {
 	logger.Infof("👀 checking route '%s' in namespace '%s'...", route.Name, route.Namespace)
-	svc, err := getService(cfg, route.Namespace, route.Spec.To.Name)
+	svc, err := cl.CoreV1().Services(route.Namespace).Get(context.TODO(), route.Spec.To.Name, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		logger.Errorf("👻 unable to find service '%s'", route.Spec.To.Name)
 		return true, nil
@@ -46,7 +40,7 @@ func checkRoute(logger logr.Logger, cfg *rest.Config, route *routev1.Route) (boo
 	case intstr.Int:
 		for _, port := range svc.Spec.Ports {
 			if port.Port == targetPort.IntVal {
-				return checkService(logger, cfg, svc)
+				return checkService(logger, cl, svc)
 			}
 		}
 		logger.Errorf("👻 route target port '%d' is not defined in service '%s'", targetPort.IntVal, svc.Name)
@@ -54,7 +48,7 @@ func checkRoute(logger logr.Logger, cfg *rest.Config, route *routev1.Route) (boo
 	default:
 		for _, port := range svc.Spec.Ports {
 			if port.Name == targetPort.StrVal {
-				return checkService(logger, cfg, svc)
+				return checkService(logger, cl, svc)
 			}
 		}
 		logger.Errorf("👻 route target port '%s' is not defined in service '%s'", targetPort.StrVal, svc.Name)
