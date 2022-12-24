@@ -31,16 +31,16 @@ func checkService(logger logr.Logger, cl *kubernetes.Clientset, svc *corev1.Serv
 	// if there is no pod matching the selector
 	if len(pods) == 0 {
 		sel := labels.Set(svc.Spec.Selector).AsSelector()
-		// TODO: try with Deployment first or instead of ReplicaSet
-		// attempt to find the ReplicaSet which was supposed to create the Pods (if there is one)
-		rss, err := cl.AppsV1().ReplicaSets(svc.Namespace).List(context.TODO(), metav1.ListOptions{})
+		// attempt to find the Deployment which was supposed to create the Pods (if there is one)
+		deploys, err := cl.AppsV1().Deployments(svc.Namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return false, err
 		}
-		for _, rs := range rss.Items {
-			if sel.Matches(labels.Set(rs.Spec.Selector.MatchLabels)) {
-				obj := rs
-				found, err := checkReplicaSet(logger, cl, &obj)
+		for _, deploy := range deploys.Items {
+			sel := labels.Set(svc.Spec.Selector).AsSelector()
+			if sel.Matches(labels.Set(deploy.Spec.Selector.MatchLabels)) {
+				obj := deploy
+				found, err := checkDeployment(logger, cl, &obj)
 				if err != nil {
 					return false, err
 				}
@@ -55,7 +55,6 @@ func checkService(logger logr.Logger, cl *kubernetes.Clientset, svc *corev1.Serv
 			return false, err
 		}
 		for _, rs := range stss.Items {
-			sel := labels.Set(svc.Spec.Selector).AsSelector()
 			if sel.Matches(labels.Set(rs.Spec.Selector.MatchLabels)) {
 				obj := rs
 				found, err := checkStatefulSet(logger, cl, &obj)
@@ -67,7 +66,6 @@ func checkService(logger logr.Logger, cl *kubernetes.Clientset, svc *corev1.Serv
 				}
 			}
 		}
-
 		logger.Errorf("👻 no pods matching label selector '%s' found in namespace '%s'", sel.String(), svc.Namespace)
 		logger.Infof("💡 you may want to verify that the pods exist and their labels match '%s'", sel.String())
 		return true, nil

@@ -332,6 +332,39 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in deploym
 	Entry("from route", diagnose.Route, "test", "deploy-sa-notfound"),
 )
 
+var _ = DescribeTable("should detect invalid serviceaccount specified in deployment with multiple replicasets",
+	func(kind diagnose.ResourceKind, namespace, name string) {
+		// given
+		logger := testsupport.NewLogger()
+		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-multiple-replicasets-failedcreate.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+
+		// when
+		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(found).To(BeTrue())
+		switch {
+		case kind == diagnose.Route:
+			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'deploy-multiple-rs' in namespace 'test'...`))
+		case kind == diagnose.Route || kind == diagnose.Service:
+			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'deploy-multiple-rs' in namespace 'test'...`))
+		case kind == diagnose.Deployment:
+			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'deploy-multiple-rs' in namespace 'test'...`))
+		}
+		// in all cases:
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'deploy-multiple-rs-c5d7d87f' in namespace 'test'...`))
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking pod 'deploy-multiple-rs-c5d7d87f-whx2l' in namespace 'test'...`))
+		Expect(logger.Output()).To(ContainSubstring("👻 containers with unready status: [kube-rbac-proxy default]"))
+		Expect(logger.Output()).To(ContainSubstring("👻 container 'default' is waiting with reason 'ContainerCreating'"))
+		Expect(logger.Output()).To(ContainSubstring("👻 container 'kube-rbac-proxy' is waiting with reason 'ContainerCreating'"))
+	},
+	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-multiple-rs-c5d7d87f"),
+	Entry("from deployment", diagnose.Deployment, "test", "deploy-multiple-rs"),
+)
+
 // ----------------------------
 // StatefulSets
 // ----------------------------

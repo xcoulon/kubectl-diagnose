@@ -200,7 +200,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		Expect(resp).To(HaveReturnedStatefulSetCount(2))
 	})
 
-	It("should list 1 replicaset by labelSelector", func() {
+	It("should list 1 statefulsets by labelSelector", func() {
 		// given
 		logger := testsupport.NewLogger()
 		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
@@ -218,12 +218,12 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should get single deployment", func() {
 		// given
 		logger := testsupport.NewLogger()
-		s, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-service-account-not-found.yaml")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/deployments/deploy-sa-notfound")
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/deployments/deploy-all-good-en")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -258,6 +258,21 @@ var _ = Describe("fake api-server endpoints", func() {
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp).To(HaveHTTPStatus(http.StatusInternalServerError))
+	})
+
+	It("should list 1 deployment by labelSelector", func() {
+		// given
+		logger := testsupport.NewLogger()
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/apis/apps/v1/namespaces/test/deployments?labelSelector=app%3Ddeploy-all-good")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveReturnedStatefulSetCount(1))
 	})
 
 	It("should get single service", func() {
