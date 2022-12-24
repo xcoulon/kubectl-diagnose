@@ -8,7 +8,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -39,25 +38,6 @@ func checkDeployment(logger logr.Logger, cl *kubernetes.Clientset, d *appsv1.Dep
 		return true, nil
 	}
 	// check the associated replicasets
-	selector := labels.Set(d.Spec.Selector.MatchLabels).String()
-	rss, err := cl.AppsV1().ReplicaSets(d.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: selector,
-	})
-	if err != nil {
-		return false, err
-	}
-	for i := range rss.Items {
-		rs := rss.Items[i]
-		for _, ref := range rs.OwnerReferences {
-			if ref.UID == d.UID {
-				// rs is "owned" by this deployment
-				f, err := checkReplicaSet(logger, cl, &rs)
-				if err != nil {
-					return false, err
-				}
-				found = found || f
-			}
-		}
-	}
-	return found, nil
+	f, err := checkReplicaSets(logger, cl, d.Namespace, d.Spec.Selector.MatchLabels, d.UID)
+	return found || f, err
 }

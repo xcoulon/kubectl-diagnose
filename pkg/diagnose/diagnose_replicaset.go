@@ -2,6 +2,7 @@ package diagnose
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
 
@@ -9,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -20,6 +22,36 @@ func diagnoseReplicaSet(logger logr.Logger, cfg *rest.Config, namespace, name st
 		return false, err
 	}
 	return checkReplicaSet(logger, cl, rs)
+}
+
+func checkReplicaSets(logger logr.Logger, cl *kubernetes.Clientset, namespace string, selector map[string]string, ownerID types.UID) (bool, error) {
+	rss, err := cl.AppsV1().ReplicaSets(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labels.Set(selector).String(),
+	})
+	if err != nil {
+		return false, err
+	}
+
+	var rs *appsv1.ReplicaSet
+rss:
+	for i := range rss.Items {
+		for _, ref := range rss.Items[i].OwnerReferences {
+			if ref.UID == ownerID {
+				rsRevision := 0
+				if rs != nil {
+					rsRevision, _ = strconv.Atoi(rs.Annotations["deployment.kubernetes.io/revision"])
+				}
+				itemRevision, _ := strconv.Atoi(rss.Items[i].Annotations["deployment.kubernetes.io/revision"])
+				if itemRevision > rsRevision {
+					rs = &rss.Items[i]
+					continue rss
+				}
+			}
+		}
+	}
+	// only check the latest ReplicaSet (older ones may be associated with previous configs, and should eventually be deleted once pods are running)
+	return checkReplicaSet(logger, cl, rs)
+
 }
 
 func checkReplicaSet(logger logr.Logger, cl *kubernetes.Clientset, rs *appsv1.ReplicaSet) (bool, error) {

@@ -82,6 +82,7 @@ func NewFakeAPIServer(logger logr.Logger, filenames ...string) (*httptest.Server
 	r.GET(`/api/v1/namespaces/:namespace/persistentvolumeclaims/:name`, newObjectHandler(logger, allObjs, diagnose.PersistentVolumeClaim))
 	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets`, newReplicaSetsHandler(logger, allObjs))
 	r.GET(`/apis/apps/v1/namespaces/:namespace/replicasets/:name`, newObjectHandler(logger, allObjs, diagnose.ReplicaSet))
+	r.GET(`/apis/apps/v1/namespaces/:namespace/deployments`, newDeploymentsHandler(logger, allObjs))
 	r.GET(`/apis/apps/v1/namespaces/:namespace/deployments/:name`, newObjectHandler(logger, allObjs, diagnose.Deployment))
 	r.GET(`/apis/apps/v1/namespaces/:namespace/statefulsets`, newStatefulSetsHandler(logger, allObjs))
 	r.GET(`/apis/apps/v1/namespaces/:namespace/statefulsets/:name`, newObjectHandler(logger, allObjs, diagnose.StatefulSet))
@@ -289,6 +290,30 @@ func newReplicaSetsHandler(logger logr.Logger, objs []runtimeclient.Object) http
 			}
 		}
 		handleObject(logger, w, rss)
+	}
+}
+
+func newDeploymentsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+		namespace := params.ByName("namespace")
+		labelSelector := r.URL.Query().Get("labelSelector")
+		logger.Debugf("listing deployments in %s with label selector '%s'", namespace, labelSelector)
+		s, err := labels.Parse(labelSelector)
+		if err != nil {
+			handleError(logger, w, err)
+			return
+		}
+		stss := &appsv1.DeploymentList{
+			Items: []appsv1.Deployment{},
+		}
+		for _, obj := range objs {
+			if obj, ok := obj.(*appsv1.Deployment); ok &&
+				obj.GetNamespace() == namespace &&
+				s.Matches(labels.Set(obj.Labels)) {
+				stss.Items = append(stss.Items, *obj)
+			}
+		}
+		handleObject(logger, w, stss)
 	}
 }
 

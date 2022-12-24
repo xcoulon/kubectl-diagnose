@@ -109,6 +109,10 @@ status:
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "1"
+    deployment.kubernetes.io/max-replicas: "1"
+    deployment.kubernetes.io/revision: "1"
   labels:
     app: deploy-readiness-probe-error
     pod-template-hash: 6cb7664768

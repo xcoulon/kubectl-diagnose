@@ -1,0 +1,97 @@
+# vscode-kubernetes-tools: exclude
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: deploy-invalid-scc
+  labels:
+    app: deploy-invalid-scc
+spec:
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: deploy-invalid-scc
+    weight: 100
+  wildcardPolicy: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deploy-invalid-scc
+  labels:
+    app: deploy-invalid-scc
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  selector:
+    app: deploy-invalid-scc
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-invalid-scc
+  labels:
+    app: deploy-invalid-scc
+spec:
+  selector:
+    matchLabels:
+      app: deploy-invalid-scc
+  template:
+    metadata:
+      labels:
+        app: deploy-invalid-scc
+    spec:
+      replicas: 1
+      containers:
+      - name: default
+        image: caddy:2
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        securityContext:
+          runAsNonRoot: true
+        volumeMounts:
+        - name: caddy-config
+          mountPath: "/etc/caddy"
+        - name: caddy-config-cache
+          mountPath: "/config/caddy"
+      securityContext:
+        fsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      volumes:
+      - name: caddy-config
+        configMap:
+          name: caddy-config-port-8080
+      - name: caddy-config-cache
+        emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config-port-8080
+  labels:
+    app: unknown-configmap
+data:
+  Caddyfile: |-
+    http://:8080
+
+    respond "Everything is fine!"
+      
