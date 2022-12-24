@@ -158,6 +158,7 @@ metadata:
     name: sts-invalid-sc
     uid: 78ae2f0a-95a1-43d1-a589-2bb0e6a80521
   uid: de159b16-20a6-4fa8-a9d3-002c2238b22d
+  resourceVersion: "1"
 spec:
   containers:
   - image: caddy:2
@@ -273,6 +274,7 @@ metadata:
   name: caddy-config-cache-sts-invalid-sc-0
   namespace: test
   uid: 0a7be822-c2ba-402d-a984-e2d706aac14c
+  resourceVersion: "1"
 spec:
   accessModes:
   - ReadWriteOnce
@@ -302,8 +304,8 @@ involvedObject:
   kind: Pod
   name: sts-invalid-sc-0
   namespace: test
-  resourceVersion: "1769766778"
-  uid: 75153248-d788-4604-acbb-96c74e610d8c
+  uid: de159b16-20a6-4fa8-a9d3-002c2238b22d
+  resourceVersion: "1"
 reason: FailedScheduling
 source: {}
 ---
@@ -327,3 +329,4 @@ involvedObject:
   name: caddy-config-cache-sts-invalid-sc-0
   namespace: test
   uid: 0a7be822-c2ba-402d-a984-e2d706aac14c
+  resourceVersion: "1"

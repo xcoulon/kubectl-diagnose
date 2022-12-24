@@ -164,6 +164,7 @@ metadata:
     name: deploy-image-pull-back-off-9bbb4f9bd
     uid: 911daac8-31af-496d-a135-b4ccd151c2bd
   uid: 81063ff4-c512-4f36-8ef0-cd800031d99d
+  resourceVersion: "277004"
 spec:
   containers:
   - image: unknown:v0.0.0
@@ -236,3 +237,5 @@ involvedObject:
   kind: Pod
   namespace: test
   name: deploy-image-pull-back-off-9bbb4f9bd-pjj55
+  uid: 81063ff4-c512-4f36-8ef0-cd800031d99d
+  resourceVersion: "277004"

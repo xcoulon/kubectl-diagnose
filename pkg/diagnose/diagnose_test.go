@@ -549,7 +549,6 @@ var _ = DescribeTable("should detect deployment pod container with readiness pro
 		Expect(logger.Output()).To(ContainSubstring(`👀 checking pod 'deploy-readiness-probe-error-6cb7664768-qlmns' in namespace 'test'...`))
 		Expect(logger.Output()).To(ContainSubstring(`👻 containers with unready status: [default]`))
 		// events
-		// events
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-13T21:55:27Z")
 		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Unhealthy: Readiness probe failed: HTTP probe failed with statuscode: 404`, time.Since(lastTimestamp).Truncate(time.Second))))
 		// logs

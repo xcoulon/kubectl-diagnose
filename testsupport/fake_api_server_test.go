@@ -448,7 +448,7 @@ var _ = Describe("fake api-server endpoints", func() {
 		defer s.Close()
 
 		// when
-		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/events?fieldSelector=involvedObject.name%3Dreadiness-probe-error-6cb7664768-qlmns")
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/events?fieldSelector=type=Warning,involvedObject.uid%3Dc188fba1-0304-4686-a67c-17db71548c6f,involvedObject.resourceVersion%3D277004")
 
 		// then
 		Expect(err).NotTo(HaveOccurred())

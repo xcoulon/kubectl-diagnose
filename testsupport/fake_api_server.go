@@ -320,7 +320,7 @@ func newEventsHandler(logger logr.Logger, objs []runtimeclient.Object) httproute
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		namespace := params.ByName("namespace")
 		fieldSelector := r.URL.Query().Get("fieldSelector")
-		logger.Debugf("listing events in %s with fields %s", namespace, fieldSelector)
+		logger.Debugf("listing events with fields %s", fieldSelector)
 		s, err := fields.ParseSelector(fieldSelector)
 		if err != nil {
 			handleError(logger, w, err)
@@ -337,9 +337,9 @@ func newEventsHandler(logger logr.Logger, objs []runtimeclient.Object) httproute
 			if obj, ok := obj.(*corev1.Event); ok &&
 				obj.GetNamespace() == namespace &&
 				s.Matches(fields.Set(map[string]string{
-					"involvedObject.kind":      "Pod", // TODO: parameterize?
-					"involvedObject.namespace": obj.InvolvedObject.Namespace,
-					"involvedObject.name":      obj.InvolvedObject.Name,
+					"type":                           "Warning",
+					"involvedObject.uid":             string(obj.InvolvedObject.UID),
+					"involvedObject.resourceVersion": obj.InvolvedObject.ResourceVersion,
 				})) {
 				events.Items = append(events.Items, *obj)
 			}

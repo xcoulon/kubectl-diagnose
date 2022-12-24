@@ -122,6 +122,7 @@ metadata:
     name: deploy-readiness-probe-error
     uid: 764b874e-cd1c-48f1-b94a-e2e60cb43726
   uid: 8be8a2db-fca3-4da3-9a73-0f28396ebb77
+  resourceVersion: "277004"
 spec:
   replicas: 1
   selector:
@@ -215,6 +216,7 @@ metadata:
     name: deploy-readiness-probe-error-6cb7664768
     uid: 8be8a2db-fca3-4da3-9a73-0f28396ebb77
   uid: c188fba1-0304-4686-a67c-17db71548c6f
+  resourceVersion: "277004"
 spec:
   containers:
   - image: caddy:2
@@ -314,3 +316,4 @@ involvedObject:
   namespace: test
   name: deploy-readiness-probe-error-6cb7664768-qlmns
   uid: c188fba1-0304-4686-a67c-17db71548c6f
+  resourceVersion: "277004"

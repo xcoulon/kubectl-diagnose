@@ -16,17 +16,15 @@ import (
 func checkEvents(logger logr.Logger, cl *kubernetes.Clientset, obj runtimeclient.Object) (bool, error) {
 	logger.Debugf("👀 checking events...")
 	events, err := cl.CoreV1().Events(obj.GetNamespace()).List(context.TODO(), metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("involvedObject.name=%s", obj.GetName()), // TODO: include 'Kind' or just use object.UID
+		FieldSelector: fmt.Sprintf("type=Warning,involvedObject.uid=%s,involvedObject.resourceVersion=%s", obj.GetUID(), obj.GetResourceVersion()),
 	})
 	if err != nil {
 		return false, err
 	}
 	found := false
 	for _, e := range events.Items {
-		if e.Type == corev1.EventTypeWarning {
-			logger.Errorf("⚡️ %s ago: %s: %s", time.Since(getTime(e)).Truncate(time.Second), e.Reason, e.Message)
-			found = true
-		}
+		logger.Errorf("⚡️ %s ago: %s: %s", time.Since(getTime(e)).Truncate(time.Second), e.Reason, e.Message)
+		found = true
 	}
 	return found, nil
 }
