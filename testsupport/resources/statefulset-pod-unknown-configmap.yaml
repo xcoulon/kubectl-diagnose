@@ -166,6 +166,7 @@ metadata:
     kind: StatefulSet
     name: sts-unknown-cm
     uid: 0c58e4ba-f9d5-46f8-992c-c69e406a71bf
+  resourceVersion: "1777496594"
   uid: 5a42e49d-e7b8-4ec3-b776-a2d80fa029e2
 spec:
   containers:

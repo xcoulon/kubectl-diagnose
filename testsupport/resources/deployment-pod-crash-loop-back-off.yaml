@@ -176,6 +176,8 @@ metadata:
     pod-template-hash: "7994787459"
   name: deploy-crash-loop-back-off-7994787459-2nrz5
   namespace: test
+  resourceVersion: "277004"
+  uid: 6097891a-2ea8-4f56-9f4b-8627474612b2
   ownerReferences:
   - apiVersion: apps/v1
     blockOwnerDeletion: true
@@ -285,6 +287,7 @@ involvedObject:
   kind: Pod
   namespace: test
   name: deploy-crash-loop-back-off
+  resourceVersion: "277004"
 ---
 apiVersion: v1
 kind: Event
@@ -302,3 +305,5 @@ involvedObject:
   kind: Pod
   namespace: test
   name: deploy-crash-loop-back-off-7994787459-2nrz5
+  resourceVersion: "277004"
+  uid: 6097891a-2ea8-4f56-9f4b-8627474612b2

@@ -183,6 +183,8 @@ metadata:
     pod-template-hash: 76476b7d5
   name: deploy-unknown-cm-76476b7d5-q2khp
   namespace: test
+  resourceVersion: "277004"
+  uid: 6097891a-2ea8-4f56-9f4b-8627474612b2
   ownerReferences:
   - apiVersion: apps/v1
     blockOwnerDeletion: true
@@ -270,6 +272,8 @@ involvedObject:
   kind: Pod
   name: deploy-unknown-cm-76476b7d5-q2khp
   namespace: test
+  resourceVersion: "277004"
+  uid: 6097891a-2ea8-4f56-9f4b-8627474612b2
 lastTimestamp: "2022-11-13T17:19:34Z"
 message: 'Unable to attach or mount volumes: unmounted volumes=[caddy-config], unattached
   volumes=[caddy-config caddy-config-cache kube-api-access-62xrc]: timed out waiting
