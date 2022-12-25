@@ -3,6 +3,7 @@ package diagnose
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
@@ -22,6 +23,9 @@ func checkEvents(logger logr.Logger, cl *kubernetes.Clientset, obj runtimeclient
 		return false, err
 	}
 	found := false
+	sort.Slice(events.Items, func(i, j int) bool {
+		return getTime(events.Items[i]).Before(getTime(events.Items[j]))
+	})
 	for _, e := range events.Items {
 		logger.Errorf("⚡️ %s ago: %s: %s", time.Since(getTime(e)).Truncate(time.Second), e.Reason, e.Message)
 		found = true

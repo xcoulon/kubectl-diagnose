@@ -36,15 +36,7 @@ func findPods(cl *kubernetes.Clientset, namespace string, selector map[string]st
 func checkPod(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bool, error) {
 	logger.Infof("👀 checking pod '%s' in namespace '%s'...", pod.Name, pod.Namespace)
 	found := false
-	if pod.Status.Phase != corev1.PodRunning {
-		// check events associated with the pod
-		f, err := checkEvents(logger, cl, pod)
-		if err != nil {
-			return false, err
-		}
-		found = found || f
-	}
-	logger.Debugf("👀 checking pod status...")
+	logger.Debugf("checking pod status...")
 	// check the containers
 	for _, c := range pod.Status.Conditions {
 		switch {
@@ -75,6 +67,16 @@ func checkPod(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bo
 			}
 		}
 	}
+
+	if pod.Status.Phase != corev1.PodRunning {
+		// check events associated with the pod
+		f, err := checkEvents(logger, cl, pod)
+		if err != nil {
+			return false, err
+		}
+		found = found || f
+	}
+
 	return found, nil
 }
 
