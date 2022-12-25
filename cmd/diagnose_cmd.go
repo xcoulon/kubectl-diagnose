@@ -31,7 +31,7 @@ func NewDiagnoseCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:           "kubectl-diagnose (TYPE NAME | TYPE/NAME)",
-		Short:         "try to find the cause of the 503 error",
+		Short:         "Diagnose the resource to find the cause of the 503 error",
 		SilenceErrors: false,
 		SilenceUsage:  false,
 		Args:          cobra.RangeArgs(1, 2),

@@ -275,11 +275,12 @@ data:
 
     respond "Everything is fine!"
 ---
+# unreleated event
 apiVersion: v1
 kind: Event
 metadata:
   namespace: test
-  name: deploy-crash-loop-back-off.17233cf30d5bf54b
+  name: unrelated.17233cf30d5bf54b
 count: 4
 type: Warning
 reason: BackOff
@@ -290,7 +291,7 @@ involvedObject:
   apiVersion: v1
   kind: Pod
   namespace: test
-  name: deploy-crash-loop-back-off
+  name: unrelated 
   resourceVersion: "277004"
 ---
 apiVersion: v1
@@ -309,5 +310,5 @@ involvedObject:
   kind: Pod
   namespace: test
   name: deploy-crash-loop-back-off-7994787459-2nrz5
-  resourceVersion: "277004"
+  resourceVersion: "277000" # older version
   uid: 6097891a-2ea8-4f56-9f4b-8627474612b2
