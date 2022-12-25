@@ -16,7 +16,7 @@ import (
 func checkEvents(logger logr.Logger, cl *kubernetes.Clientset, obj runtimeclient.Object) (bool, error) {
 	logger.Debugf("👀 checking events...")
 	events, err := cl.CoreV1().Events(obj.GetNamespace()).List(context.TODO(), metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("type=Warning,involvedObject.uid=%s,involvedObject.resourceVersion=%s", obj.GetUID(), obj.GetResourceVersion()),
+		FieldSelector: fmt.Sprintf("type=Warning,involvedObject.uid=%s", obj.GetUID()),
 	})
 	if err != nil {
 		return false, err
