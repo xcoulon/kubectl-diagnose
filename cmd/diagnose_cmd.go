@@ -11,7 +11,6 @@ import (
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
 
 	"github.com/spf13/cobra"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -57,18 +56,8 @@ func NewDiagnoseCmd() *cobra.Command {
 					return err
 				}
 			}
-			found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
-			switch {
-			case apierrors.IsNotFound(err):
-				// if resource was not found, just print the error but
-				// no need to print of the cmd usage
-				fmt.Fprintln(cmd.OutOrStderr(), err.Error())
-			case err != nil:
-				return err
-			case !found:
-				logger.Infof("🤷 couldn't find the culprit")
-			}
-			return nil
+			_, err = diagnose.Diagnose(logger, cfg, kind, namespace, name)
+			return err
 		},
 	}
 	cmd.Flags().StringVarP(&kubeconfig, "kubeconfig", "", "", "(optional) absolute path to the kubeconfig file")
