@@ -49,7 +49,8 @@ func ParseLevel(level string) (Level, error) {
 
 func (l *DefaultLogger) Debugf(msg string, args ...interface{}) {
 	if l.loglevel == DebugLevel {
-		fmt.Fprintln(l.out, fmt.Sprintf(msg, args...))
+		c := color.New(color.FgHiBlue)
+		c.Fprintln(l.out, fmt.Sprintf(msg, args...))
 	}
 }
 

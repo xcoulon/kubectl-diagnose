@@ -1,0 +1,586 @@
+---
+apiVersion:  apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: caddy
+  name: caddy
+  namespace: test
+  resourceVersion: "1910388804"
+  uid: 06f90640-de89-43ed-9a8c-df804e290528
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: caddy
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: caddy
+    spec:
+      containers:
+      - args:
+        - --secure-listen-address=0.0.0.0:8081
+        - --upstream=http://127.0.0.1:8080
+        - --config-file=/etc/kube-rbac-proxy/config.yaml
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        - --tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+        - --tls-min-version=VersionTLS12
+        - -v=10
+        image: quay.io/brancz/kube-rbac-proxy:v0.14.0
+        imagePullPolicy: IfNotPresent
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8081
+          name: proxy
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 10m
+            memory: 20Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: secret-caddy-tls
+        - mountPath: /etc/kube-rbac-proxy
+          name: kube-rbac-proxy-config
+      - image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-port-8080
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+      - configMap:
+          defaultMode: 420
+          name: kube-rbac-proxy
+        name: kube-rbac-proxy-config
+      - name: secret-caddy-tls
+        secret:
+          defaultMode: 420
+          secretName: caddy-tls
+status:
+  conditions:
+  - message: Deployment does not have minimum availability.
+    reason: MinimumReplicasUnavailable
+    status: "False"
+    type: Available
+  - message: ReplicaSet "caddy-76c8d8fdfb" is progressing.
+    reason: ReplicaSetUpdated
+    status: "True"
+    type: Progressing
+  observedGeneration: 10
+  replicas: 1
+  unavailableReplicas: 1
+  updatedReplicas: 1
+---
+apiVersion:  v1
+kind: Service
+metadata:
+  labels:
+    app: caddy
+  name: caddy
+  namespace: test
+  resourceVersion: "1867283233"
+  uid: 2edb202d-6722-4dd1-9cec-db8032061a43
+spec:
+  clusterIP: 172.30.91.31
+  clusterIPs:
+  - 172.30.91.31
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: caddy
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion:  v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.openshift.io/serving-cert-signed-by: openshift-service-serving-signer@1612378065
+    service.beta.openshift.io/serving-cert-secret-name: caddy-tls
+    service.beta.openshift.io/serving-cert-signed-by: openshift-service-serving-signer@1612378065
+  creationTimestamp: "2022-12-24T08:31:00Z"
+  labels:
+    app: caddy
+  name: caddy-rbac
+  namespace: test
+  resourceVersion: "1867283306"
+  uid: a5659073-ce5c-45ae-a5b9-1e3724c1af43
+spec:
+  clusterIP: 172.30.120.27
+  clusterIPs:
+  - 172.30.120.27
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: proxy
+    port: 8080
+    protocol: TCP
+    targetPort: proxy
+  selector:
+    app: caddy
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion:  apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "1"
+    deployment.kubernetes.io/max-replicas: "2"
+    deployment.kubernetes.io/revision: "4"
+  labels:
+    app: caddy
+    pod-template-hash: 76c8d8fdfb
+  name: caddy-76c8d8fdfb
+  namespace: test
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: caddy
+    uid: 06f90640-de89-43ed-9a8c-df804e290528
+  resourceVersion: "1910308169"
+  uid: 8e1a3d2e-592e-4b2b-94b9-7d3eb36d8dfa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: caddy
+      pod-template-hash: 76c8d8fdfb
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: caddy
+        pod-template-hash: 76c8d8fdfb
+    spec:
+      containers:
+      - args:
+        - --secure-listen-address=0.0.0.0:8081
+        - --upstream=http://127.0.0.1:8080
+        - --config-file=/etc/kube-rbac-proxy/config.yaml
+        - --tls-cert-file=/etc/tls/private/tls.crt
+        - --tls-private-key-file=/etc/tls/private/tls.key
+        - --tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+        - --tls-min-version=VersionTLS12
+        - -v=10
+        image: quay.io/brancz/kube-rbac-proxy:v0.14.0
+        imagePullPolicy: IfNotPresent
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8081
+          name: proxy
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 10m
+            memory: 20Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: secret-caddy-tls
+        - mountPath: /etc/kube-rbac-proxy
+          name: kube-rbac-proxy-config
+      - image: caddy:2
+        imagePullPolicy: IfNotPresent
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/caddy
+          name: caddy-config
+        - mountPath: /config/caddy
+          name: caddy-config-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: caddy-config-port-8080
+        name: caddy-config
+      - emptyDir: {}
+        name: caddy-config-cache
+      - configMap:
+          defaultMode: 420
+          name: kube-rbac-proxy
+        name: kube-rbac-proxy-config
+      - name: secret-caddy-tls
+        secret:
+          defaultMode: 420
+          secretName: caddy-tls
+status:
+  fullyLabeledReplicas: 1
+  observedGeneration: 1
+  replicas: 1
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    openshift.io/scc: restricted-v2
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+  generateName: caddy-76c8d8fdfb-
+  labels:
+    app: caddy
+    pod-template-hash: 76c8d8fdfb
+  name: caddy-76c8d8fdfb-cjsxc
+  namespace: test
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: caddy-76c8d8fdfb
+    uid: 8e1a3d2e-592e-4b2b-94b9-7d3eb36d8dfa
+  resourceVersion: "1910377577"
+  uid: cd2f5c2b-ec1d-42db-8755-ae4d92fa201b
+spec:
+  containers:
+  - args:
+    - --secure-listen-address=0.0.0.0:8081
+    - --upstream=http://127.0.0.1:8080
+    - --config-file=/etc/kube-rbac-proxy/config.yaml
+    - --tls-cert-file=/etc/tls/private/tls.crt
+    - --tls-private-key-file=/etc/tls/private/tls.key
+    - --tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+    - --tls-min-version=VersionTLS12
+    - -v=10
+    image: quay.io/brancz/kube-rbac-proxy:v0.14.0
+    imagePullPolicy: IfNotPresent
+    name: kube-rbac-proxy
+    ports:
+    - containerPort: 8081
+      name: proxy
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 10m
+        memory: 20Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      runAsUser: 1003870000
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /etc/tls/private
+      name: secret-caddy-tls
+    - mountPath: /etc/kube-rbac-proxy
+      name: kube-rbac-proxy-config
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-6lgck
+      readOnly: true
+  - image: caddy:2
+    imagePullPolicy: IfNotPresent
+    name: default
+    ports:
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      runAsNonRoot: true
+      runAsUser: 1003870000
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /etc/caddy
+      name: caddy-config
+    - mountPath: /config/caddy
+      name: caddy-config-cache
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-6lgck
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  imagePullSecrets:
+  - name: default-dockercfg-r6jhg
+  nodeName: ip-10-0-175-2.us-east-2.compute.internal
+  preemptionPolicy: PreemptLowerPriority
+  priority: -3
+  priorityClassName: sandbox-users-pods
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext:
+    fsGroup: 1003870000
+    runAsNonRoot: true
+    seLinuxOptions:
+      level: s0:c62,c44
+    seccompProfile:
+      type: RuntimeDefault
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoSchedule
+    key: node.kubernetes.io/memory-pressure
+    operator: Exists
+  volumes:
+  - configMap:
+      defaultMode: 420
+      name: caddy-config-port-8080
+    name: caddy-config
+  - emptyDir: {}
+    name: caddy-config-cache
+  - configMap:
+      defaultMode: 420
+      name: kube-rbac-proxy
+    name: kube-rbac-proxy-config
+  - name: secret-caddy-tls
+    secret:
+      defaultMode: 420
+      secretName: caddy-tls
+  - name: kube-api-access-6lgck
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+      - configMap:
+          items:
+          - key: service-ca.crt
+            path: service-ca.crt
+          name: openshift-service-ca.crt
+status:
+  conditions:
+  - status: "True"
+    type: Initialized
+  - message: 'containers with unready status: [kube-rbac-proxy]'
+    reason: ContainersNotReady
+    status: "False"
+    type: Ready
+  - message: 'containers with unready status: [kube-rbac-proxy]'
+    reason: ContainersNotReady
+    status: "False"
+    type: ContainersReady
+  - status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: cri-o://077085de699e704662eb08114af35e8217aa91279b3225881c5500e27a67db96
+    image: docker.io/library/caddy:2
+    imageID: docker.io/library/caddy@sha256:39f1da8bd9f6405dc7f085062d532aee5abb3cb64a7526c5f468e15aa2525f89
+    lastState: {}
+    name: default
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2023-01-02T06:54:10Z"
+  - containerID: cri-o://b38e0cf52b348bd2124f557cd1ca89889ed9557a5b4dccb844db60ea6b3129fc
+    image: quay.io/brancz/kube-rbac-proxy:v0.14.0
+    imageID: quay.io/brancz/kube-rbac-proxy@sha256:4ba7351a4d1efb50a03990697de7efbc51c6c02149f97b11f15d8f9953faf45e
+    lastState:
+      terminated:
+        containerID: cri-o://b38e0cf52b348bd2124f557cd1ca89889ed9557a5b4dccb844db60ea6b3129fc
+        exitCode: 1
+        finishedAt: "2023-01-02T07:15:26Z"
+        message: |2
+           FLAG: --oidc-username-claim="email"
+          I0104 07:15:26.794209       1 flags.go:64] FLAG: --one-output="false"
+          I0104 07:15:26.794212       1 flags.go:64] FLAG: --proxy-endpoints-port="0"
+          I0104 07:15:26.794216       1 flags.go:64] FLAG: --secure-listen-address="0.0.0.0:8081"
+          I0104 07:15:26.794219       1 flags.go:64] FLAG: --skip-headers="false"
+          I0104 07:15:26.794221       1 flags.go:64] FLAG: --skip-log-headers="false"
+          I0104 07:15:26.794224       1 flags.go:64] FLAG: --stderrthreshold="2"
+          I0104 07:15:26.794227       1 flags.go:64] FLAG: --tls-cert-file="/etc/tls/private/tls.crt"
+          I0104 07:15:26.794229       1 flags.go:64] FLAG: --tls-cipher-suites="[TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256]"
+          I0104 07:15:26.794239       1 flags.go:64] FLAG: --tls-min-version="VersionTLS12"
+          I0104 07:15:26.794243       1 flags.go:64] FLAG: --tls-private-key-file="/etc/tls/private/tls.key"
+          I0104 07:15:26.794246       1 flags.go:64] FLAG: --tls-reload-interval="1m0s"
+          I0104 07:15:26.794251       1 flags.go:64] FLAG: --upstream="http://127.0.0.1:8080"
+          I0104 07:15:26.794256       1 flags.go:64] FLAG: --upstream-ca-file=""
+          I0104 07:15:26.794260       1 flags.go:64] FLAG: --upstream-client-cert-file=""
+          I0104 07:15:26.794264       1 flags.go:64] FLAG: --upstream-client-key-file=""
+          I0104 07:15:26.794268       1 flags.go:64] FLAG: --upstream-force-h2c="false"
+          I0104 07:15:26.794272       1 flags.go:64] FLAG: --v="10"
+          I0104 07:15:26.794276       1 flags.go:64] FLAG: --version="false"
+          I0104 07:15:26.794281       1 flags.go:64] FLAG: --vmodule=""
+          I0104 07:15:26.794291       1 kube-rbac-proxy.go:528] Reading config file: /etc/kube-rbac-proxy/config.yaml
+          E0104 07:15:26.794329       1 run.go:74] "command failed" err="failed to read the config file: failed to read resource-attribute file: open /etc/kube-rbac-proxy/config.yaml: no such file or directory"
+        reason: Error
+        startedAt: "2023-01-02T07:15:26Z"
+    name: kube-rbac-proxy
+    ready: false
+    restartCount: 9
+    started: false
+    state:
+      waiting:
+        message: back-off 5m0s restarting failed container=kube-rbac-proxy pod=caddy-76c8d8fdfb-cjsxc_xcoulon-dev(cd2f5c2b-ec1d-42db-8755-ae4d92fa201b)
+        reason: CrashLoopBackOff
+  hostIP: 10.0.175.2
+  phase: Running
+  podIP: 10.131.2.85
+  podIPs:
+  - ip: 10.131.2.85
+  qosClass: Burstable
+  startTime: "2023-01-02T06:54:03Z"
+---
+apiVersion: v1
+kind: Event
+metadata:
+  name: caddy-76c8d8fdfb-cjsxc.1737089bfec9a4b8
+  namespace: xcoulon-dev
+  resourceVersion: "1910514068"
+  uid: 6662f0e3-9952-4eb4-a745-43bce78826b9
+count: 304
+eventTime: null
+firstTimestamp: "2023-01-04T06:54:12Z"
+lastTimestamp: "2023-01-04T06:59:16Z"
+involvedObject:
+  apiVersion: v1
+  fieldPath: spec.containers{kube-rbac-proxy}
+  kind: Pod
+  name: caddy-76c8d8fdfb-cjsxc
+  namespace: xcoulon-dev
+  resourceVersion: "1910308166"
+  uid: cd2f5c2b-ec1d-42db-8755-ae4d92fa201b
+message: Back-off restarting failed container
+reason: BackOff
+reportingComponent: ""
+reportingInstance: ""
+source:
+  component: kubelet
+  host: ip-10-0-175-2.us-east-2.compute.internal
+type: Warning

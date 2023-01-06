@@ -476,7 +476,7 @@ var _ = DescribeTable("should detect invalid storageclass specified in statefuls
 // Pods
 // ----------------------------
 
-var _ = DescribeTable("should detect deployment pod container in CrashLoopBackOff status",
+var _ = DescribeTable("should detect default container in CrashLoopBackOff status",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := testsupport.NewLogger()
@@ -516,7 +516,45 @@ var _ = DescribeTable("should detect deployment pod container in CrashLoopBackOf
 	Entry("from route", diagnose.Route, "test", "deploy-crash-loop-back-off"),
 )
 
-var _ = DescribeTable("should detect deployment pod container in ImagePullBackOff status",
+var _ = DescribeTable("should detect proxy container in CrashLoopBackOff status",
+	func(kind diagnose.ResourceKind, namespace, name string) {
+		// given
+		logger := testsupport.NewLogger()
+		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-crash-loop-back-off-proxy.yaml", "resources/deployment-pod-crash-loop-back-off-proxy.logs")
+		Expect(err).NotTo(HaveOccurred())
+		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+
+		// when
+		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(found).To(BeTrue())
+		switch {
+		case kind == diagnose.Service:
+			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'caddy' in namespace 'test'...`))
+		case kind == diagnose.Deployment:
+			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'caddy' in namespace 'test'...`))
+		case kind == diagnose.Deployment || kind == diagnose.ReplicaSet:
+			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'caddy-76c8d8fdfb' in namespace 'test'...`))
+		}
+		// in all cases:
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking pod 'caddy-76c8d8fdfb-cjsxc' in namespace 'test'...`))
+		Expect(logger.Output()).To(ContainSubstring(`👻 containers with unready status: [kube-rbac-proxy]`))
+		Expect(logger.Output()).NotTo(ContainSubstring(`🤷 no 'error'/'fatal'/'panic'/'emerg' messages found in the 'default' container logs`))
+
+		// logs
+		Expect(logger.Output()).To(ContainSubstring(`🗒  E0104 06:58:34.754634       1 run.go:74] "command failed" err="failed to read the config file: failed to read resource-attribute file: open /etc/kube-rbac-proxy/config.yaml: no such file or directory"`))
+		// event
+		// no events reported since errors were found in the logs (besides, warning event is similar to container status ¯\_(ツ)_/¯)
+	},
+	Entry("from pod", diagnose.Pod, "test", "caddy-76c8d8fdfb-cjsxc"),
+	Entry("from replicaset", diagnose.ReplicaSet, "test", "caddy-76c8d8fdfb"),
+	Entry("from deployment", diagnose.Deployment, "test", "caddy"),
+	Entry("from service", diagnose.Service, "test", "caddy"),
+)
+
+var _ = DescribeTable("should detect container in ImagePullBackOff status",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := testsupport.NewLogger()
@@ -554,7 +592,7 @@ var _ = DescribeTable("should detect deployment pod container in ImagePullBackOf
 	Entry("from route", diagnose.Route, "test", "deploy-image-pull-back-off"),
 )
 
-var _ = DescribeTable("should detect deployment pod container with readiness probe error",
+var _ = DescribeTable("should detect container with readiness probe error",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := testsupport.NewLogger()
@@ -585,7 +623,7 @@ var _ = DescribeTable("should detect deployment pod container with readiness pro
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-13T21:55:27Z")
 		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Unhealthy: Readiness probe failed: HTTP probe failed with statuscode: 404`, time.Since(lastTimestamp).Truncate(time.Second))))
 		// logs
-		Expect(logger.Output()).To(ContainSubstring("🤷 no 'error'/'fatal'/'panic'/'emerg' messages found in the container logs"))
+		Expect(logger.Output()).To(ContainSubstring("🤷 no 'error'/'fatal'/'panic'/'emerg' messages found in the 'default' container logs"))
 	},
 	Entry("from pod", diagnose.Pod, "test", "deploy-readiness-probe-error-6cb7664768-qlmns"),
 	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-readiness-probe-error-6cb7664768"),
@@ -594,7 +632,7 @@ var _ = DescribeTable("should detect deployment pod container with readiness pro
 	Entry("from route", diagnose.Route, "test", "deploy-readiness-probe-error"),
 )
 
-var _ = DescribeTable("should detect deployment pod container with unknown configmap mount",
+var _ = DescribeTable("should detect container with unknown configmap mount",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := testsupport.NewLogger()
@@ -635,7 +673,7 @@ var _ = DescribeTable("should detect deployment pod container with unknown confi
 	Entry("from route", diagnose.Route, "test", "deploy-unknown-cm"),
 )
 
-var _ = DescribeTable("should detect statefulset pod container with unknown configmap mount",
+var _ = DescribeTable("should detect container with unknown configmap mount",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
 		logger := testsupport.NewLogger()

@@ -1,0 +1,17 @@
+caddy-76c8d8fdfb-cjsxc:
+  default: |-
+    {"level":"info","msg":"using provided configuration","config_file":"/etc/caddy/Caddyfile","config_adapter":"caddyfile"}
+    {"level":"warn","msg":"Caddyfile input is not formatted; run the 'caddy fmt' command to fix inconsistencies","adapter":"caddyfile","file":"/etc/caddy/Caddyfile","line":3}
+    {"level":"info","logger":"admin","msg":"admin endpoint started","address":"localhost:2019","enforce_origin":false,"origins":["//localhost:2019","//[::1]:2019","//127.0.0.1:2019"]}
+    {"level":"info","logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0xc0003a1a40"}
+    {"level":"info","logger":"tls","msg":"cleaning storage unit","description":"FileStorage:/data/caddy"}
+    {"level":"info","logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2","h3"]}
+    {"level":"info","logger":"tls","msg":"finished cleaning storage units"}
+    {"level":"info","msg":"autosaved config (load with --resume flag)","file":"/config/caddy/autosave.json"}
+    {"level":"info","msg":"serving initial configuration"}
+  kube-rbac-proxy: |-
+    I0104 06:58:34.754365       1 flags.go:64] FLAG: --add-dir-header="false"
+    ...
+    I0104 06:58:34.754591       1 flags.go:64] FLAG: --vmodule=""
+    I0104 06:58:34.754600       1 kube-rbac-proxy.go:528] Reading config file: /etc/kube-rbac-proxy/config.yaml
+    E0104 06:58:34.754634       1 run.go:74] "command failed" err="failed to read the config file: failed to read resource-attribute file: open /etc/kube-rbac-proxy/config.yaml: no such file or directory"

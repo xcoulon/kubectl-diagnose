@@ -54,7 +54,7 @@ func checkStatefulSet(logger logr.Logger, cl *kubernetes.Clientset, sts *appsv1.
 	}
 	for i := range pods.Items {
 		pod := pods.Items[i]
-		logger.Debugf("checking pod '%s'...", pod.Name)
+		logger.Debugf("👀 checking pod '%s'...", pod.Name)
 		for _, ownerRef := range pod.OwnerReferences {
 			if ownerRef.UID == sts.UID {
 				// pod is "owned" by this sts
