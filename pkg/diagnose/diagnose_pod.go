@@ -36,7 +36,7 @@ func findPods(cl *kubernetes.Clientset, namespace string, selector map[string]st
 func checkPod(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bool, error) {
 	logger.Infof("👀 checking pod '%s' in namespace '%s'...", pod.Name, pod.Namespace)
 	found := false
-	logger.Debugf("checking pod status...")
+	logger.Debugf("👀 checking pod status...")
 	// check the containers
 	for _, c := range pod.Status.Conditions {
 		switch {
@@ -95,7 +95,7 @@ func diagnoseContainer(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1
 			}
 		}
 		// also, check the logs
-		if (s.Started != nil && *s.Started) ||
+		if (s.Started != nil && *s.Started && !s.Ready) ||
 			s.LastTerminationState.Running != nil ||
 			s.LastTerminationState.Terminated != nil ||
 			s.LastTerminationState.Waiting != nil {
@@ -122,7 +122,7 @@ func checkContainerLogs(logger logr.Logger, cl *kubernetes.Clientset, pod *corev
 	logger.Debugf("logs: '%s'", string(logs))
 	for _, l := range strings.Split(string(logs), "\n") {
 		ll := strings.ToLower(l)
-		if strings.Contains(ll, "error") ||
+		if strings.Contains(ll, "err") ||
 			strings.Contains(ll, "fatal") ||
 			strings.Contains(ll, "panic") ||
 			strings.Contains(ll, "emerg") {
@@ -131,7 +131,7 @@ func checkContainerLogs(logger logr.Logger, cl *kubernetes.Clientset, pod *corev
 		}
 	}
 	if !found {
-		logger.Infof("🤷 no 'error'/'fatal'/'panic'/'emerg' messages found in the container logs")
+		logger.Infof("🤷 no 'error'/'fatal'/'panic'/'emerg' messages found in the '%s' container logs", container)
 	}
 	return found, nil
 }

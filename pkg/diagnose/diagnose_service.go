@@ -72,7 +72,7 @@ func checkService(logger logr.Logger, cl *kubernetes.Clientset, svc *corev1.Serv
 	}
 pods:
 	for _, pod := range pods {
-		logger.Debugf("checking pod '%s'...", pod.Name)
+		logger.Debugf("👀 checking pod '%s'...", pod.Name)
 		for _, sp := range svc.Spec.Ports {
 			// check the svc/pod port bindings
 			found := false
