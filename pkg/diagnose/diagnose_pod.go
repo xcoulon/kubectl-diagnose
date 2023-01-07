@@ -85,26 +85,37 @@ func checkPod(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bo
 func diagnoseContainer(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bool, error) {
 	found := false
 	for _, s := range pod.Status.ContainerStatuses {
-		// if container not in `Running` state
-		if s.State.Waiting != nil {
+		switch {
+		case s.State.Waiting != nil: // if container not in `Running` state
 			found = true
 			if s.State.Waiting.Message != "" {
 				logger.Errorf("👻 container '%s' is waiting with reason '%s': %s", s.Name, s.State.Waiting.Reason, s.State.Waiting.Message)
 			} else {
 				logger.Errorf("👻 container '%s' is waiting with reason '%s'", s.Name, s.State.Waiting.Reason)
 			}
-		}
-		// also, check the logs
-		if (s.Started != nil && *s.Started && !s.Ready) ||
-			s.LastTerminationState.Running != nil ||
-			s.LastTerminationState.Terminated != nil ||
-			s.LastTerminationState.Waiting != nil {
+			switch {
+			case s.State.Waiting.Reason == "CrashLoopBackOff" && s.LastTerminationState.Terminated != nil && s.LastTerminationState.Terminated.Message != "":
+				logger.Errorf("🗒 %s", strings.ReplaceAll(s.LastTerminationState.Terminated.Message, "\n", "\n  "))
+			default:
+				_, err := checkContainerLogs(logger, cl, pod, s.Name)
+				if err != nil {
+					return false, err
+				}
+			}
+
+		case s.Started != nil && *s.Started && !s.Ready:
 			f, err := checkContainerLogs(logger, cl, pod, s.Name)
 			if err != nil {
 				return false, err
 			}
 			found = found || f
 		}
+		// also, check the logs
+		// if () ||
+		// 	s.LastTerminationState.Running != nil ||
+		// 	s.LastTerminationState.Terminated != nil ||
+		// 	s.LastTerminationState.Waiting != nil {
+		// }
 		// TODO: check reason and provide a more detailed diagnosis or hint to fix the problem?
 		// eg: if reason is `CrashLoopBackOff`, look for errors (`ERROR`/`FATAL`) in the container logs? (but display the n last lines?)
 		// eg: if reason is `CreateContainerConfigError`, message should be enough (eg: `secret "cookie" not found`)

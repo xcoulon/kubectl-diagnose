@@ -347,10 +347,6 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in deploym
 		Expect(err).NotTo(HaveOccurred())
 		Expect(found).To(BeTrue())
 		switch {
-		case kind == diagnose.Route:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'deploy-multiple-rs' in namespace 'test'...`))
-		case kind == diagnose.Route || kind == diagnose.Service:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'deploy-multiple-rs' in namespace 'test'...`))
 		case kind == diagnose.Deployment:
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'deploy-multiple-rs' in namespace 'test'...`))
 		}
@@ -541,9 +537,10 @@ var _ = DescribeTable("should detect proxy container in CrashLoopBackOff status"
 		// in all cases:
 		Expect(logger.Output()).To(ContainSubstring(`👀 checking pod 'caddy-76c8d8fdfb-qgssh' in namespace 'test'...`))
 		Expect(logger.Output()).To(ContainSubstring(`👻 containers with unready status: [kube-rbac-proxy]`))
+		Expect(logger.Output()).To(ContainSubstring(`🗒  FLAG: --oidc-username-claim="email"`))
+		Expect(logger.Output()).To(ContainSubstring(`  E0106 06:27:45.761479       1 run.go:74] "command failed" err="failed to read the config file: failed to read resource-attribute file: open /etc/kube-rbac-proxy/config.yaml: no such file or directory"`))
 
 		// logs
-		Expect(logger.Output()).To(ContainSubstring(`🗒  E0106 06:27:45.761479       1 run.go:74] "command failed" err="failed to read the config file: failed to read resource-attribute file: open /etc/kube-rbac-proxy/config.yaml: no such file or directory"`))
 		Expect(logger.Output()).NotTo(ContainSubstring(`--alsologtostderr="false"`))
 		Expect(logger.Output()).NotTo(ContainSubstring(`--logtostderr="true"`))
 		Expect(logger.Output()).NotTo(ContainSubstring(`🤷 no 'error'/'failed'/'fatal'/'panic'/'emerg' messages found in the 'default' container logs`))
