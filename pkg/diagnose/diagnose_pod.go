@@ -122,7 +122,8 @@ func checkContainerLogs(logger logr.Logger, cl *kubernetes.Clientset, pod *corev
 	logger.Debugf("logs: '%s'", string(logs))
 	for _, l := range strings.Split(string(logs), "\n") {
 		ll := strings.ToLower(l)
-		if strings.Contains(ll, "err") ||
+		if strings.Contains(ll, "error") ||
+			strings.Contains(ll, "failed") ||
 			strings.Contains(ll, "fatal") ||
 			strings.Contains(ll, "panic") ||
 			strings.Contains(ll, "emerg") {
@@ -131,7 +132,7 @@ func checkContainerLogs(logger logr.Logger, cl *kubernetes.Clientset, pod *corev
 		}
 	}
 	if !found {
-		logger.Infof("🤷 no 'error'/'fatal'/'panic'/'emerg' messages found in the '%s' container logs", container)
+		logger.Infof("🤷 no 'error'/'failed'/'fatal'/'panic'/'emerg' messages found in the '%s' container logs", container)
 	}
 	return found, nil
 }
