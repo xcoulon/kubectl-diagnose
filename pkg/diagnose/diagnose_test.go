@@ -539,16 +539,18 @@ var _ = DescribeTable("should detect proxy container in CrashLoopBackOff status"
 			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'caddy-76c8d8fdfb' in namespace 'test'...`))
 		}
 		// in all cases:
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking pod 'caddy-76c8d8fdfb-cjsxc' in namespace 'test'...`))
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking pod 'caddy-76c8d8fdfb-qgssh' in namespace 'test'...`))
 		Expect(logger.Output()).To(ContainSubstring(`👻 containers with unready status: [kube-rbac-proxy]`))
-		Expect(logger.Output()).NotTo(ContainSubstring(`🤷 no 'error'/'fatal'/'panic'/'emerg' messages found in the 'default' container logs`))
 
 		// logs
-		Expect(logger.Output()).To(ContainSubstring(`🗒  E0104 06:58:34.754634       1 run.go:74] "command failed" err="failed to read the config file: failed to read resource-attribute file: open /etc/kube-rbac-proxy/config.yaml: no such file or directory"`))
+		Expect(logger.Output()).To(ContainSubstring(`🗒  E0106 06:27:45.761479       1 run.go:74] "command failed" err="failed to read the config file: failed to read resource-attribute file: open /etc/kube-rbac-proxy/config.yaml: no such file or directory"`))
+		Expect(logger.Output()).NotTo(ContainSubstring(`--alsologtostderr="false"`))
+		Expect(logger.Output()).NotTo(ContainSubstring(`--logtostderr="true"`))
+		Expect(logger.Output()).NotTo(ContainSubstring(`🤷 no 'error'/'failed'/'fatal'/'panic'/'emerg' messages found in the 'default' container logs`))
 		// event
 		// no events reported since errors were found in the logs (besides, warning event is similar to container status ¯\_(ツ)_/¯)
 	},
-	Entry("from pod", diagnose.Pod, "test", "caddy-76c8d8fdfb-cjsxc"),
+	Entry("from pod", diagnose.Pod, "test", "caddy-76c8d8fdfb-qgssh"),
 	Entry("from replicaset", diagnose.ReplicaSet, "test", "caddy-76c8d8fdfb"),
 	Entry("from deployment", diagnose.Deployment, "test", "caddy"),
 	Entry("from service", diagnose.Service, "test", "caddy"),
@@ -623,7 +625,7 @@ var _ = DescribeTable("should detect container with readiness probe error",
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-13T21:55:27Z")
 		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Unhealthy: Readiness probe failed: HTTP probe failed with statuscode: 404`, time.Since(lastTimestamp).Truncate(time.Second))))
 		// logs
-		Expect(logger.Output()).To(ContainSubstring("🤷 no 'error'/'fatal'/'panic'/'emerg' messages found in the 'default' container logs"))
+		Expect(logger.Output()).To(ContainSubstring("🤷 no 'error'/'failed'/'fatal'/'panic'/'emerg' messages found in the 'default' container logs"))
 	},
 	Entry("from pod", diagnose.Pod, "test", "deploy-readiness-probe-error-6cb7664768-qlmns"),
 	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-readiness-probe-error-6cb7664768"),

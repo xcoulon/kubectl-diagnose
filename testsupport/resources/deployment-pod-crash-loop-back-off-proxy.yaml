@@ -322,14 +322,11 @@ status:
 apiVersion: v1
 kind: Pod
 metadata:
-  annotations:
-    openshift.io/scc: restricted-v2
-    seccomp.security.alpha.kubernetes.io/pod: runtime/default
   generateName: caddy-76c8d8fdfb-
   labels:
     app: caddy
     pod-template-hash: 76c8d8fdfb
-  name: caddy-76c8d8fdfb-cjsxc
+  name: caddy-76c8d8fdfb-qgssh
   namespace: test
   ownerReferences:
   - apiVersion: apps/v1
@@ -338,8 +335,8 @@ metadata:
     kind: ReplicaSet
     name: caddy-76c8d8fdfb
     uid: 8e1a3d2e-592e-4b2b-94b9-7d3eb36d8dfa
-  resourceVersion: "1910377577"
-  uid: cd2f5c2b-ec1d-42db-8755-ae4d92fa201b
+  resourceVersion: "1918563859"
+  uid: 11db59b0-3b41-4a1d-857d-fb51472b651e
 spec:
   containers:
   - args:
@@ -379,7 +376,7 @@ spec:
     - mountPath: /etc/kube-rbac-proxy
       name: kube-rbac-proxy-config
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      name: kube-api-access-6lgck
+      name: kube-api-access-bbhts
       readOnly: true
   - image: caddy:2
     imagePullPolicy: IfNotPresent
@@ -410,7 +407,7 @@ spec:
     - mountPath: /config/caddy
       name: caddy-config-cache
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      name: kube-api-access-6lgck
+      name: kube-api-access-bbhts
       readOnly: true
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
@@ -459,7 +456,7 @@ spec:
     secret:
       defaultMode: 420
       secretName: caddy-tls
-  - name: kube-api-access-6lgck
+  - name: kube-api-access-bbhts
     projected:
       defaultMode: 420
       sources:
@@ -497,7 +494,7 @@ status:
   - status: "True"
     type: PodScheduled
   containerStatuses:
-  - containerID: cri-o://077085de699e704662eb08114af35e8217aa91279b3225881c5500e27a67db96
+  - containerID: cri-o://ef6ff80891022ad650d1a72a42b88a718e5fead1b3c5e240d1593ef05e1b836a
     image: docker.io/library/caddy:2
     imageID: docker.io/library/caddy@sha256:39f1da8bd9f6405dc7f085062d532aee5abb3cb64a7526c5f468e15aa2525f89
     lastState: {}
@@ -507,61 +504,61 @@ status:
     started: true
     state:
       running:
-        startedAt: "2023-01-02T06:54:10Z"
-  - containerID: cri-o://b38e0cf52b348bd2124f557cd1ca89889ed9557a5b4dccb844db60ea6b3129fc
+        startedAt: "2023-01-06T06:24:40Z"
+  - containerID: cri-o://26b9733e67854441b5ff1b18fb0d10941da42fe910997c07fe78bda38f8101bf
     image: quay.io/brancz/kube-rbac-proxy:v0.14.0
     imageID: quay.io/brancz/kube-rbac-proxy@sha256:4ba7351a4d1efb50a03990697de7efbc51c6c02149f97b11f15d8f9953faf45e
     lastState:
       terminated:
-        containerID: cri-o://b38e0cf52b348bd2124f557cd1ca89889ed9557a5b4dccb844db60ea6b3129fc
+        containerID: cri-o://26b9733e67854441b5ff1b18fb0d10941da42fe910997c07fe78bda38f8101bf
         exitCode: 1
-        finishedAt: "2023-01-02T07:15:26Z"
+        finishedAt: "2023-01-06T06:27:45Z"
         message: |2
            FLAG: --oidc-username-claim="email"
-          I0104 07:15:26.794209       1 flags.go:64] FLAG: --one-output="false"
-          I0104 07:15:26.794212       1 flags.go:64] FLAG: --proxy-endpoints-port="0"
-          I0104 07:15:26.794216       1 flags.go:64] FLAG: --secure-listen-address="0.0.0.0:8081"
-          I0104 07:15:26.794219       1 flags.go:64] FLAG: --skip-headers="false"
-          I0104 07:15:26.794221       1 flags.go:64] FLAG: --skip-log-headers="false"
-          I0104 07:15:26.794224       1 flags.go:64] FLAG: --stderrthreshold="2"
-          I0104 07:15:26.794227       1 flags.go:64] FLAG: --tls-cert-file="/etc/tls/private/tls.crt"
-          I0104 07:15:26.794229       1 flags.go:64] FLAG: --tls-cipher-suites="[TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256]"
-          I0104 07:15:26.794239       1 flags.go:64] FLAG: --tls-min-version="VersionTLS12"
-          I0104 07:15:26.794243       1 flags.go:64] FLAG: --tls-private-key-file="/etc/tls/private/tls.key"
-          I0104 07:15:26.794246       1 flags.go:64] FLAG: --tls-reload-interval="1m0s"
-          I0104 07:15:26.794251       1 flags.go:64] FLAG: --upstream="http://127.0.0.1:8080"
-          I0104 07:15:26.794256       1 flags.go:64] FLAG: --upstream-ca-file=""
-          I0104 07:15:26.794260       1 flags.go:64] FLAG: --upstream-client-cert-file=""
-          I0104 07:15:26.794264       1 flags.go:64] FLAG: --upstream-client-key-file=""
-          I0104 07:15:26.794268       1 flags.go:64] FLAG: --upstream-force-h2c="false"
-          I0104 07:15:26.794272       1 flags.go:64] FLAG: --v="10"
-          I0104 07:15:26.794276       1 flags.go:64] FLAG: --version="false"
-          I0104 07:15:26.794281       1 flags.go:64] FLAG: --vmodule=""
-          I0104 07:15:26.794291       1 kube-rbac-proxy.go:528] Reading config file: /etc/kube-rbac-proxy/config.yaml
-          E0104 07:15:26.794329       1 run.go:74] "command failed" err="failed to read the config file: failed to read resource-attribute file: open /etc/kube-rbac-proxy/config.yaml: no such file or directory"
+          I0106 06:27:45.761292       1 flags.go:64] FLAG: --one-output="false"
+          I0106 06:27:45.761296       1 flags.go:64] FLAG: --proxy-endpoints-port="0"
+          I0106 06:27:45.761302       1 flags.go:64] FLAG: --secure-listen-address="0.0.0.0:8081"
+          I0106 06:27:45.761307       1 flags.go:64] FLAG: --skip-headers="false"
+          I0106 06:27:45.761312       1 flags.go:64] FLAG: --skip-log-headers="false"
+          I0106 06:27:45.761316       1 flags.go:64] FLAG: --stderrthreshold="2"
+          I0106 06:27:45.761321       1 flags.go:64] FLAG: --tls-cert-file="/etc/tls/private/tls.crt"
+          I0106 06:27:45.761326       1 flags.go:64] FLAG: --tls-cipher-suites="[TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256]"
+          I0106 06:27:45.761345       1 flags.go:64] FLAG: --tls-min-version="VersionTLS12"
+          I0106 06:27:45.761351       1 flags.go:64] FLAG: --tls-private-key-file="/etc/tls/private/tls.key"
+          I0106 06:27:45.761356       1 flags.go:64] FLAG: --tls-reload-interval="1m0s"
+          I0106 06:27:45.761365       1 flags.go:64] FLAG: --upstream="http://127.0.0.1:8080"
+          I0106 06:27:45.761370       1 flags.go:64] FLAG: --upstream-ca-file=""
+          I0106 06:27:45.761375       1 flags.go:64] FLAG: --upstream-client-cert-file=""
+          I0106 06:27:45.761380       1 flags.go:64] FLAG: --upstream-client-key-file=""
+          I0106 06:27:45.761384       1 flags.go:64] FLAG: --upstream-force-h2c="false"
+          I0106 06:27:45.761389       1 flags.go:64] FLAG: --v="10"
+          I0106 06:27:45.761397       1 flags.go:64] FLAG: --version="false"
+          I0106 06:27:45.761405       1 flags.go:64] FLAG: --vmodule=""
+          I0106 06:27:45.761417       1 kube-rbac-proxy.go:528] Reading config file: /etc/kube-rbac-proxy/config.yaml
+          E0106 06:27:45.761479       1 run.go:74] "command failed" err="failed to read the config file: failed to read resource-attribute file: open /etc/kube-rbac-proxy/config.yaml: no such file or directory"
         reason: Error
-        startedAt: "2023-01-02T07:15:26Z"
+        startedAt: "2023-01-06T06:27:45Z"
     name: kube-rbac-proxy
     ready: false
-    restartCount: 9
+    restartCount: 5
     started: false
     state:
       waiting:
-        message: back-off 5m0s restarting failed container=kube-rbac-proxy pod=caddy-76c8d8fdfb-cjsxc_xcoulon-dev(cd2f5c2b-ec1d-42db-8755-ae4d92fa201b)
+        message: back-off 2m40s restarting failed container=kube-rbac-proxy pod=caddy-76c8d8fdfb-qgssh_xcoulon-dev(11db59b0-3b41-4a1d-857d-fb51472b651e)
         reason: CrashLoopBackOff
   hostIP: 10.0.175.2
   phase: Running
-  podIP: 10.131.2.85
+  podIP: 10.131.3.75
   podIPs:
-  - ip: 10.131.2.85
+  - ip: 10.131.3.75
   qosClass: Burstable
-  startTime: "2023-01-02T06:54:03Z"
+  startTime: "2023-01-06T06:24:37Z"
 ---
 apiVersion: v1
 kind: Event
 metadata:
   name: caddy-76c8d8fdfb-cjsxc.1737089bfec9a4b8
-  namespace: xcoulon-dev
+  namespace: test
   resourceVersion: "1910514068"
   uid: 6662f0e3-9952-4eb4-a745-43bce78826b9
 count: 304
@@ -573,7 +570,7 @@ involvedObject:
   fieldPath: spec.containers{kube-rbac-proxy}
   kind: Pod
   name: caddy-76c8d8fdfb-cjsxc
-  namespace: xcoulon-dev
+  namespace: test
   resourceVersion: "1910308166"
   uid: cd2f5c2b-ec1d-42db-8755-ae4d92fa201b
 message: Back-off restarting failed container

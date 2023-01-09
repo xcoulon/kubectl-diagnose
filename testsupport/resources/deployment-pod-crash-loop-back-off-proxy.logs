@@ -1,17 +1,18 @@
-caddy-76c8d8fdfb-cjsxc:
+caddy-76c8d8fdfb-qgssh:
   default: |-
-    {"level":"info","msg":"using provided configuration","config_file":"/etc/caddy/Caddyfile","config_adapter":"caddyfile"}
-    {"level":"warn","msg":"Caddyfile input is not formatted; run the 'caddy fmt' command to fix inconsistencies","adapter":"caddyfile","file":"/etc/caddy/Caddyfile","line":3}
-    {"level":"info","logger":"admin","msg":"admin endpoint started","address":"localhost:2019","enforce_origin":false,"origins":["//localhost:2019","//[::1]:2019","//127.0.0.1:2019"]}
-    {"level":"info","logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0xc0003a1a40"}
-    {"level":"info","logger":"tls","msg":"cleaning storage unit","description":"FileStorage:/data/caddy"}
-    {"level":"info","logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2","h3"]}
-    {"level":"info","logger":"tls","msg":"finished cleaning storage units"}
-    {"level":"info","msg":"autosaved config (load with --resume flag)","file":"/config/caddy/autosave.json"}
-    {"level":"info","msg":"serving initial configuration"}
+    {"level":"info","ts":1672986280.9469097,"msg":"using provided configuration","config_file":"/etc/caddy/Caddyfile","config_adapter":"caddyfile"}
+    {"level":"warn","ts":1672986280.947763,"msg":"Caddyfile input is not formatted; run the 'caddy fmt' command to fix inconsistencies","adapter":"caddyfile","file":"/etc/caddy/Caddyfile","line":3}
+    {"level":"info","ts":1672986280.949301,"logger":"admin","msg":"admin endpoint started","address":"localhost:2019","enforce_origin":false,"origins":["//localhost:2019","//[::1]:2019","//127.0.0.1:2019"]}
+    {"level":"info","ts":1672986280.9495502,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0xc0006bee70"}
+    {"level":"info","ts":1672986280.9496136,"logger":"tls","msg":"cleaning storage unit","description":"FileStorage:/data/caddy"}
+    {"level":"info","ts":1672986280.9496562,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2","h3"]}
+    {"level":"info","ts":1672986280.9497278,"logger":"tls","msg":"finished cleaning storage units"}
+    {"level":"info","ts":1672986280.9497876,"msg":"autosaved config (load with --resume flag)","file":"/config/caddy/autosave.json"}
+    {"level":"info","ts":1672986280.9498024,"msg":"serving initial configuration"}
   kube-rbac-proxy: |-
-    I0104 06:58:34.754365       1 flags.go:64] FLAG: --add-dir-header="false"
+    I0106 06:27:45.761152       1 flags.go:64] FLAG: --alsologtostderr="false"
+    I0106 06:27:45.761245       1 flags.go:64] FLAG: --logtostderr="true"
+    I0106 06:27:45.761250       1 flags.go:64] FLAG: --oidc-ca-file=""
     ...
-    I0104 06:58:34.754591       1 flags.go:64] FLAG: --vmodule=""
-    I0104 06:58:34.754600       1 kube-rbac-proxy.go:528] Reading config file: /etc/kube-rbac-proxy/config.yaml
-    E0104 06:58:34.754634       1 run.go:74] "command failed" err="failed to read the config file: failed to read resource-attribute file: open /etc/kube-rbac-proxy/config.yaml: no such file or directory"
+    I0106 06:27:45.761417       1 kube-rbac-proxy.go:528] Reading config file: /etc/kube-rbac-proxy/config.yaml
+    E0106 06:27:45.761479       1 run.go:74] "command failed" err="failed to read the config file: failed to read resource-attribute file: open /etc/kube-rbac-proxy/config.yaml: no such file or directory"
