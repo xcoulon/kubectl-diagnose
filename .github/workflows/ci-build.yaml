@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [1.17,1.18,1.19]
+        go-version: [1.18,1.19]
     name: Build and Test with Go ${{ matrix.go-version }}
 
     steps:
@@ -43,8 +43,8 @@ jobs:
         make test-with-coverage
 
     - name: Codecov
-      if: ${{ matrix.go-version }} == '1.17'
-      uses: codecov/codecov-action@v3.1.1
+      if: ${{ matrix.go-version }} == '1.18'
+      uses: codecov/codecov-action@v3
       with:
         # Path to coverage file to upload
         file: coverprofile.out
@@ -57,7 +57,7 @@ jobs:
     - name: Install Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.17
+        go-version: 1.18
 
     - name: Checkout code
       uses: actions/checkout@v3
