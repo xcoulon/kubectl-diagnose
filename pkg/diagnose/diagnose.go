@@ -6,18 +6,12 @@ import (
 
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
 )
 
 func Diagnose(ctx context.Context, logger logr.Logger, cfg *rest.Config, kind ResourceKind, namespace, name string) (bool, error) {
 	found, err := diagnose(ctx, logger, cfg, kind, namespace, name)
-	switch {
-	case apierrors.IsNotFound(err):
-		// if resource was not found, just print the error but
-		// no need to print of the cmd usage
-		logger.Errorf(err.Error())
-	case !found:
+	if err == nil && !found {
 		logger.Infof(notFoundMsg)
 	}
 	return found, err

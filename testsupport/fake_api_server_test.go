@@ -488,7 +488,7 @@ var _ = Describe("fake api-server endpoints", func() {
 	It("should retrieve logs", func() {
 		// given
 		logger := testsupport.NewLogger()
-		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml", "resources/all-good.logs")
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml", "resources/fake-api-server.logs")
 		Expect(err).NotTo(HaveOccurred())
 		defer s.Close()
 
@@ -498,6 +498,22 @@ var _ = Describe("fake api-server endpoints", func() {
 		// then
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp).To(HaveTextBody("some\nlogs"))
+	})
+
+	It("should fail to retrieve logs when container creating", func() {
+		// given
+		logger := testsupport.NewLogger()
+		s, err := testsupport.NewFakeAPIServer(logger, "resources/fake-api-server.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		defer s.Close()
+
+		// when
+		resp, err := http.DefaultClient.Get(s.URL + "/api/v1/namespaces/test/pods/container-creating/log?container=default")
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(HaveHTTPStatus(http.StatusInternalServerError))
+		Expect(resp).To(HaveHTTPBody("container 'default' in pod 'container-creating' is waiting to start: ContainerCreating"))
 	})
 
 	It("should not match any endpoint", func() {

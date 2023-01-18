@@ -75,7 +75,7 @@ func NewFakeAPIServer(logger logr.Logger, filenames ...string) (*httptest.Server
 	r := httprouter.New()
 	r.GET(`/api/v1/namespaces/:namespace/pods`, newPodsHandler(logger, allObjs))
 	r.GET(`/api/v1/namespaces/:namespace/pods/:name`, newObjectHandler(logger, allObjs, diagnose.Pod))
-	r.GET(`/api/v1/namespaces/:namespace/pods/:name/log`, newPodLogsHandler(logger, allLogs))
+	r.GET(`/api/v1/namespaces/:namespace/pods/:name/log`, newPodLogsHandler(logger, allObjs, allLogs))
 	r.GET(`/api/v1/namespaces/:namespace/services/:name`, newObjectHandler(logger, allObjs, diagnose.Service))
 	r.GET(`/api/v1/namespaces/:namespace/events`, newEventsHandler(logger, allObjs))
 	r.GET(`/api/v1/namespaces/:namespace/persistentvolumeclaims`, newPersistentVolumeClaimsHandler(logger, allObjs))
@@ -166,20 +166,6 @@ func parseLogs(filename string) (map[string]map[string][]string, error) {
 // Endpoint Handlers
 // ----------------------------------
 
-func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind diagnose.ResourceKind) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-		logger.Debugf("handling object at '%s'", r.URL.Path)
-		namespace := params.ByName("namespace") // unset for cluster-scoped resources (eg: storageclasses)
-		name := params.ByName("name")
-		obj, err := lookupObject(logger, kind, namespace, name, objs)
-		if err != nil {
-			handleError(logger, w, err)
-			return
-		}
-		handleObject(logger, w, obj)
-	}
-}
-
 func lookupObject(logger logr.Logger, kind diagnose.ResourceKind, namespace, name string, objs []runtimeclient.Object) (interface{}, error) {
 	logger.Debugf("looking up %s %s/%s", kind, namespace, name)
 	switch name {
@@ -208,15 +194,43 @@ func lookupObject(logger logr.Logger, kind diagnose.ResourceKind, namespace, nam
 	}
 }
 
-func newPodLogsHandler(logger logr.Logger, logs map[string]map[string][]string) httprouter.Handle {
+func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind diagnose.ResourceKind) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+		logger.Debugf("handling object at '%s'", r.URL.Path)
+		namespace := params.ByName("namespace") // unset for cluster-scoped resources (eg: storageclasses)
+		name := params.ByName("name")
+		obj, err := lookupObject(logger, kind, namespace, name, objs)
+		if err != nil {
+			handleError(logger, w, err)
+			return
+		}
+		handleObject(logger, w, obj)
+	}
+}
+
+func newPodLogsHandler(logger logr.Logger, objs []runtimeclient.Object, logs map[string]map[string][]string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		namespace := params.ByName("namespace")
-		pod := params.ByName("name")
+		name := params.ByName("name")
 		container := r.URL.Query().Get("container")
-		logger.Debugf("fetching logs for container '%s' of pod '%s' in namespace '%s'", container, pod, namespace)
+		pod, err := lookupObject(logger, "Pod", namespace, name, objs)
+		if err != nil {
+			handleError(logger, w, err)
+			return
+		}
+		if p, ok := pod.(*corev1.Pod); ok {
+			for _, cs := range p.Status.ContainerStatuses {
+				// should not return logs when container is waiting with 'ContainerCreating' reason
+				if cs.Name == container && cs.State.Waiting != nil && cs.State.Waiting.Reason == "ContainerCreating" {
+					handleError(logger, w, fmt.Errorf("container '%s' in pod '%s' is waiting to start: %s", container, p.Name, cs.State.Waiting.Reason))
+					return
+				}
+			}
+		}
+		logger.Debugf("fetching logs for container '%s' of pod '%s' in namespace '%s'", container, name, namespace)
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
-		output := strings.Join(logs[pod][container], "\n")
+		output := strings.Join(logs[name][container], "\n")
 		w.Write([]byte(output)) //nolint: errcheck
 	}
 }
