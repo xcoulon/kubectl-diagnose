@@ -16,12 +16,14 @@ type Logger interface {
 type DefaultLogger struct {
 	out      io.Writer
 	loglevel Level
+	colorize bool
 }
 
-func New(out io.Writer, level Level) Logger {
+func New(out io.Writer, level Level, colorize bool) Logger {
 	return &DefaultLogger{
 		out:      out,
 		loglevel: level,
+		colorize: colorize,
 	}
 }
 
@@ -61,6 +63,9 @@ func (l *DefaultLogger) Infof(msg string, args ...interface{}) {
 }
 
 func (l *DefaultLogger) Errorf(msg string, args ...interface{}) {
-	c := color.New(color.FgRed)
+	c := color.New()
+	if l.colorize {
+		c.Add(color.FgRed)
+	}
 	c.Fprintln(l.out, fmt.Sprintf(msg, args...))
 }

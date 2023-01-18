@@ -20,12 +20,12 @@ func NewLogger() *TestLogger {
 	switch logLevel {
 	case "debug":
 		return &TestLogger{
-			logger: logr.New(os.Stdout, logr.DebugLevel),
+			logger: logr.New(os.Stdout, logr.DebugLevel, false),
 			buff:   buff,
 		}
 	}
 	return &TestLogger{
-		logger: logr.New(buff, logr.InfoLevel),
+		logger: logr.New(buff, logr.InfoLevel, false),
 		buff:   buff,
 	}
 }
