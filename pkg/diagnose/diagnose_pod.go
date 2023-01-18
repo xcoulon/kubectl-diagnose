@@ -84,27 +84,29 @@ func checkPod(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset,
 // return the list of containers' name whose status is `waiting`
 func diagnoseContainer(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bool, error) {
 	found := false
-	for _, s := range pod.Status.ContainerStatuses {
+	for _, cs := range pod.Status.ContainerStatuses {
 		switch {
-		case s.State.Waiting != nil: // if container not in `Running` state
+		case cs.State.Waiting != nil: // if container not in `Running` state
 			found = true
-			if s.State.Waiting.Message != "" {
-				logger.Errorf("👻 container '%s' is waiting with reason '%s': %s", s.Name, s.State.Waiting.Reason, s.State.Waiting.Message)
+			if cs.State.Waiting.Message != "" {
+				logger.Errorf("👻 container '%s' is waiting with reason '%s': %s", cs.Name, cs.State.Waiting.Reason, cs.State.Waiting.Message)
 			} else {
-				logger.Errorf("👻 container '%s' is waiting with reason '%s'", s.Name, s.State.Waiting.Reason)
+				logger.Errorf("👻 container '%s' is waiting with reason '%s'", cs.Name, cs.State.Waiting.Reason)
 			}
 			switch {
-			case s.State.Waiting.Reason == "CrashLoopBackOff" && s.LastTerminationState.Terminated != nil && s.LastTerminationState.Terminated.Message != "":
-				logger.Errorf("🗒 %s", strings.ReplaceAll(s.LastTerminationState.Terminated.Message, "\n", "\n  "))
+			case cs.State.Waiting.Reason == "CrashLoopBackOff" && cs.LastTerminationState.Terminated != nil && cs.LastTerminationState.Terminated.Message != "":
+				logger.Errorf("🗒 %s", strings.ReplaceAll(cs.LastTerminationState.Terminated.Message, "\n", "\n  "))
+			case cs.State.Waiting != nil && cs.State.Waiting.Reason == "ContainerCreating":
+				// do nothing
 			default:
-				_, err := checkContainerLogs(ctx, logger, cl, pod, s.Name)
+				_, err := checkContainerLogs(ctx, logger, cl, pod, cs.Name)
 				if err != nil {
 					return false, err
 				}
 			}
 
-		case s.Started != nil && *s.Started && !s.Ready:
-			f, err := checkContainerLogs(ctx, logger, cl, pod, s.Name)
+		case cs.Started != nil && *cs.Started && !cs.Ready:
+			f, err := checkContainerLogs(ctx, logger, cl, pod, cs.Name)
 			if err != nil {
 				return false, err
 			}

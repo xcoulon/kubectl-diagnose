@@ -33,32 +33,33 @@ func NewDiagnoseCmd() *cobra.Command {
 		Use:           "kubectl-diagnose (TYPE NAME | TYPE/NAME)",
 		Short:         "Diagnose the resource to find the cause of the 503 error",
 		SilenceErrors: false,
-		SilenceUsage:  false,
+		SilenceUsage:  true,
 		Args:          cobra.RangeArgs(1, 2),
 		Version:       version(),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			l, err := logr.ParseLevel(loglevel)
 			if err != nil {
-				return err
+				fmt.Fprint(cmd.ErrOrStderr(), err.Error())
 			}
 			logger := logr.New(cmd.OutOrStdout(), l)
 			kind, name, err := getResourceTypeName(args)
 			if err != nil {
-				return err
+				logger.Errorf(err.Error())
 			}
 			// look-up the kubeconfig to use
 			// use the current context in kubeconfig
 			cfg, config, err := newClientFromConfig(kubeconfig)
 			if err != nil {
-				return err
+				logger.Errorf(err.Error())
 			}
 			if namespace == "" {
 				if namespace, _, err = config.Namespace(); err != nil {
-					return err
+					logger.Errorf(err.Error())
 				}
 			}
-			_, err = diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-			return err
+			if _, err = diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name); err != nil {
+				logger.Errorf(err.Error())
+			}
 		},
 	}
 	cmd.Flags().StringVarP(&kubeconfig, "kubeconfig", "", "", "(optional) absolute path to the kubeconfig file")

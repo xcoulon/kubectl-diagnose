@@ -591,3 +591,46 @@ involvedObject:
   name: readiness-probe-error-6cb7664768-qlmns
   uid: c188fba1-0304-4686-a67c-17db71548c6f
   resourceVersion: "277004"
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: test
+  name: container-creating
+spec: # (does not matter here)
+status:
+  conditions:
+  - status: "True"
+    type: Initialized
+  - message: 'containers with unready status: [default default-proxy]'
+    reason: ContainersNotReady
+    status: "False"
+    type: Ready
+  - message: 'containers with unready status: [default default-proxy]'
+    reason: ContainersNotReady
+    status: "False"
+    type: ContainersReady
+  - status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - image: docker.io/default/default
+    imageID: ""
+    lastState: {}
+    name: default
+    ready: false
+    restartCount: 0
+    started: false
+    state:
+      waiting:
+        reason: ContainerCreating
+  - image: docker.io/default/default
+    imageID: ""
+    lastState: {}
+    name: default-proxy
+    ready: false
+    restartCount: 0
+    started: false
+    state:
+      waiting:
+        reason: ContainerCreating
