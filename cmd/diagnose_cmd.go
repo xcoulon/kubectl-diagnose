@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -56,7 +57,7 @@ func NewDiagnoseCmd() *cobra.Command {
 					return err
 				}
 			}
-			_, err = diagnose.Diagnose(logger, cfg, kind, namespace, name)
+			_, err = diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 			return err
 		},
 	}

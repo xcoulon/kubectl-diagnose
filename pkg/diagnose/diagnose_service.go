@@ -11,19 +11,19 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func diagnoseService(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+func diagnoseService(ctx context.Context, logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
 	cl := kubernetes.NewForConfigOrDie(cfg)
-	svc, err := cl.CoreV1().Services(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	svc, err := cl.CoreV1().Services(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
-	return checkService(logger, cl, svc)
+	return checkService(ctx, logger, cl, svc)
 }
 
-func checkService(logger logr.Logger, cl *kubernetes.Clientset, svc *corev1.Service) (bool, error) {
+func checkService(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, svc *corev1.Service) (bool, error) {
 	logger.Infof("👀 checking service '%s' in namespace '%s'...", svc.Name, svc.Namespace)
 
-	pods, err := findPods(cl, svc.Namespace, svc.Spec.Selector)
+	pods, err := findPods(ctx, cl, svc.Namespace, svc.Spec.Selector)
 	if err != nil {
 		return false, err
 	}
@@ -32,7 +32,7 @@ func checkService(logger logr.Logger, cl *kubernetes.Clientset, svc *corev1.Serv
 	if len(pods) == 0 {
 		sel := labels.Set(svc.Spec.Selector).AsSelector()
 		// attempt to find the Deployment which was supposed to create the Pods (if there is one)
-		deploys, err := cl.AppsV1().Deployments(svc.Namespace).List(context.TODO(), metav1.ListOptions{})
+		deploys, err := cl.AppsV1().Deployments(svc.Namespace).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -40,7 +40,7 @@ func checkService(logger logr.Logger, cl *kubernetes.Clientset, svc *corev1.Serv
 			sel := labels.Set(svc.Spec.Selector).AsSelector()
 			if sel.Matches(labels.Set(deploy.Spec.Selector.MatchLabels)) {
 				obj := deploy
-				found, err := checkDeployment(logger, cl, &obj)
+				found, err := checkDeployment(ctx, logger, cl, &obj)
 				if err != nil {
 					return false, err
 				}
@@ -50,14 +50,14 @@ func checkService(logger logr.Logger, cl *kubernetes.Clientset, svc *corev1.Serv
 			}
 		}
 		// attempt to find the StatefulSet which was supposed to create the Pods (if there is one)
-		stss, err := cl.AppsV1().StatefulSets(svc.Namespace).List(context.TODO(), metav1.ListOptions{})
+		stss, err := cl.AppsV1().StatefulSets(svc.Namespace).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return false, err
 		}
 		for _, rs := range stss.Items {
 			if sel.Matches(labels.Set(rs.Spec.Selector.MatchLabels)) {
 				obj := rs
-				found, err := checkStatefulSet(logger, cl, &obj)
+				found, err := checkStatefulSet(ctx, logger, cl, &obj)
 				if err != nil {
 					return false, err
 				}
@@ -91,7 +91,7 @@ pods:
 				return true, nil
 			}
 			p := pod
-			if found, err := checkPod(logger, cl, &p); err != nil {
+			if found, err := checkPod(ctx, logger, cl, &p); err != nil {
 				return false, err
 			} else if found {
 				return true, nil

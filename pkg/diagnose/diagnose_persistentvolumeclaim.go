@@ -11,16 +11,16 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func diagnosePersistentVolumeClaim(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+func diagnosePersistentVolumeClaim(ctx context.Context, logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
 	cl := kubernetes.NewForConfigOrDie(cfg)
-	pvc, err := cl.CoreV1().PersistentVolumeClaims(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	pvc, err := cl.CoreV1().PersistentVolumeClaims(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
-	return checkPersistentVolumeClaim(logger, cl, pvc)
+	return checkPersistentVolumeClaim(ctx, logger, cl, pvc)
 }
 
-func checkPersistentVolumeClaim(logger logr.Logger, cl *kubernetes.Clientset, pvc *corev1.PersistentVolumeClaim) (bool, error) {
+func checkPersistentVolumeClaim(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, pvc *corev1.PersistentVolumeClaim) (bool, error) {
 	logger.Infof("👀 checking persistentvolumeclaim '%s' in namespace '%s'...", pvc.Name, pvc.Namespace)
 	found := false
 	logger.Debugf("👀 checking persistentvolumeclaim status...")
@@ -28,7 +28,7 @@ func checkPersistentVolumeClaim(logger logr.Logger, cl *kubernetes.Clientset, pv
 		logger.Errorf("👻 persistentvolumeclaim '%s' is in '%s' phase", pvc.Name, pvc.Status.Phase)
 	}
 	// check events associated with the pod
-	f, err := checkEvents(logger, cl, pvc)
+	f, err := checkEvents(ctx, logger, cl, pvc)
 	if err != nil {
 		return false, err
 	}

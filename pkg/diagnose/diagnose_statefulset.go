@@ -12,16 +12,16 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func diagnoseStatefulSet(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+func diagnoseStatefulSet(ctx context.Context, logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
 	cl := kubernetes.NewForConfigOrDie(cfg)
-	sts, err := cl.AppsV1().StatefulSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	sts, err := cl.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
-	return checkStatefulSet(logger, cl, sts)
+	return checkStatefulSet(ctx, logger, cl, sts)
 }
 
-func checkStatefulSet(logger logr.Logger, cl *kubernetes.Clientset, sts *appsv1.StatefulSet) (bool, error) {
+func checkStatefulSet(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, sts *appsv1.StatefulSet) (bool, error) {
 	logger.Infof("👀 checking statefulset '%s' in namespace '%s'...", sts.Name, sts.Namespace)
 	found := false
 	// check the replicas
@@ -32,7 +32,7 @@ func checkStatefulSet(logger logr.Logger, cl *kubernetes.Clientset, sts *appsv1.
 		return true, nil
 	}
 	// check events associated with the statefulset
-	if found, err := checkEvents(logger, cl, sts); found || err != nil {
+	if found, err := checkEvents(ctx, logger, cl, sts); found || err != nil {
 		return found, err
 	}
 
@@ -40,7 +40,7 @@ func checkStatefulSet(logger logr.Logger, cl *kubernetes.Clientset, sts *appsv1.
 	// checking the pods
 	// TODO: remove code duplication with ReplicaSet checks
 	selector := labels.Set(sts.Spec.Selector.MatchLabels).String()
-	pods, err := cl.CoreV1().Pods(sts.Namespace).List(context.TODO(), metav1.ListOptions{
+	pods, err := cl.CoreV1().Pods(sts.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
@@ -58,7 +58,7 @@ func checkStatefulSet(logger logr.Logger, cl *kubernetes.Clientset, sts *appsv1.
 		for _, ownerRef := range pod.OwnerReferences {
 			if ownerRef.UID == sts.UID {
 				// pod is "owned" by this sts
-				if found, err := checkPod(logger, cl, &pod); err != nil {
+				if found, err := checkPod(ctx, logger, cl, &pod); err != nil {
 					return false, err
 				} else if found {
 					return true, nil

@@ -1,6 +1,7 @@
 package diagnose_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -27,7 +28,7 @@ var _ = DescribeTable("should detect missing route target service",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -47,7 +48,7 @@ var _ = DescribeTable("should detect invalid route target port as string",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -67,7 +68,7 @@ var _ = DescribeTable("should detect invalid route target port as int",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -90,7 +91,7 @@ var _ = DescribeTable("should detect missing target service",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -110,7 +111,7 @@ var _ = DescribeTable("should detect invalid service port",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -130,7 +131,7 @@ var _ = DescribeTable("should detect invalid service name",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -150,7 +151,7 @@ var _ = DescribeTable("should detect invalid ingressclassname",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -170,7 +171,7 @@ var _ = DescribeTable("should not fail when get ingressclass is forbidden", // i
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -195,7 +196,7 @@ var _ = DescribeTable("should detect no matching pods",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -221,7 +222,7 @@ var _ = DescribeTable("should detect invalid service target port as string",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -246,7 +247,7 @@ var _ = DescribeTable("should detect invalid service target port as int",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -274,7 +275,7 @@ var _ = DescribeTable("should detect zero replicas specified in deployment",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -308,7 +309,7 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in deploym
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -341,7 +342,7 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in deploym
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -374,7 +375,7 @@ var _ = DescribeTable("should detect zero replicas specified in deployment",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -406,9 +407,10 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in statefu
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -440,9 +442,10 @@ var _ = DescribeTable("should detect invalid storageclass specified in statefuls
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -482,9 +485,10 @@ var _ = DescribeTable("should detect default container in CrashLoopBackOff statu
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -524,7 +528,7 @@ var _ = DescribeTable("should detect proxy container in CrashLoopBackOff status"
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -564,9 +568,10 @@ var _ = DescribeTable("should detect container in ImagePullBackOff status",
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -603,9 +608,10 @@ var _ = DescribeTable("should detect container with readiness probe error",
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -644,9 +650,10 @@ var _ = DescribeTable("should detect container with unknown configmap mount",
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -686,9 +693,10 @@ var _ = DescribeTable("should detect container with unknown configmap mount",
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -728,7 +736,7 @@ var _ = DescribeTable("should handle internal server errors",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		_, err = diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		_, err = diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(apierrors.IsInternalError(err)).To(BeTrue())
@@ -750,7 +758,7 @@ var _ = DescribeTable("should handle not found errors",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		_, err = diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		_, err = diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).To(BeANotFoundError())

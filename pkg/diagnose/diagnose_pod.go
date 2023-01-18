@@ -13,18 +13,18 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func diagnosePod(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+func diagnosePod(ctx context.Context, logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
 	cl := kubernetes.NewForConfigOrDie(cfg)
-	pod, err := cl.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	pod, err := cl.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
-	return checkPod(logger, cl, pod)
+	return checkPod(ctx, logger, cl, pod)
 }
 
-func findPods(cl *kubernetes.Clientset, namespace string, selector map[string]string) ([]corev1.Pod, error) {
+func findPods(ctx context.Context, cl *kubernetes.Clientset, namespace string, selector map[string]string) ([]corev1.Pod, error) {
 	// find all pods with the associated label selector in the same namespace
-	pods, err := cl.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+	pods, err := cl.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labels.Set(selector).String(),
 	})
 	if err != nil {
@@ -33,7 +33,7 @@ func findPods(cl *kubernetes.Clientset, namespace string, selector map[string]st
 	return pods.Items, nil
 }
 
-func checkPod(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bool, error) {
+func checkPod(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bool, error) {
 	logger.Infof("👀 checking pod '%s' in namespace '%s'...", pod.Name, pod.Namespace)
 	found := false
 	logger.Debugf("👀 checking pod status...")
@@ -45,7 +45,7 @@ func checkPod(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bo
 				logger.Errorf("👻 %s", c.Message)
 			}
 			// also, check the container statuses
-			f, err := diagnoseContainer(logger, cl, pod)
+			f, err := diagnoseContainer(ctx, logger, cl, pod)
 			if err != nil {
 				return false, err
 			}
@@ -54,11 +54,11 @@ func checkPod(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bo
 			// check if there's a pending PVC
 			for _, v := range pod.Spec.Volumes {
 				if v.PersistentVolumeClaim != nil {
-					pvc, err := cl.CoreV1().PersistentVolumeClaims(pod.Namespace).Get(context.TODO(), v.PersistentVolumeClaim.ClaimName, metav1.GetOptions{})
+					pvc, err := cl.CoreV1().PersistentVolumeClaims(pod.Namespace).Get(ctx, v.PersistentVolumeClaim.ClaimName, metav1.GetOptions{})
 					if err != nil {
 						return false, err
 					}
-					f, err := checkPersistentVolumeClaim(logger, cl, pvc)
+					f, err := checkPersistentVolumeClaim(ctx, logger, cl, pvc)
 					if err != nil {
 						return false, err
 					}
@@ -70,7 +70,7 @@ func checkPod(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bo
 
 	if pod.Status.Phase != corev1.PodRunning {
 		// check events associated with the pod
-		f, err := checkEvents(logger, cl, pod)
+		f, err := checkEvents(ctx, logger, cl, pod)
 		if err != nil {
 			return false, err
 		}
@@ -82,7 +82,7 @@ func checkPod(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bo
 
 // check the status of the pod containers
 // return the list of containers' name whose status is `waiting`
-func diagnoseContainer(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bool, error) {
+func diagnoseContainer(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bool, error) {
 	found := false
 	for _, s := range pod.Status.ContainerStatuses {
 		switch {
@@ -97,14 +97,14 @@ func diagnoseContainer(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1
 			case s.State.Waiting.Reason == "CrashLoopBackOff" && s.LastTerminationState.Terminated != nil && s.LastTerminationState.Terminated.Message != "":
 				logger.Errorf("🗒 %s", strings.ReplaceAll(s.LastTerminationState.Terminated.Message, "\n", "\n  "))
 			default:
-				_, err := checkContainerLogs(logger, cl, pod, s.Name)
+				_, err := checkContainerLogs(ctx, logger, cl, pod, s.Name)
 				if err != nil {
 					return false, err
 				}
 			}
 
 		case s.Started != nil && *s.Started && !s.Ready:
-			f, err := checkContainerLogs(logger, cl, pod, s.Name)
+			f, err := checkContainerLogs(ctx, logger, cl, pod, s.Name)
 			if err != nil {
 				return false, err
 			}
@@ -123,10 +123,10 @@ func diagnoseContainer(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1
 	return found, nil
 }
 
-func checkContainerLogs(logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod, container string) (bool, error) {
+func checkContainerLogs(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod, container string) (bool, error) {
 	found := false
 	logger.Debugf("👀 checking '%s' container logs...", container)
-	logs, err := cl.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: container}).DoRaw(context.TODO())
+	logs, err := cl.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: container}).DoRaw(ctx)
 	if err != nil {
 		return false, err
 	}
