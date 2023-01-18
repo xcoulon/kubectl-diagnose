@@ -41,8 +41,8 @@ func diagnose(ctx context.Context, logger logr.Logger, cfg *rest.Config, kind Re
 }
 
 const notFoundMsg = `🤷 couldn't find the culprit
-possible causes:
-- invalid configuration of a sidecar container or a proxy within the pod
-- trying to connect to a container which is listening to '127.0.0.1' instead of '0.0.0.0'
-- something else?
-`
+💡 possible causes:
+   - invalid configuration of a container within the pod?
+   - trying to connect to a container listening to '127.0.0.1' instead of '0.0.0.0'?
+   - redirecting to an invalid callback URL after logging in on a third-party SSO?
+   - something else?`

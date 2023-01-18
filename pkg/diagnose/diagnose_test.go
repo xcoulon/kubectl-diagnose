@@ -526,9 +526,11 @@ var _ = DescribeTable("should detect proxy container in CrashLoopBackOff status"
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-crash-loop-back-off-proxy.yaml", "resources/deployment-pod-crash-loop-back-off-proxy.logs")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
 
 		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -552,7 +554,9 @@ var _ = DescribeTable("should detect proxy container in CrashLoopBackOff status"
 		Expect(logger.Output()).NotTo(ContainSubstring(`--logtostderr="true"`))
 		Expect(logger.Output()).NotTo(ContainSubstring(`🤷 no 'error'/'failed'/'fatal'/'panic'/'emerg' messages found in the 'default' container logs`))
 		// event
-		// no events reported since errors were found in the logs (besides, warning event is similar to container status ¯\_(ツ)_/¯)
+		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2023-01-04T06:59:16Z")
+		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: BackOff: Back-off restarting failed container`, now.Sub(lastTimestamp).Truncate(time.Second))))
+
 	},
 	Entry("from pod", diagnose.Pod, "test", "caddy-76c8d8fdfb-qgssh"),
 	Entry("from replicaset", diagnose.ReplicaSet, "test", "caddy-76c8d8fdfb"),

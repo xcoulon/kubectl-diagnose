@@ -557,7 +557,7 @@ status:
 apiVersion: v1
 kind: Event
 metadata:
-  name: caddy-76c8d8fdfb-cjsxc.1737089bfec9a4b8
+  name: caddy-76c8d8fdfb-qgssh.1737089bfec9a4b8
   namespace: test
   resourceVersion: "1910514068"
   uid: 6662f0e3-9952-4eb4-a745-43bce78826b9
@@ -569,10 +569,10 @@ involvedObject:
   apiVersion: v1
   fieldPath: spec.containers{kube-rbac-proxy}
   kind: Pod
-  name: caddy-76c8d8fdfb-cjsxc
+  name: caddy-76c8d8fdfb-qgssh
   namespace: test
   resourceVersion: "1910308166"
-  uid: cd2f5c2b-ec1d-42db-8755-ae4d92fa201b
+  uid: 11db59b0-3b41-4a1d-857d-fb51472b651e
 message: Back-off restarting failed container
 reason: BackOff
 reportingComponent: ""

@@ -37,6 +37,13 @@ func checkPod(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset,
 	logger.Infof("👀 checking pod '%s' in namespace '%s'...", pod.Name, pod.Namespace)
 	found := false
 	logger.Debugf("👀 checking pod status...")
+	//
+	for _, c := range pod.Status.Conditions {
+		if c.Type == corev1.ContainersReady && c.Status == corev1.ConditionTrue {
+			logger.Infof("☑️  all containers in pod '%s' are ready", pod.Name)
+			return false, nil
+		}
+	}
 	// check the containers
 	for _, c := range pod.Status.Conditions {
 		switch {
@@ -68,15 +75,12 @@ func checkPod(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset,
 		}
 	}
 
-	if pod.Status.Phase != corev1.PodRunning {
-		// check events associated with the pod
-		f, err := checkEvents(ctx, logger, cl, pod)
-		if err != nil {
-			return false, err
-		}
-		found = found || f
+	// check events associated with the pod
+	f, err := checkEvents(ctx, logger, cl, pod)
+	if err != nil {
+		return false, err
 	}
-
+	found = found || f
 	return found, nil
 }
 
