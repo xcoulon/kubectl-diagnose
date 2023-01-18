@@ -12,16 +12,16 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func diagnoseDeployment(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+func diagnoseDeployment(ctx context.Context, logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
 	cl := kubernetes.NewForConfigOrDie(cfg)
-	d, err := cl.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	d, err := cl.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
-	return checkDeployment(logger, cl, d)
+	return checkDeployment(ctx, logger, cl, d)
 }
 
-func checkDeployment(logger logr.Logger, cl *kubernetes.Clientset, d *appsv1.Deployment) (bool, error) {
+func checkDeployment(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, d *appsv1.Deployment) (bool, error) {
 	logger.Infof("👀 checking deployment '%s' in namespace '%s'...", d.Name, d.Namespace)
 	found := false
 	for _, c := range d.Status.Conditions {
@@ -38,6 +38,6 @@ func checkDeployment(logger logr.Logger, cl *kubernetes.Clientset, d *appsv1.Dep
 		return true, nil
 	}
 	// check the associated replicasets
-	f, err := checkReplicaSets(logger, cl, d.Namespace, d.Spec.Selector.MatchLabels, d.UID)
+	f, err := checkReplicaSets(ctx, logger, cl, d.Namespace, d.Spec.Selector.MatchLabels, d.UID)
 	return found || f, err
 }

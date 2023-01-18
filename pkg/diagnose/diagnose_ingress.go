@@ -13,24 +13,24 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func diagnoseIngress(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+func diagnoseIngress(ctx context.Context, logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return false, err
 	}
-	i, err := cl.NetworkingV1().Ingresses(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	i, err := cl.NetworkingV1().Ingresses(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
-	return checkIngress(logger, cl, i)
+	return checkIngress(ctx, logger, cl, i)
 }
 
-func checkIngress(logger logr.Logger, cl *kubernetes.Clientset, i *networkingv1.Ingress) (bool, error) {
+func checkIngress(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, i *networkingv1.Ingress) (bool, error) {
 	logger.Infof("👀 checking ingress '%s' in namespace '%s'...", i.Name, i.Namespace)
 	if i.Spec.IngressClassName != nil {
 		logger.Infof("`👀 checking ingressclass '%s' at cluster level...`", *i.Spec.IngressClassName)
 		// look for ingress classnames (if allowed)
-		if _, err := cl.NetworkingV1().IngressClasses().Get(context.TODO(), *i.Spec.IngressClassName, metav1.GetOptions{}); errors.IsNotFound(err) {
+		if _, err := cl.NetworkingV1().IngressClasses().Get(ctx, *i.Spec.IngressClassName, metav1.GetOptions{}); errors.IsNotFound(err) {
 			logger.Errorf("👻 unable to find ingressclass '%s'", *i.Spec.IngressClassName)
 			return true, nil
 		} else if errors.IsForbidden(err) {
@@ -46,7 +46,7 @@ func checkIngress(logger logr.Logger, cl *kubernetes.Clientset, i *networkingv1.
 			for _, p := range h.Paths {
 				if s := p.Backend.Service; s != nil {
 					// look-up service by name
-					svc, err := cl.CoreV1().Services(i.Namespace).Get(context.TODO(), s.Name, metav1.GetOptions{})
+					svc, err := cl.CoreV1().Services(i.Namespace).Get(ctx, s.Name, metav1.GetOptions{})
 					if errors.IsNotFound(err) {
 						logger.Errorf("👻 unable to find service '%s' associated with host '%s' and path '%s'", s.Name, r.Host, p.Path)
 						return true, nil
@@ -55,7 +55,7 @@ func checkIngress(logger logr.Logger, cl *kubernetes.Clientset, i *networkingv1.
 					}
 					for _, p := range svc.Spec.Ports {
 						if s.Port.Number == p.Port || s.Port.Name == p.Name {
-							if found, err := checkService(logger, cl, svc); found || err != nil {
+							if found, err := checkService(ctx, logger, cl, svc); found || err != nil {
 								return found, err
 							}
 							continue paths

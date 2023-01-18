@@ -1,6 +1,7 @@
 package diagnose_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -27,7 +28,7 @@ var _ = DescribeTable("should detect missing route target service",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -47,7 +48,7 @@ var _ = DescribeTable("should detect invalid route target port as string",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -67,7 +68,7 @@ var _ = DescribeTable("should detect invalid route target port as int",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -90,7 +91,7 @@ var _ = DescribeTable("should detect missing target service",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -110,7 +111,7 @@ var _ = DescribeTable("should detect invalid service port",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -130,7 +131,7 @@ var _ = DescribeTable("should detect invalid service name",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -150,7 +151,7 @@ var _ = DescribeTable("should detect invalid ingressclassname",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -170,7 +171,7 @@ var _ = DescribeTable("should not fail when get ingressclass is forbidden", // i
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -195,7 +196,7 @@ var _ = DescribeTable("should detect no matching pods",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -221,7 +222,7 @@ var _ = DescribeTable("should detect invalid service target port as string",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -246,7 +247,7 @@ var _ = DescribeTable("should detect invalid service target port as int",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -274,7 +275,7 @@ var _ = DescribeTable("should detect zero replicas specified in deployment",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -308,7 +309,7 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in deploym
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -341,7 +342,7 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in deploym
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -374,7 +375,7 @@ var _ = DescribeTable("should detect zero replicas specified in deployment",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -405,9 +406,11 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in statefu
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/statefulset-service-account-not-found.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -423,7 +426,7 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in statefu
 		// in all cases:
 		// events
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-27T08:51:34Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: FailedCreate: create Pod sts-sa-notfound-0 in StatefulSet sts-sa-notfound failed error: pods "sts-sa-notfound-0" is forbidden: error looking up service account test/unknown: serviceaccount "unknown" not found`, time.Since(lastTimestamp).Truncate(time.Second))))
+		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: FailedCreate: create Pod sts-sa-notfound-0 in StatefulSet sts-sa-notfound failed error: pods "sts-sa-notfound-0" is forbidden: error looking up service account test/unknown: serviceaccount "unknown" not found`, now.Sub(lastTimestamp).Truncate(time.Second))))
 		Expect(logger.Output()).NotTo(ContainSubstring("👻 no pods matching label selector")) // should not appear, other messages are enough
 	},
 	Entry("from statefulset", diagnose.StatefulSet, "test", "sts-sa-notfound"),
@@ -438,9 +441,11 @@ var _ = DescribeTable("should detect invalid storageclass specified in statefuls
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/statefulset-invalid-storageclass.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -456,10 +461,10 @@ var _ = DescribeTable("should detect invalid storageclass specified in statefuls
 		// in all cases:
 		// pod events
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-26T08:40:16.475828Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: FailedScheduling: 0/12 nodes are available: 12 pod has unbound immediate PersistentVolumeClaims. preemption: 0/12 nodes are available: 12 Preemption is not helpful for scheduling.`, time.Since(lastTimestamp).Truncate(time.Second))))
+		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: FailedScheduling: 0/12 nodes are available: 12 pod has unbound immediate PersistentVolumeClaims. preemption: 0/12 nodes are available: 12 Preemption is not helpful for scheduling.`, now.Sub(lastTimestamp).Truncate(time.Second))))
 		// associated persistent volume claim
 		lastTimestamp, _ = time.Parse("2006-01-02T15:04:05Z", "2022-11-26T09:40:20Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: ProvisioningFailed: storageclass.storage.k8s.io "unknown" not found`, time.Since(lastTimestamp).Truncate(time.Second))))
+		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: ProvisioningFailed: storageclass.storage.k8s.io "unknown" not found`, now.Sub(lastTimestamp).Truncate(time.Second))))
 
 	},
 	Entry("from pod", diagnose.Pod, "test", "sts-invalid-sc-0"),
@@ -479,9 +484,11 @@ var _ = DescribeTable("should detect default container in CrashLoopBackOff statu
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-crash-loop-back-off.yaml", "resources/deployment-pod-crash-loop-back-off.logs")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -501,7 +508,7 @@ var _ = DescribeTable("should detect default container in CrashLoopBackOff statu
 		Expect(logger.Output()).To(ContainSubstring(`👻 containers with unready status: [default]`))
 		// event
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-12T18:02:28Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: BackOff: Back-off restarting failed container`, time.Since(lastTimestamp).Truncate(time.Second))))
+		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: BackOff: Back-off restarting failed container`, now.Sub(lastTimestamp).Truncate(time.Second))))
 		// logs
 		Expect(logger.Output()).To(ContainSubstring(`🗒  Error: loading initial config: loading new config: http app module: start: listening on :80: listen tcp :80: bind: permission denied`))
 	},
@@ -521,7 +528,7 @@ var _ = DescribeTable("should detect proxy container in CrashLoopBackOff status"
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -560,9 +567,11 @@ var _ = DescribeTable("should detect container in ImagePullBackOff status",
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-image-pull-back-off.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -582,7 +591,7 @@ var _ = DescribeTable("should detect container in ImagePullBackOff status",
 		Expect(logger.Output()).To(ContainSubstring(`👻 container 'default' is waiting with reason 'ImagePullBackOff': Back-off pulling image "unknown:v0.0.0"`))
 		// events
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-13T07:59:04Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Failed: Error: ImagePullBackOff`, time.Since(lastTimestamp).Truncate(time.Second))))
+		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Failed: Error: ImagePullBackOff`, now.Sub(lastTimestamp).Truncate(time.Second))))
 	},
 	Entry("from pod", diagnose.Pod, "test", "deploy-image-pull-back-off-9bbb4f9bd-pjj55"),
 	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-image-pull-back-off-9bbb4f9bd"),
@@ -598,9 +607,11 @@ var _ = DescribeTable("should detect container with readiness probe error",
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-readiness-probe-error.yaml", "resources/deployment-pod-readiness-probe-error.logs")
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -620,7 +631,7 @@ var _ = DescribeTable("should detect container with readiness probe error",
 		Expect(logger.Output()).To(ContainSubstring(`👻 containers with unready status: [default]`))
 		// events
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-13T21:55:27Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Unhealthy: Readiness probe failed: HTTP probe failed with statuscode: 404`, time.Since(lastTimestamp).Truncate(time.Second))))
+		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Unhealthy: Readiness probe failed: HTTP probe failed with statuscode: 404`, now.Sub(lastTimestamp).Truncate(time.Second))))
 		// logs
 		Expect(logger.Output()).To(ContainSubstring("🤷 no 'error'/'failed'/'fatal'/'panic'/'emerg' messages found in the 'default' container logs"))
 	},
@@ -638,9 +649,11 @@ var _ = DescribeTable("should detect container with unknown configmap mount",
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-unknown-configmap.yaml") // no logs, container is not created
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -663,7 +676,7 @@ var _ = DescribeTable("should detect container with unknown configmap mount",
 		// no logs: container has not started
 		// events
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-13T17:19:34Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: FailedMount: Unable to attach or mount volumes: unmounted volumes=[caddy-config], unattached volumes=[caddy-config caddy-config-cache kube-api-access-62xrc]: timed out waiting for the condition`, time.Since(lastTimestamp).Truncate(time.Second))))
+		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: FailedMount: Unable to attach or mount volumes: unmounted volumes=[caddy-config], unattached volumes=[caddy-config caddy-config-cache kube-api-access-62xrc]: timed out waiting for the condition`, now.Sub(lastTimestamp).Truncate(time.Second))))
 	},
 	Entry("from pod", diagnose.Pod, "test", "deploy-unknown-cm-76476b7d5-q2khp"),
 	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-unknown-cm-76476b7d5"),
@@ -679,9 +692,11 @@ var _ = DescribeTable("should detect container with unknown configmap mount",
 		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/statefulset-pod-unknown-configmap.yaml") // no logs, container is not created
 		Expect(err).NotTo(HaveOccurred())
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
 
 		// when
-		found, err := diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).NotTo(HaveOccurred())
@@ -701,7 +716,7 @@ var _ = DescribeTable("should detect container with unknown configmap mount",
 		// no logs: container has not started
 		// events
 		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-12-01T05:40:55Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Failed: Error: configmap "sts-unknown-cm" not found`, time.Since(lastTimestamp).Truncate(time.Second))))
+		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Failed: Error: configmap "sts-unknown-cm" not found`, now.Sub(lastTimestamp).Truncate(time.Second))))
 	},
 	Entry("from statefulset", diagnose.StatefulSet, "test", "sts-unknown-cm"),
 	Entry("from service", diagnose.Service, "test", "sts-unknown-cm"),
@@ -721,7 +736,7 @@ var _ = DescribeTable("should handle internal server errors",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		_, err = diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		_, err = diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(apierrors.IsInternalError(err)).To(BeTrue())
@@ -743,7 +758,7 @@ var _ = DescribeTable("should handle not found errors",
 		cfg := testsupport.NewConfig(apiserver.URL, "/api")
 
 		// when
-		_, err = diagnose.Diagnose(logger, cfg, kind, namespace, name)
+		_, err = diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
 		Expect(err).To(BeANotFoundError())

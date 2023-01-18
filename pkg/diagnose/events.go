@@ -14,9 +14,11 @@ import (
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func checkEvents(logger logr.Logger, cl *kubernetes.Clientset, obj runtimeclient.Object) (bool, error) {
+const Now = "now"
+
+func checkEvents(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, obj runtimeclient.Object) (bool, error) {
 	logger.Debugf("👀 checking events...")
-	events, err := cl.CoreV1().Events(obj.GetNamespace()).List(context.TODO(), metav1.ListOptions{
+	events, err := cl.CoreV1().Events(obj.GetNamespace()).List(ctx, metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("type=Warning,involvedObject.uid=%s", obj.GetUID()),
 	})
 	if err != nil {
@@ -27,7 +29,7 @@ func checkEvents(logger logr.Logger, cl *kubernetes.Clientset, obj runtimeclient
 		return getTime(events.Items[i]).Before(getTime(events.Items[j]))
 	})
 	for _, e := range events.Items {
-		logger.Errorf("⚡️ %s ago: %s: %s", time.Since(getTime(e)).Truncate(time.Second), e.Reason, e.Message)
+		logger.Errorf("⚡️ %s ago: %s: %s", now(ctx).Sub(getTime(e)).Truncate(time.Second), e.Reason, e.Message)
 		found = true
 	}
 	return found, nil

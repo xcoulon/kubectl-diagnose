@@ -1,6 +1,7 @@
 package diagnose
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
@@ -9,8 +10,8 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func Diagnose(logger logr.Logger, cfg *rest.Config, kind ResourceKind, namespace, name string) (bool, error) {
-	found, err := diagnose(logger, cfg, kind, namespace, name)
+func Diagnose(ctx context.Context, logger logr.Logger, cfg *rest.Config, kind ResourceKind, namespace, name string) (bool, error) {
+	found, err := diagnose(ctx, logger, cfg, kind, namespace, name)
 	switch {
 	case apierrors.IsNotFound(err):
 		// if resource was not found, just print the error but
@@ -22,24 +23,24 @@ func Diagnose(logger logr.Logger, cfg *rest.Config, kind ResourceKind, namespace
 	return found, err
 }
 
-func diagnose(logger logr.Logger, cfg *rest.Config, kind ResourceKind, namespace, name string) (bool, error) {
+func diagnose(ctx context.Context, logger logr.Logger, cfg *rest.Config, kind ResourceKind, namespace, name string) (bool, error) {
 	switch kind {
 	case Route:
-		return diagnoseRoute(logger, cfg, namespace, name)
+		return diagnoseRoute(ctx, logger, cfg, namespace, name)
 	case Ingress:
-		return diagnoseIngress(logger, cfg, namespace, name)
+		return diagnoseIngress(ctx, logger, cfg, namespace, name)
 	case Service:
-		return diagnoseService(logger, cfg, namespace, name)
+		return diagnoseService(ctx, logger, cfg, namespace, name)
 	case Deployment:
-		return diagnoseDeployment(logger, cfg, namespace, name)
+		return diagnoseDeployment(ctx, logger, cfg, namespace, name)
 	case ReplicaSet:
-		return diagnoseReplicaSet(logger, cfg, namespace, name)
+		return diagnoseReplicaSet(ctx, logger, cfg, namespace, name)
 	case Pod:
-		return diagnosePod(logger, cfg, namespace, name)
+		return diagnosePod(ctx, logger, cfg, namespace, name)
 	case StatefulSet:
-		return diagnoseStatefulSet(logger, cfg, namespace, name)
+		return diagnoseStatefulSet(ctx, logger, cfg, namespace, name)
 	case PersistentVolumeClaim:
-		return diagnosePersistentVolumeClaim(logger, cfg, namespace, name)
+		return diagnosePersistentVolumeClaim(ctx, logger, cfg, namespace, name)
 	default:
 		return false, fmt.Errorf("🤷 unsupported kind of resource: '%s'", kind)
 	}

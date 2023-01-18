@@ -15,17 +15,17 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func diagnoseReplicaSet(logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+func diagnoseReplicaSet(ctx context.Context, logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
 	cl := kubernetes.NewForConfigOrDie(cfg)
-	rs, err := cl.AppsV1().ReplicaSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	rs, err := cl.AppsV1().ReplicaSets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
-	return checkReplicaSet(logger, cl, rs)
+	return checkReplicaSet(ctx, logger, cl, rs)
 }
 
-func checkReplicaSets(logger logr.Logger, cl *kubernetes.Clientset, namespace string, selector map[string]string, ownerID types.UID) (bool, error) {
-	rss, err := cl.AppsV1().ReplicaSets(namespace).List(context.TODO(), metav1.ListOptions{
+func checkReplicaSets(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, namespace string, selector map[string]string, ownerID types.UID) (bool, error) {
+	rss, err := cl.AppsV1().ReplicaSets(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labels.Set(selector).String(),
 	})
 	if err != nil {
@@ -50,11 +50,11 @@ rss:
 		}
 	}
 	// only check the latest ReplicaSet (older ones may be associated with previous configs, and should eventually be deleted once pods are running)
-	return checkReplicaSet(logger, cl, rs)
+	return checkReplicaSet(ctx, logger, cl, rs)
 
 }
 
-func checkReplicaSet(logger logr.Logger, cl *kubernetes.Clientset, rs *appsv1.ReplicaSet) (bool, error) {
+func checkReplicaSet(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, rs *appsv1.ReplicaSet) (bool, error) {
 	logger.Infof("👀 checking replicaset '%s' in namespace '%s'...", rs.Name, rs.Namespace)
 	for _, c := range rs.Status.Conditions {
 		if c.Type == appsv1.ReplicaSetReplicaFailure &&
@@ -68,17 +68,17 @@ func checkReplicaSet(logger logr.Logger, cl *kubernetes.Clientset, rs *appsv1.Re
 	if rs.Spec.Replicas != nil && *rs.Spec.Replicas == 0 {
 		for _, ownerRef := range rs.OwnerReferences {
 			if ownerRef.Kind == "Deployment" {
-				d, err := cl.AppsV1().Deployments(rs.Namespace).Get(context.TODO(), ownerRef.Name, metav1.GetOptions{})
+				d, err := cl.AppsV1().Deployments(rs.Namespace).Get(ctx, ownerRef.Name, metav1.GetOptions{})
 				if err != nil {
 					return false, err
 				}
-				return checkDeployment(logger, cl, d)
+				return checkDeployment(ctx, logger, cl, d)
 			}
 		}
 	}
 	// if status looks fine, then look for pods with the matching label(s)
 	selector := labels.Set(rs.Spec.Selector.MatchLabels).String()
-	pods, err := cl.CoreV1().Pods(rs.Namespace).List(context.TODO(), metav1.ListOptions{
+	pods, err := cl.CoreV1().Pods(rs.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
@@ -96,7 +96,7 @@ func checkReplicaSet(logger logr.Logger, cl *kubernetes.Clientset, rs *appsv1.Re
 		for _, ownerRef := range pod.OwnerReferences {
 			if ownerRef.UID == rs.UID {
 				// pod is "owned" by this replicaset
-				if found, err := checkPod(logger, cl, &pod); err != nil {
+				if found, err := checkPod(ctx, logger, cl, &pod); err != nil {
 					return false, err
 				} else if found {
 					return true, nil
