@@ -28,6 +28,7 @@ func NewDiagnoseCmd() *cobra.Command {
 	var kubeconfig string
 	var namespace string
 	var loglevel string
+	var color bool
 
 	cmd := &cobra.Command{
 		Use:           "kubectl-diagnose (TYPE NAME | TYPE/NAME)",
@@ -41,7 +42,7 @@ func NewDiagnoseCmd() *cobra.Command {
 			if err != nil {
 				fmt.Fprint(cmd.ErrOrStderr(), err.Error())
 			}
-			logger := logr.New(cmd.OutOrStdout(), l)
+			logger := logr.New(cmd.OutOrStdout(), l, color)
 			kind, name, err := getResourceTypeName(args)
 			if err != nil {
 				logger.Errorf(err.Error())
@@ -62,9 +63,10 @@ func NewDiagnoseCmd() *cobra.Command {
 			}
 		},
 	}
-	cmd.Flags().StringVarP(&kubeconfig, "kubeconfig", "", "", "(optional) absolute path to the kubeconfig file")
-	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "(optional) the namespace scope for this CLI request")
+	cmd.Flags().StringVarP(&kubeconfig, "kubeconfig", "", "", "absolute path to the kubeconfig file")
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "namespace scope for this CLI request")
 	cmd.Flags().StringVar(&loglevel, "loglevel", "info", "log level to set [debug|info|error|]")
+	cmd.Flags().BoolVar(&color, "color", false, "colorized error messages (in red)")
 
 	return cmd
 }
