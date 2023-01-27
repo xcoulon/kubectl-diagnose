@@ -727,6 +727,31 @@ var _ = DescribeTable("should detect container with unknown configmap mount",
 	Entry("from route", diagnose.Route, "test", "sts-unknown-cm"),
 )
 
+var _ = DescribeTable("should detect container not ready but starting",
+	func(kind diagnose.ResourceKind, namespace, name string) {
+		// given
+		logger := testsupport.NewLogger()
+		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/pod-container-starting-not-ready.yaml") // container is taking time to start
+		Expect(err).NotTo(HaveOccurred())
+		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+		now := time.Now()
+		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
+
+		// when
+		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(found).To(BeTrue())
+		// in all cases:
+		Expect(logger.Output()).To(ContainSubstring(`👀 checking pod 'prometheus-container-starting' in namespace 'test'...`))
+		Expect(logger.Output()).To(ContainSubstring(`👻 containers with unready status: [prometheus]`))
+		Expect(logger.Output()).To(ContainSubstring(`👻 container 'prometheus' is still starting`))
+		Expect(logger.Output()).NotTo(ContainSubstring(diagnose.NotFoundMsg))
+	},
+	Entry("from pod", diagnose.Pod, "test", "prometheus-container-starting"),
+)
+
 // --------------------------------------------------------
 // Diagnose no errors when all good
 // --------------------------------------------------------

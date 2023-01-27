@@ -90,7 +90,10 @@ func diagnoseContainer(ctx context.Context, logger logr.Logger, cl *kubernetes.C
 	found := false
 	for _, cs := range pod.Status.ContainerStatuses {
 		switch {
-		case cs.State.Waiting != nil: // if container not in `Running` state
+		case cs.State.Running != nil && cs.Started != nil && !*cs.Started: // container is still starting...
+			found = true
+			logger.Errorf("👻 container '%s' is still starting", cs.Name)
+		case cs.State.Waiting != nil: // container is waiting
 			found = true
 			if cs.State.Waiting.Message != "" {
 				logger.Errorf("👻 container '%s' is waiting with reason '%s': %s", cs.Name, cs.State.Waiting.Reason, cs.State.Waiting.Message)

@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: prometheus-container-starting
+  namespace: test
+  uid: 81e08f67-5fd3-4b77-8216-9ebca2110c56
+spec:
+  containers:
+  - name: prometheus
+  - name: config-reloader
+  - name: thanos-sidecar
+  - name: kube-rbac-proxy-federate
+  - name: kube-rbac-proxy-metrics
+  - name: kube-rbac-proxy-thanos
+  initContainers:
+  - name: init-config-reloader
+  serviceAccount: prometheus-user-workload
+  serviceAccountName: prometheus-user-workload
+status:
+  conditions:
+  - status: "True"
+    type: Initialized
+  - message: 'containers with unready status: [prometheus]'
+    reason: ContainersNotReady
+    status: "False"
+    type: Ready
+  - message: 'containers with unready status: [prometheus]'
+    reason: ContainersNotReady
+    status: "False"
+    type: ContainersReady
+  - status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: cri-o://0bb759195855f8c6d6623847391b662ad6de0c2b226e75629fe6b6b97bf8c9ca
+    lastState: {}
+    name: config-reloader
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2023-01-27T06:23:13Z"
+  - containerID: cri-o://a10e32f75e94e5e3d0175954f89d02a8722e0d71666d7408f7c8e034c0747497
+    lastState: {}
+    name: kube-rbac-proxy-federate
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2023-01-27T06:23:13Z"
+  - containerID: cri-o://92923618a21fb96ae28d3a068018f5aa05bc25b4587e69d73d070eb681cca931
+    lastState: {}
+    name: kube-rbac-proxy-metrics
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2023-01-27T06:23:13Z"
+  - containerID: cri-o://64859afdbe92674929798a2e71ac8133dcbec364cb8f5100d2983dd25a269877
+    lastState: {}
+    name: kube-rbac-proxy-thanos
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2023-01-27T06:23:14Z"
+  - containerID: cri-o://519531f7d9e088918397bde87b5728c70fb3785593afe4b71d209e2c5d418018
+    lastState: {}
+    name: prometheus
+    ready: false
+    restartCount: 0
+    started: false
+    state:
+      running:
+        startedAt: "2023-01-27T06:23:13Z"
+  - containerID: cri-o://7018882a39b964deb3d83941156ffcef6507b0aad4005bd06952f9bc8056197f
+    lastState: {}
+    name: thanos-sidecar
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2023-01-27T06:23:13Z"
+  hostIP: 10.0.146.129
+  initContainerStatuses:
+  - containerID: cri-o://e9b2761547b46a31e017de8f1eb75e27fa86b387c602bfea93c2d32a742cbf65
+    lastState: {}
+    name: init-config-reloader
+    ready: true
+    restartCount: 0
+    state:
+      terminated:
+        containerID: cri-o://e9b2761547b46a31e017de8f1eb75e27fa86b387c602bfea93c2d32a742cbf65
+        exitCode: 0
+        finishedAt: "2023-01-27T06:23:12Z"
+        reason: Completed
+        startedAt: "2023-01-27T06:23:12Z"
+  phase: Running
+  podIP: 10.129.2.38
+  podIPs:
+  - ip: 10.129.2.38
+  qosClass: Burstable
+  startTime: "2023-01-27T06:23:09Z"
