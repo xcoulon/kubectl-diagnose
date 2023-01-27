@@ -195,19 +195,19 @@ apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
   namespace: test
-  name: rs-1
+  name: all-good
   labels:
-    app: rs-1
+    app: all-good
     more: cookies
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: rs-1
+      app: all-good
   template:
     metadata:
       labels:
-        app: rs-1
+        app: all-good
     spec:
       containers:
       - name: default
