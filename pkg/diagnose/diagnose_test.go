@@ -16,9 +16,9 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// ----------------------------
-// Routes
-// ----------------------------
+// --------------------------------------------------------
+// Diagnose errors on Routes
+// --------------------------------------------------------
 var _ = DescribeTable("should detect missing route target service",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
@@ -79,9 +79,9 @@ var _ = DescribeTable("should detect invalid route target port as int",
 	Entry("from route", diagnose.Route, "test", "invalid-route-target-port-int"),
 )
 
-// ----------------------------
-// Ingresses
-// ----------------------------
+// --------------------------------------------------------
+// Diagnose errors on Ingresses
+// --------------------------------------------------------
 var _ = DescribeTable("should detect missing target service",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
@@ -183,9 +183,9 @@ var _ = DescribeTable("should not fail when get ingressclass is forbidden", // i
 	Entry("from ingress", diagnose.Ingress, "test", "forbidden-ingressclassname"),
 )
 
-// ----------------------------
-// Services
-// ----------------------------
+// --------------------------------------------------------
+// Diagnose errors on Services
+// --------------------------------------------------------
 
 var _ = DescribeTable("should detect no matching pods",
 	func(kind diagnose.ResourceKind, namespace, name string) {
@@ -263,9 +263,9 @@ var _ = DescribeTable("should detect invalid service target port as int",
 	Entry("from route", diagnose.Route, "test", "invalid-service-target-port-int"),
 )
 
-// ----------------------------
-// Deployments / ReplicaSets
-// ----------------------------
+// --------------------------------------------------------
+// Diagnose errors on Deployments / ReplicaSets
+// --------------------------------------------------------
 var _ = DescribeTable("should detect zero replicas specified in deployment",
 	func(kind diagnose.ResourceKind, namespace, name string) {
 		// given
@@ -362,9 +362,9 @@ var _ = DescribeTable("should detect invalid serviceaccount specified in deploym
 	Entry("from deployment", diagnose.Deployment, "test", "deploy-multiple-rs"),
 )
 
-// ----------------------------
-// StatefulSets
-// ----------------------------
+// --------------------------------------------------------
+// Diagnose errors StatefulSets
+// --------------------------------------------------------
 
 var _ = DescribeTable("should detect zero replicas specified in deployment",
 	func(kind diagnose.ResourceKind, namespace, name string) {
@@ -473,9 +473,9 @@ var _ = DescribeTable("should detect invalid storageclass specified in statefuls
 	Entry("from route", diagnose.Route, "test", "sts-invalid-sc"),
 )
 
-// ----------------------------
-// Pods
-// ----------------------------
+// --------------------------------------------------------
+// Diagnose errors Pods
+// --------------------------------------------------------
 
 var _ = DescribeTable("should detect default container in CrashLoopBackOff status",
 	func(kind diagnose.ResourceKind, namespace, name string) {
@@ -727,9 +727,35 @@ var _ = DescribeTable("should detect container with unknown configmap mount",
 	Entry("from route", diagnose.Route, "test", "sts-unknown-cm"),
 )
 
-// ----------------------------
-// Errors
-// ----------------------------
+// --------------------------------------------------------
+// Diagnose no errors when all good
+// --------------------------------------------------------
+
+var _ = DescribeTable("should not find errors",
+	func(gr string, kind diagnose.ResourceKind, namespace, name string) {
+		// given
+		logger := testsupport.NewLogger()
+		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/all-good.yaml", "resources/all-good.logs")
+		Expect(err).NotTo(HaveOccurred())
+		cfg := testsupport.NewConfig(apiserver.URL, "/api")
+
+		// when
+		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
+
+		// then
+		Expect(err).NotTo(HaveOccurred())
+		Expect(found).To(BeFalse())
+		Expect(logger.Output()).To(ContainSubstring(diagnose.NotFoundMsg))
+	},
+	Entry("from route", "routes.route.openshift.io", diagnose.Route, "test", "all-good"),
+	Entry("from service", "services", diagnose.Service, "test", "all-good"),
+	Entry("from replicaset", "replicasets.apps", diagnose.ReplicaSet, "test", "all-good"),
+	Entry("from pod", "pods", diagnose.Pod, "test", "all-good-785d8bcc5f-x85p2"),
+)
+
+// --------------------------------------------------------
+// Server-side Errors
+// --------------------------------------------------------
 
 var _ = DescribeTable("should handle internal server errors",
 	func(gr string, kind diagnose.ResourceKind, namespace, name string) {
@@ -765,7 +791,7 @@ var _ = DescribeTable("should handle not found errors",
 		_, err = diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
 
 		// then
-		Expect(err).To(BeANotFoundError())
+		Expect(err).To(BeNotFoundError())
 	},
 	Entry("from pod", "pods", diagnose.Pod, "test", "notfound"),
 	Entry("from persistentvolumeclaim", "persistentvolumeclaims", diagnose.PersistentVolumeClaim, "test", "notfound"),
@@ -775,7 +801,7 @@ var _ = DescribeTable("should handle not found errors",
 	Entry("from route", "routes.route.openshift.io", diagnose.Route, "test", "notfound"),
 )
 
-func BeANotFoundError() types.GomegaMatcher {
+func BeNotFoundError() types.GomegaMatcher {
 	return And(
 		WithTransform(func(err error) (int, error) {
 			if e := apierrors.APIStatus(nil); errors.As(err, &e) {

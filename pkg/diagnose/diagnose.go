@@ -12,7 +12,7 @@ import (
 func Diagnose(ctx context.Context, logger logr.Logger, cfg *rest.Config, kind ResourceKind, namespace, name string) (bool, error) {
 	found, err := diagnose(ctx, logger, cfg, kind, namespace, name)
 	if err == nil && !found {
-		logger.Infof(notFoundMsg)
+		logger.Infof(NotFoundMsg)
 	}
 	return found, err
 }
@@ -40,7 +40,7 @@ func diagnose(ctx context.Context, logger logr.Logger, cfg *rest.Config, kind Re
 	}
 }
 
-const notFoundMsg = `🤷 couldn't find the culprit
+const NotFoundMsg = `🤷 couldn't find the culprit
 💡 possible causes:
    - invalid configuration of a container within the pod?
    - trying to connect to a container listening to '127.0.0.1' instead of '0.0.0.0'?
