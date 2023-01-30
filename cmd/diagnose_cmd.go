@@ -65,7 +65,7 @@ func NewDiagnoseCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&kubeconfig, "kubeconfig", "", "", "absolute path to the kubeconfig file")
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "namespace scope for this CLI request")
-	cmd.Flags().StringVar(&loglevel, "loglevel", "info", "log level to set [debug|info|error|]")
+	cmd.Flags().StringVar(&loglevel, "loglevel", "info", "log level to set [debug|info|error]")
 	cmd.Flags().BoolVar(&color, "color", false, "colorized error messages (in red)")
 
 	return cmd
