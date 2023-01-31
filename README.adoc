@@ -11,7 +11,7 @@ Damn'it! 😬
 
 Say hello to `kubectl-diagnose`👋 
 
-This tool attempts to find which of the `route`, `service`, `deployment, `replicaset`, `statefulset`, `persistentvolumeclaim` or `pod` resource is misconfigured or failing, so you don't have to pull your hair out on such a problem.
+This tool attempts to find which of the `route`, `ingress`, `service`, `deployment`, `replicaset`, `statefulset`, `persistentvolumeclaim` or `pod` is misconfigured or failing, so you don't have to pull your hair out on such a problem.
 
 
 
