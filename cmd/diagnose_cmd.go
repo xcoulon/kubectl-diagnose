@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -92,7 +92,7 @@ func newClientFromConfig(kubeconfig string) (*rest.Config, clientcmd.ClientConfi
 	if err != nil {
 		return nil, nil, err
 	}
-	d, err := ioutil.ReadAll(r)
+	d, err := io.ReadAll(r)
 	if err != nil {
 		return nil, nil, err
 	}

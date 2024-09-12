@@ -1,7 +1,7 @@
 package testsupport_test
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/xcoulon/kubectl-diagnose/testsupport"
@@ -614,7 +614,7 @@ func HaveBodyOfType(expected runtime.Object) types.GomegaMatcher {
 		HaveHTTPHeaderWithValue("Content-Type", "application/json"),
 		WithTransform(func(resp *http.Response) (runtime.Object, error) {
 			deserializer := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
-			data, err := ioutil.ReadAll(resp.Body)
+			data, err := io.ReadAll(resp.Body)
 			defer resp.Body.Close()
 			if err != nil {
 				return nil, err
@@ -630,7 +630,7 @@ func HaveTextBody(expected string) types.GomegaMatcher {
 		HaveHTTPStatus(200),
 		HaveHTTPHeaderWithValue("Content-Type", "text/plain"),
 		WithTransform(func(resp *http.Response) (string, error) {
-			data, err := ioutil.ReadAll(resp.Body)
+			data, err := io.ReadAll(resp.Body)
 			defer resp.Body.Close()
 			if err != nil {
 				return "", err
@@ -646,7 +646,7 @@ func HaveReturnedPodCount(expected int) types.GomegaMatcher {
 		HaveHTTPHeaderWithValue("Content-Type", "application/json"),
 		WithTransform(func(resp *http.Response) ([]corev1.Pod, error) {
 			deserializer := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
-			data, err := ioutil.ReadAll(resp.Body)
+			data, err := io.ReadAll(resp.Body)
 			defer resp.Body.Close()
 			if err != nil {
 				return nil, err
@@ -664,7 +664,7 @@ func HaveReturnedPersistentVolumeClaimCount(expected int) types.GomegaMatcher {
 		HaveHTTPHeaderWithValue("Content-Type", "application/json"),
 		WithTransform(func(resp *http.Response) ([]corev1.PersistentVolumeClaim, error) {
 			deserializer := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
-			data, err := ioutil.ReadAll(resp.Body)
+			data, err := io.ReadAll(resp.Body)
 			defer resp.Body.Close()
 			if err != nil {
 				return nil, err
@@ -682,7 +682,7 @@ func HaveReturnedReplicaSetCount(expected int) types.GomegaMatcher {
 		HaveHTTPHeaderWithValue("Content-Type", "application/json"),
 		WithTransform(func(resp *http.Response) ([]appsv1.ReplicaSet, error) {
 			deserializer := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
-			data, err := ioutil.ReadAll(resp.Body)
+			data, err := io.ReadAll(resp.Body)
 			defer resp.Body.Close()
 			if err != nil {
 				return nil, err
@@ -700,7 +700,7 @@ func HaveReturnedStatefulSetCount(expected int) types.GomegaMatcher {
 		HaveHTTPHeaderWithValue("Content-Type", "application/json"),
 		WithTransform(func(resp *http.Response) ([]appsv1.StatefulSet, error) {
 			deserializer := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
-			data, err := ioutil.ReadAll(resp.Body)
+			data, err := io.ReadAll(resp.Body)
 			defer resp.Body.Close()
 			if err != nil {
 				return nil, err
@@ -718,7 +718,7 @@ func HaveReturnedEventCount(expected int) types.GomegaMatcher {
 		HaveHTTPHeaderWithValue("Content-Type", "application/json"),
 		WithTransform(func(resp *http.Response) ([]corev1.Event, error) {
 			deserializer := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
-			data, err := ioutil.ReadAll(resp.Body)
+			data, err := io.ReadAll(resp.Body)
 			defer resp.Body.Close()
 			if err != nil {
 				return nil, err
