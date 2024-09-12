@@ -15,14 +15,8 @@ linters:
     - nolintlint
   disable-all: false
   disable:
-    - maligned
     - prealloc
-    - scopelint
-    - golint
     - asasalint
-    - structcheck # deprecated, replaced by `revive`
-    - varcheck # deprecated, replaced by `revive`
-    - deadcode # deprecated, replaced by `revive`
   presets:
     - bugs
     - unused
