@@ -7,10 +7,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/xcoulon/kubectl-diagnose/pkg/diagnose"
-	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
 
+	charmlog "github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -38,28 +39,31 @@ func NewDiagnoseCmd() *cobra.Command {
 		Args:          cobra.RangeArgs(1, 2),
 		Version:       version(),
 		Run: func(cmd *cobra.Command, args []string) {
-			l, err := logr.ParseLevel(loglevel)
+			l, err := charmlog.ParseLevel(loglevel)
 			if err != nil {
 				fmt.Fprint(cmd.ErrOrStderr(), err.Error())
 			}
-			logger := logr.New(cmd.OutOrStdout(), l, color)
+			logger := charmlog.NewWithOptions(os.Stdout, charmlog.Options{
+				Level:      l,
+				TimeFormat: time.Kitchen,
+			})
 			kind, name, err := getResourceTypeName(args)
 			if err != nil {
-				logger.Errorf(err.Error())
+				logger.Errorf("%s", err.Error())
 			}
 			// look-up the kubeconfig to use
 			// use the current context in kubeconfig
 			cfg, config, err := newClientFromConfig(kubeconfig)
 			if err != nil {
-				logger.Errorf(err.Error())
+				logger.Errorf("%s", err.Error())
 			}
 			if namespace == "" {
 				if namespace, _, err = config.Namespace(); err != nil {
-					logger.Errorf(err.Error())
+					logger.Errorf("%s", err.Error())
 				}
 			}
 			if _, err = diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name); err != nil {
-				logger.Errorf(err.Error())
+				logger.Errorf("%s", err.Error())
 			}
 		},
 	}

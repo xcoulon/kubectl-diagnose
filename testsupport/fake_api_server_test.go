@@ -5,8 +5,11 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/xcoulon/kubectl-diagnose/testsupport"
@@ -346,7 +349,12 @@ func TestFakeAPIServer(t *testing.T) {
 	for _, tc := range testdata {
 		t.Run(tc.title, func(t *testing.T) {
 			// given
-			logger := testsupport.NewLogger()
+			buf := &strings.Builder{}
+			logger := log.NewWithOptions(buf, log.Options{
+				TimeFormat: time.Kitchen,
+				Level:      log.DebugLevel,
+			})
+
 			s, err := testsupport.NewFakeAPIServer(logger, tc.resources...)
 			require.NoError(t, err)
 			defer s.Close()

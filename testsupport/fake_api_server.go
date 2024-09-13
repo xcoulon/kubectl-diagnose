@@ -13,10 +13,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/charmbracelet/log"
 	"github.com/julienschmidt/httprouter"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/xcoulon/kubectl-diagnose/pkg/diagnose"
-	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -44,7 +44,7 @@ func init() {
 	routev1.AddToScheme(scheme.Scheme) //nolint:errcheck
 }
 
-func NewFakeAPIServer(logger logr.Logger, filenames ...string) (*httptest.Server, error) {
+func NewFakeAPIServer(logger *log.Logger, filenames ...string) (*httptest.Server, error) {
 	allObjs := []runtimeclient.Object{}
 	allLogs := map[string]map[string][]string{}
 	for _, filename := range filenames {
@@ -166,7 +166,7 @@ func parseLogs(filename string) (map[string]map[string][]string, error) {
 // Endpoint Handlers
 // ----------------------------------
 
-func lookupObject(logger logr.Logger, kind diagnose.ResourceKind, namespace, name string, objs []runtimeclient.Object) (interface{}, error) {
+func lookupObject(logger *log.Logger, kind diagnose.ResourceKind, namespace, name string, objs []runtimeclient.Object) (interface{}, error) {
 	logger.Debugf("looking up %s %s/%s", kind, namespace, name)
 	switch name {
 	// special cases to test errors on the client side
@@ -194,7 +194,7 @@ func lookupObject(logger logr.Logger, kind diagnose.ResourceKind, namespace, nam
 	}
 }
 
-func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind diagnose.ResourceKind) httprouter.Handle {
+func newObjectHandler(logger *log.Logger, objs []runtimeclient.Object, kind diagnose.ResourceKind) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		logger.Debugf("handling object at '%s'", r.URL.Path)
 		namespace := params.ByName("namespace") // unset for cluster-scoped resources (eg: storageclasses)
@@ -208,7 +208,7 @@ func newObjectHandler(logger logr.Logger, objs []runtimeclient.Object, kind diag
 	}
 }
 
-func newPodLogsHandler(logger logr.Logger, objs []runtimeclient.Object, logs map[string]map[string][]string) httprouter.Handle {
+func newPodLogsHandler(logger *log.Logger, objs []runtimeclient.Object, logs map[string]map[string][]string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		namespace := params.ByName("namespace")
 		name := params.ByName("name")
@@ -235,7 +235,7 @@ func newPodLogsHandler(logger logr.Logger, objs []runtimeclient.Object, logs map
 	}
 }
 
-func newPodsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.Handle {
+func newPodsHandler(logger *log.Logger, objs []runtimeclient.Object) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		namespace := params.ByName("namespace")
 		labelSelector := r.URL.Query().Get("labelSelector")
@@ -259,7 +259,7 @@ func newPodsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.
 	}
 }
 
-func newPersistentVolumeClaimsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.Handle {
+func newPersistentVolumeClaimsHandler(logger *log.Logger, objs []runtimeclient.Object) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		namespace := params.ByName("namespace")
 		labelSelector := r.URL.Query().Get("labelSelector")
@@ -283,7 +283,7 @@ func newPersistentVolumeClaimsHandler(logger logr.Logger, objs []runtimeclient.O
 	}
 }
 
-func newReplicaSetsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.Handle {
+func newReplicaSetsHandler(logger *log.Logger, objs []runtimeclient.Object) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		namespace := params.ByName("namespace")
 		labelSelector := r.URL.Query().Get("labelSelector")
@@ -307,7 +307,7 @@ func newReplicaSetsHandler(logger logr.Logger, objs []runtimeclient.Object) http
 	}
 }
 
-func newDeploymentsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.Handle {
+func newDeploymentsHandler(logger *log.Logger, objs []runtimeclient.Object) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		namespace := params.ByName("namespace")
 		labelSelector := r.URL.Query().Get("labelSelector")
@@ -331,7 +331,7 @@ func newDeploymentsHandler(logger logr.Logger, objs []runtimeclient.Object) http
 	}
 }
 
-func newStatefulSetsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.Handle {
+func newStatefulSetsHandler(logger *log.Logger, objs []runtimeclient.Object) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		namespace := params.ByName("namespace")
 		labelSelector := r.URL.Query().Get("labelSelector")
@@ -355,7 +355,7 @@ func newStatefulSetsHandler(logger logr.Logger, objs []runtimeclient.Object) htt
 	}
 }
 
-func newEventsHandler(logger logr.Logger, objs []runtimeclient.Object) httprouter.Handle {
+func newEventsHandler(logger *log.Logger, objs []runtimeclient.Object) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		namespace := params.ByName("namespace")
 		fieldSelector := r.URL.Query().Get("fieldSelector")
@@ -387,10 +387,10 @@ func newEventsHandler(logger logr.Logger, objs []runtimeclient.Object) httproute
 	}
 }
 
-func handleObject(logger logr.Logger, w http.ResponseWriter, obj interface{}) {
+func handleObject(logger *log.Logger, w http.ResponseWriter, obj interface{}) {
 	output, err := json.Marshal(obj)
 	if err != nil {
-		logger.Errorf(err.Error())
+		logger.Errorf("%s", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -399,8 +399,8 @@ func handleObject(logger logr.Logger, w http.ResponseWriter, obj interface{}) {
 	w.Write(output) //nolint: errcheck
 }
 
-func handleError(logger logr.Logger, w http.ResponseWriter, err error) {
-	logger.Errorf(err.Error())
+func handleError(logger *log.Logger, w http.ResponseWriter, err error) {
+	logger.Errorf("%s", err.Error())
 	if e := apierrors.APIStatus(nil); errors.As(err, &e) {
 		w.WriteHeader(int(e.Status().Code))
 		w.Write([]byte(e.Status().Message)) //nolint: errcheck

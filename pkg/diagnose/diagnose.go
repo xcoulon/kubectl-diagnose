@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
-
+	charmlog "github.com/charmbracelet/log"
 	"k8s.io/client-go/rest"
 )
 
-func Diagnose(ctx context.Context, logger logr.Logger, cfg *rest.Config, kind ResourceKind, namespace, name string) (bool, error) {
+func Diagnose(ctx context.Context, logger *charmlog.Logger, cfg *rest.Config, kind ResourceKind, namespace, name string) (bool, error) {
 	found, err := diagnose(ctx, logger, cfg, kind, namespace, name)
 	if err == nil && !found {
 		logger.Infof(NotFoundMsg)
@@ -17,7 +16,7 @@ func Diagnose(ctx context.Context, logger logr.Logger, cfg *rest.Config, kind Re
 	return found, err
 }
 
-func diagnose(ctx context.Context, logger logr.Logger, cfg *rest.Config, kind ResourceKind, namespace, name string) (bool, error) {
+func diagnose(ctx context.Context, logger *charmlog.Logger, cfg *rest.Config, kind ResourceKind, namespace, name string) (bool, error) {
 	switch kind {
 	case Route:
 		return diagnoseRoute(ctx, logger, cfg, namespace, name)

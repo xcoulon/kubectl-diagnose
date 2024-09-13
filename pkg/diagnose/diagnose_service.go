@@ -3,7 +3,7 @@ package diagnose
 import (
 	"context"
 
-	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
+	"github.com/charmbracelet/log"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func diagnoseService(ctx context.Context, logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+func diagnoseService(ctx context.Context, logger *log.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
 	cl := kubernetes.NewForConfigOrDie(cfg)
 	svc, err := cl.CoreV1().Services(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
@@ -20,7 +20,7 @@ func diagnoseService(ctx context.Context, logger logr.Logger, cfg *rest.Config, 
 	return checkService(ctx, logger, cl, svc)
 }
 
-func checkService(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, svc *corev1.Service) (bool, error) {
+func checkService(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, svc *corev1.Service) (bool, error) {
 	logger.Infof("👀 checking service '%s' in namespace '%s'...", svc.Name, svc.Namespace)
 
 	pods, err := findPods(ctx, cl, svc.Namespace, svc.Spec.Selector)

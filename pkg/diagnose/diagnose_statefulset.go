@@ -3,8 +3,7 @@ package diagnose
 import (
 	"context"
 
-	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
-
+	"github.com/charmbracelet/log"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -12,7 +11,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func diagnoseStatefulSet(ctx context.Context, logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+func diagnoseStatefulSet(ctx context.Context, logger *log.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
 	cl := kubernetes.NewForConfigOrDie(cfg)
 	sts, err := cl.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
@@ -21,7 +20,7 @@ func diagnoseStatefulSet(ctx context.Context, logger logr.Logger, cfg *rest.Conf
 	return checkStatefulSet(ctx, logger, cl, sts)
 }
 
-func checkStatefulSet(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, sts *appsv1.StatefulSet) (bool, error) {
+func checkStatefulSet(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, sts *appsv1.StatefulSet) (bool, error) {
 	logger.Infof("👀 checking statefulset '%s' in namespace '%s'...", sts.Name, sts.Namespace)
 	found := false
 	// check the replicas

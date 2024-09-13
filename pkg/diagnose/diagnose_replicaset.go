@@ -4,8 +4,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
-
+	"github.com/charmbracelet/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +14,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func diagnoseReplicaSet(ctx context.Context, logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+func diagnoseReplicaSet(ctx context.Context, logger *log.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
 	cl := kubernetes.NewForConfigOrDie(cfg)
 	rs, err := cl.AppsV1().ReplicaSets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
@@ -24,7 +23,7 @@ func diagnoseReplicaSet(ctx context.Context, logger logr.Logger, cfg *rest.Confi
 	return checkReplicaSet(ctx, logger, cl, rs)
 }
 
-func checkReplicaSets(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, namespace string, selector map[string]string, ownerID types.UID) (bool, error) {
+func checkReplicaSets(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, namespace string, selector map[string]string, ownerID types.UID) (bool, error) {
 	rss, err := cl.AppsV1().ReplicaSets(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labels.Set(selector).String(),
 	})
@@ -54,7 +53,7 @@ rss:
 
 }
 
-func checkReplicaSet(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, rs *appsv1.ReplicaSet) (bool, error) {
+func checkReplicaSet(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, rs *appsv1.ReplicaSet) (bool, error) {
 	logger.Infof("👀 checking replicaset '%s' in namespace '%s'...", rs.Name, rs.Namespace)
 	for _, c := range rs.Status.Conditions {
 		if c.Type == appsv1.ReplicaSetReplicaFailure &&

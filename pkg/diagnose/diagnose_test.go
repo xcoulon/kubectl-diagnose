@@ -3,9 +3,12 @@ package diagnose_test
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/xcoulon/kubectl-diagnose/pkg/diagnose"
 	"github.com/xcoulon/kubectl-diagnose/testsupport"
 
@@ -733,7 +736,11 @@ func TestDiagnose(t *testing.T) {
 					for _, e := range tc.entrypoints {
 						t.Run(fmt.Sprintf("from %v", e.kind), func(t *testing.T) {
 							// given
-							logger := testsupport.NewLogger()
+							buf := &strings.Builder{}
+							logger := log.NewWithOptions(buf, log.Options{
+								TimeFormat: time.Kitchen,
+								Level:      log.DebugLevel,
+							})
 							apiserver, err := testsupport.NewFakeAPIServer(logger, tc.resources...)
 							require.NoError(t, err)
 							cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -745,7 +752,7 @@ func TestDiagnose(t *testing.T) {
 							require.NoError(t, err)
 							assert.Equal(t, tc.expectedFound, found)
 							for _, m := range tc.expectedMsgs {
-								assert.Contains(t, logger.Output(), m)
+								assert.Contains(t, buf.String(), m)
 							}
 						})
 					}
@@ -796,7 +803,11 @@ func TestDiagnose(t *testing.T) {
 		for _, e := range entrypoints {
 			t.Run(fmt.Sprintf("from %v", e.kind), func(t *testing.T) {
 				// given
-				logger := testsupport.NewLogger()
+				logger := log.NewWithOptions(os.Stdout, log.Options{
+					TimeFormat: time.Kitchen,
+					Level:      log.DebugLevel,
+				})
+
 				apiserver, err := testsupport.NewFakeAPIServer(logger)
 				require.NoError(t, err)
 				cfg := testsupport.NewConfig(apiserver.URL, "/api")
@@ -848,7 +859,11 @@ func TestDiagnose(t *testing.T) {
 		for _, e := range entrypoints {
 			t.Run(fmt.Sprintf("from %v", e.kind), func(t *testing.T) {
 				// given
-				logger := testsupport.NewLogger()
+				logger := log.NewWithOptions(os.Stdout, log.Options{
+					TimeFormat: time.Kitchen,
+					Level:      log.DebugLevel,
+				})
+
 				apiserver, err := testsupport.NewFakeAPIServer(logger)
 				require.NoError(t, err)
 				cfg := testsupport.NewConfig(apiserver.URL, "/api")

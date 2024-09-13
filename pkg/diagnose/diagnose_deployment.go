@@ -3,8 +3,7 @@ package diagnose
 import (
 	"context"
 
-	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
-
+	"github.com/charmbracelet/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,7 +11,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func diagnoseDeployment(ctx context.Context, logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+func diagnoseDeployment(ctx context.Context, logger *log.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
 	cl := kubernetes.NewForConfigOrDie(cfg)
 	d, err := cl.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
@@ -21,7 +20,7 @@ func diagnoseDeployment(ctx context.Context, logger logr.Logger, cfg *rest.Confi
 	return checkDeployment(ctx, logger, cl, d)
 }
 
-func checkDeployment(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, d *appsv1.Deployment) (bool, error) {
+func checkDeployment(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, d *appsv1.Deployment) (bool, error) {
 	logger.Infof("👀 checking deployment '%s' in namespace '%s'...", d.Name, d.Namespace)
 	found := false
 	for _, c := range d.Status.Conditions {
