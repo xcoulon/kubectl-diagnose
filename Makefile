@@ -26,6 +26,16 @@ build:
 test: 
 	@go test github.com/xcoulon/kubectl-diagnose/... -v -failfast
 
+# Output directory for coverage information
+COV_DIR = out/coverage
+
+.PHONY: test-with-coverage
+## run all tests excluding fixtures and vendored packages
+test-with-coverage: 
+	@-mkdir -p $(COV_DIR)
+	@-rm $(COV_DIR)/coverage.txt
+	@go test github.com/xcoulon/kubectl-diagnose/... -coverprofile=$(COV_DIR)/coverage.txt -covermode=atomic
+
 .PHONY: install
 ## installs the binary executable in the $GOPATH/bin directory
 install: build
