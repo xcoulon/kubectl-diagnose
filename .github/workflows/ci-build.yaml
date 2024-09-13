@@ -11,16 +11,13 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: [1.18,1.19]
-    name: Build and Test with Go ${{ matrix.go-version }}
+    name: Build and Test
 
     steps:
     - name: Install Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v5
       with:
-        go-version: ${{ matrix.go-version }}
+        go-version: '1.20'
         check-latest: true
 
     - name: Checkout code
@@ -43,21 +40,21 @@ jobs:
         make test-with-coverage
 
     - name: Codecov
-      if: ${{ matrix.go-version }} == '1.18'
       uses: codecov/codecov-action@v3
       with:
         # Path to coverage file to upload
         file: coverprofile.out
 
   golangci:
-    name: Lint with Go ${{ matrix.go-version }}
+    name: Lint 
     runs-on: ubuntu-latest
 
     steps:
     - name: Install Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v5
       with:
-        go-version: 1.18
+        go-version: '1.20'
+        check-latest: true
 
     - name: Checkout code
       uses: actions/checkout@v3
