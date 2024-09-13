@@ -21,24 +21,20 @@ build:
 		-o $(BIN_DIR)/kubectl-diagnose \
 		main.go
 
-.PHONY: install-ginkgo
-## Install development tools.
-install-ginkgo:
-	@go install -v github.com/onsi/ginkgo/v2/ginkgo
-	@ginkgo version
-
 .PHONY: test
 ## run all tests excluding fixtures and vendored packages
-test: install-ginkgo
-	@ginkgo -r --randomize-all --randomize-suites  --trace --race --compilers=0
+test: 
+	@go test github.com/xcoulon/kubectl-diagnose/... -v -failfast
 
-COVERPKGS := $(shell go list ./... | grep -v vendor | paste -sd "," -)
+# Output directory for coverage information
+COV_DIR = out/coverage
 
 .PHONY: test-with-coverage
 ## run all tests excluding fixtures and vendored packages
-test-with-coverage: install-ginkgo
-	@echo $(COVERPKGS)
-	@ginkgo -r --randomize-all --randomize-suites  --trace --race --compilers=0  --cover -coverpkg $(COVERPKGS)
+test-with-coverage: 
+	@-mkdir -p $(COV_DIR)
+	@-rm $(COV_DIR)/coverage.txt
+	@go test github.com/xcoulon/kubectl-diagnose/... -coverprofile=$(COV_DIR)/coverage.txt -covermode=atomic
 
 .PHONY: install
 ## installs the binary executable in the $GOPATH/bin directory

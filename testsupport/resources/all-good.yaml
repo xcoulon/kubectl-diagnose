@@ -195,7 +195,7 @@ apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
   namespace: test
-  name: all-good
+  name: all-good-785d8bcc5f
   labels:
     app: all-good
     more: cookies
