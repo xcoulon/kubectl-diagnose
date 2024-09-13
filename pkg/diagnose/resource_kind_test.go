@@ -1,57 +1,154 @@
 package diagnose_test
 
 import (
+	"testing"
+
 	"github.com/xcoulon/kubectl-diagnose/pkg/diagnose"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
 )
 
-var _ = DescribeTable("resource kind",
-	func(kind string, expected diagnose.ResourceKind) {
-		Expect(diagnose.NewResourceKind(kind)).To(Equal(expected))
-	},
-	// routes
-	Entry("routes", "routes", diagnose.Route),
-	Entry("route", "route", diagnose.Route),
-	Entry("route.route.openshift.io", "route.route.openshift.io", diagnose.Route),
+func TestResourceKind(t *testing.T) {
 
-	// services
-	Entry("services", "services", diagnose.Service),
-	Entry("service", "service", diagnose.Service),
-	Entry("svc", "svc", diagnose.Service),
+	testcases := []struct {
+		name     string
+		expected diagnose.ResourceKind
+	}{
+		// routes
+		{
+			name:     "routes",
+			expected: diagnose.Route,
+		},
+		{
+			name:     "route",
+			expected: diagnose.Route,
+		},
+		{
+			name:     "route.route.openshift.io",
+			expected: diagnose.Route,
+		},
 
-	// replicasets
-	Entry("replicasets", "replicasets", diagnose.ReplicaSet),
-	Entry("replicaset", "replicaset", diagnose.ReplicaSet),
-	Entry("rs", "rs", diagnose.ReplicaSet),
-	Entry("replicaset.apps", "replicaset.apps", diagnose.ReplicaSet),
+		// services
+		{
+			name:     "services",
+			expected: diagnose.Service,
+		},
+		{
+			name:     "service",
+			expected: diagnose.Service,
+		},
+		{
+			name:     "svc",
+			expected: diagnose.Service,
+		},
 
-	// deployments
-	Entry("deployments", "deployments", diagnose.Deployment),
-	Entry("deployment", "deployment", diagnose.Deployment),
-	Entry("deploy", "deploy", diagnose.Deployment),
-	Entry("deployment.apps", "deployment.apps", diagnose.Deployment),
+		// replicasets
+		{
+			name:     "replicasets",
+			expected: diagnose.ReplicaSet,
+		},
+		{
+			name:     "replicaset",
+			expected: diagnose.ReplicaSet,
+		},
+		{
+			name:     "rs",
+			expected: diagnose.ReplicaSet,
+		},
+		{
+			name:     "replicaset.apps",
+			expected: diagnose.ReplicaSet,
+		},
 
-	// pods
-	Entry("pods", "pods", diagnose.Pod),
-	Entry("pod", "pod", diagnose.Pod),
-	Entry("po", "po", diagnose.Pod),
+		// deployments
+		{
+			name:     "deployments",
+			expected: diagnose.Deployment,
+		},
+		{
+			name:     "deployment",
+			expected: diagnose.Deployment,
+		},
+		{
+			name:     "deploy",
+			expected: diagnose.Deployment,
+		},
+		{
+			name:     "deployment.apps",
+			expected: diagnose.Deployment,
+		},
 
-	// statefulsets
-	Entry("statefulsets", "statefulsets", diagnose.StatefulSet),
-	Entry("statefulset", "statefulset", diagnose.StatefulSet),
-	Entry("sts", "sts", diagnose.StatefulSet),
-	Entry("statefulset.apps", "statefulset.apps", diagnose.StatefulSet),
+		// pods
+		{
+			name:     "pods",
+			expected: diagnose.Pod,
+		},
+		{
+			name:     "pod",
+			expected: diagnose.Pod,
+		},
+		{
+			name:     "po",
+			expected: diagnose.Pod,
+		},
 
-	// persistent volume claims
-	Entry("persistentvolumeclaims", "persistentvolumeclaims", diagnose.PersistentVolumeClaim),
-	Entry("persistentvolumeclaim", "persistentvolumeclaim", diagnose.PersistentVolumeClaim),
-	Entry("pvc", "pvc", diagnose.PersistentVolumeClaim),
+		// statefulsets
+		{
+			name:     "statefulsets",
+			expected: diagnose.StatefulSet,
+		},
+		{
+			name:     "statefulset",
+			expected: diagnose.StatefulSet,
+		},
+		{
+			name:     "sts",
+			expected: diagnose.StatefulSet,
+		},
+		{
+			name:     "statefulset.apps",
+			expected: diagnose.StatefulSet,
+		},
 
-	// storage classes
-	Entry("storageclass", "storageclass", diagnose.StorageClass),
-	Entry("storageclasses", "storageclasses", diagnose.StorageClass),
-	Entry("sc", "sc", diagnose.StorageClass),
-	Entry("storageclass.storage.k8s.io", "storageclass.storage.k8s.io", diagnose.StorageClass),
-)
+		// persistent volume claims
+		{
+			name:     "persistentvolumeclaims",
+			expected: diagnose.PersistentVolumeClaim,
+		},
+		{
+			name:     "persistentvolumeclaim",
+			expected: diagnose.PersistentVolumeClaim,
+		},
+		{
+			name:     "pvc",
+			expected: diagnose.PersistentVolumeClaim,
+		},
+
+		// storage classes
+		{
+			name:     "storageclasses",
+			expected: diagnose.StorageClass,
+		},
+		{
+			name:     "storageclass",
+			expected: diagnose.StorageClass,
+		},
+		{
+			name:     "sc",
+			expected: diagnose.StorageClass,
+		},
+		{
+			name:     "storageclass.storage.k8s.io",
+			expected: diagnose.StorageClass,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			// when
+			actual := diagnose.NewResourceKind(tc.name)
+			// then
+			assert.Equal(t, tc.expected, actual)
+		})
+	}
+}

@@ -1,6 +1,12 @@
 run:
   timeout: 10m
   
+issues:
+  exclude-rules:
+    - path: testsupport/fake_api_server_test.go
+      linters:
+      - bodyclose
+
 linters:
   enable-all: false
   enable:

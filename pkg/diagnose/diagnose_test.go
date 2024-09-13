@@ -2,837 +2,868 @@ package diagnose_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"net/http"
+	"testing"
 	"time"
 
 	"github.com/xcoulon/kubectl-diagnose/pkg/diagnose"
 	"github.com/xcoulon/kubectl-diagnose/testsupport"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// --------------------------------------------------------
-// Diagnose errors on Routes
-// --------------------------------------------------------
-var _ = DescribeTable("should detect missing route target service",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/route-unknown-target-service.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'unknown-target-service' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring("👻 unable to find service 'unknown'"))
-	},
-	Entry("from route", diagnose.Route, "test", "unknown-target-service"),
-)
-
-var _ = DescribeTable("should detect invalid route target port as string",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/route-invalid-target-port-str.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'invalid-route-target-port-str' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring("👻 route target port 'https' is not defined in service 'invalid-route-target-port-str'"))
-	},
-	Entry("from route", diagnose.Route, "test", "invalid-route-target-port-str"),
-)
-
-var _ = DescribeTable("should detect invalid route target port as int",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/route-invalid-target-port-int.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'invalid-route-target-port-int' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring("👻 route target port '8443' is not defined in service 'invalid-route-target-port-int'"))
-	},
-	Entry("from route", diagnose.Route, "test", "invalid-route-target-port-int"),
-)
-
-// --------------------------------------------------------
-// Diagnose errors on Ingresses
-// --------------------------------------------------------
-var _ = DescribeTable("should detect missing target service",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/ingress-unknown-target-service.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking ingress 'unknown-target-service' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring("👻 unable to find service 'unknown' associated with host 'unknown-target-service.test' and path '/'"))
-	},
-	Entry("from ingress", diagnose.Ingress, "test", "unknown-target-service"),
-)
-
-var _ = DescribeTable("should detect invalid service port",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/ingress-invalid-service-port.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking ingress 'invalid-service-port' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring("👻 port '8081' is not defined in service 'invalid-service-port'"))
-	},
-	Entry("from ingress", diagnose.Ingress, "test", "invalid-service-port"),
-)
-
-var _ = DescribeTable("should detect invalid service name",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/ingress-invalid-service-name.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking ingress 'invalid-service-name' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring("👻 port 'https' is not defined in service 'invalid-service-name'"))
-	},
-	Entry("from ingress", diagnose.Ingress, "test", "invalid-service-name"),
-)
-
-var _ = DescribeTable("should detect invalid ingressclassname",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/ingress-invalid-ingressclassname.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking ingress 'invalid-ingressclassname' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring("👻 unable to find ingressclass 'invalid'"))
-	},
-	Entry("from ingress", diagnose.Ingress, "test", "invalid-ingressclassname"),
-)
-
-var _ = DescribeTable("should not fail when get ingressclass is forbidden", // ingressclasses are cluster-scoped resources and user may not be allowed to get/list such resources
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/ingress-forbidden-ingressclassname.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeFalse()) // cound not find the culprit: the error is in the ingress classname but user is missing permissions for this resource kind ¯\_(ツ)_/¯
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking ingress 'forbidden-ingressclassname' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking ingressclass 'forbidden' at cluster level...`))
-		Expect(logger.Output()).To(ContainSubstring("🤷 unable to verify ingressclass 'forbidden': ingressclass 'forbidden' is forbidden: User cannot get ingressclass resources at the cluster level (get ingressclasses.networking.k8s.io forbidden"))
-	},
-	Entry("from ingress", diagnose.Ingress, "test", "forbidden-ingressclassname"),
-)
-
-// --------------------------------------------------------
-// Diagnose errors on Services
-// --------------------------------------------------------
-
-var _ = DescribeTable("should detect no matching pods",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/service-no-matching-pods.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		if kind == diagnose.Route {
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'no-matching-pods' in namespace 'test'...`))
-		}
-		// in all cases:
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'no-matching-pods' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 no pods matching label selector 'app=invalid' found in namespace 'test'`))
-		Expect(logger.Output()).To(ContainSubstring(`💡 you may want to verify that the pods exist and their labels match 'app=invalid'`))
-	},
-	Entry("from service", diagnose.Service, "test", "no-matching-pods"),
-	Entry("from route", diagnose.Route, "test", "no-matching-pods"),
-)
-
-var _ = DescribeTable("should detect invalid service target port as string",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/service-invalid-target-port-str.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		if kind == diagnose.Route {
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'invalid-service-target-port-str' in namespace 'test'...`))
-		}
-		// in all cases:
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'invalid-service-target-port-str' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 no container with port 'https' in pod 'invalid-service-target-port-str-76d5db5c9b-s8wpq'`))
-	},
-	Entry("from service", diagnose.Service, "test", "invalid-service-target-port-str"),
-	Entry("from route", diagnose.Route, "test", "invalid-service-target-port-str"),
-)
-
-var _ = DescribeTable("should detect invalid service target port as int",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/service-invalid-target-port-int.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		if kind == diagnose.Route {
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'invalid-service-target-port-int' in namespace 'test'...`))
-		}
-		// in all cases:
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'invalid-service-target-port-int' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 no container with port '8443' in pod 'invalid-service-target-port-int-bbcb4fd5d-k8kg8'`))
-	},
-	Entry("from service", diagnose.Service, "test", "invalid-service-target-port-int"),
-	Entry("from route", diagnose.Route, "test", "invalid-service-target-port-int"),
-)
-
-// --------------------------------------------------------
-// Diagnose errors on Deployments / ReplicaSets
-// --------------------------------------------------------
-var _ = DescribeTable("should detect zero replicas specified in deployment",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-zero-replica.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		switch {
-		case kind == diagnose.Route:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'deploy-zero-replica' in namespace 'test'...`))
-		case kind == diagnose.Route || kind == diagnose.Service:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'deploy-zero-replica' in namespace 'test'...`))
-		case kind == diagnose.Route || kind == diagnose.Service || kind == diagnose.ReplicaSet:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'deploy-zero-replica-9bccf7d88' in namespace 'test'...`))
-		}
-		// in all cases
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'deploy-zero-replica' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 number of desired replicas for deployment 'deploy-zero-replica' is set to 0`))
-		Expect(logger.Output()).To(ContainSubstring(`💡 run 'oc scale --replicas=1 deployment/deploy-zero-replica -n test' or increase the 'replicas' value in the deployment specs`))
-		Expect(logger.Output()).NotTo(ContainSubstring("👻 no pods matching label selector")) // should not appear, other messages are enough
-	},
-	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-zero-replica-9bccf7d88"),
-	Entry("from deployment", diagnose.Deployment, "test", "deploy-zero-replica"),
-	Entry("from service", diagnose.Service, "test", "deploy-zero-replica"),
-	Entry("from route", diagnose.Route, "test", "deploy-zero-replica"),
-)
-
-var _ = DescribeTable("should detect invalid serviceaccount specified in deployment",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-service-account-not-found.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		switch {
-		case kind == diagnose.Route:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'deploy-sa-notfound' in namespace 'test'...`))
-		case kind == diagnose.Route || kind == diagnose.Service:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'deploy-sa-notfound' in namespace 'test'...`))
-		case kind == diagnose.Deployment:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'deploy-sa-notfound' in namespace 'test'...`))
-		}
-		// in all cases:
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'deploy-sa-notfound-59b5d8468f' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 replicaset 'deploy-sa-notfound-59b5d8468f' failed to create pods: pods "deploy-sa-notfound-59b5d8468f-" is forbidden: error looking up service account test/deploy-sa-notfound: serviceaccount "deploy-sa-notfound" not found`))
-		Expect(logger.Output()).NotTo(ContainSubstring("👻 no pods matching label selector")) // should not appear, other messages are enough
-	},
-	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-sa-notfound-59b5d8468f"),
-	Entry("from deployment", diagnose.Deployment, "test", "deploy-sa-notfound"),
-	Entry("from service", diagnose.Service, "test", "deploy-sa-notfound"),
-	Entry("from route", diagnose.Route, "test", "deploy-sa-notfound"),
-)
-
-var _ = DescribeTable("should detect invalid serviceaccount specified in deployment with multiple replicasets",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-multiple-replicasets-failedcreate.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		switch {
-		case kind == diagnose.Deployment:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'deploy-multiple-rs' in namespace 'test'...`))
-		}
-		// in all cases:
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'deploy-multiple-rs-c5d7d87f' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking pod 'deploy-multiple-rs-c5d7d87f-whx2l' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring("👻 containers with unready status: [kube-rbac-proxy default]"))
-		Expect(logger.Output()).To(ContainSubstring("👻 container 'default' is waiting with reason 'ContainerCreating'"))
-		Expect(logger.Output()).To(ContainSubstring("👻 container 'kube-rbac-proxy' is waiting with reason 'ContainerCreating'"))
-	},
-	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-multiple-rs-c5d7d87f"),
-	Entry("from deployment", diagnose.Deployment, "test", "deploy-multiple-rs"),
-)
-
-// --------------------------------------------------------
-// Diagnose errors StatefulSets
-// --------------------------------------------------------
-
-var _ = DescribeTable("should detect zero replicas specified in deployment",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/statefulset-zero-replica.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		switch {
-		case kind == diagnose.Route:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'sts-zero-replica' in namespace 'test'...`))
-		case kind == diagnose.Route || kind == diagnose.Service:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'sts-zero-replica' in namespace 'test'...`))
-		case kind == diagnose.StatefulSet:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking statefulset 'sts-zero-replica' in namespace 'test'...`))
-		}
-		// in all cases:
-		Expect(logger.Output()).To(ContainSubstring(`👻 number of desired replicas for statefulset 'sts-zero-replica' is set to 0`))
-		Expect(logger.Output()).To(ContainSubstring(`💡 run 'oc scale --replicas=1 sts/sts-zero-replica -n test' or increase the 'replicas' value in the statefulset specs`))
-		Expect(logger.Output()).NotTo(ContainSubstring("👻 no pods matching label selector")) // should not appear, other messages are enough
-
-	},
-	Entry("from statefulset", diagnose.StatefulSet, "test", "sts-zero-replica"),
-	Entry("from service", diagnose.Service, "test", "sts-zero-replica"),
-	Entry("from route", diagnose.Route, "test", "sts-zero-replica"),
-)
-
-var _ = DescribeTable("should detect invalid serviceaccount specified in statefulset",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/statefulset-service-account-not-found.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-		now := time.Now()
-		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
-
-		// when
-		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		switch {
-		case kind == diagnose.Route:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'sts-sa-notfound' in namespace 'test'...`))
-		case kind == diagnose.Route || kind == diagnose.Service:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'sts-sa-notfound' in namespace 'test'...`))
-		case kind == diagnose.StatefulSet:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking statefulset 'sts-sa-notfound' in namespace 'test'...`))
-		}
-		// in all cases:
-		// events
-		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-27T08:51:34Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: FailedCreate: create Pod sts-sa-notfound-0 in StatefulSet sts-sa-notfound failed error: pods "sts-sa-notfound-0" is forbidden: error looking up service account test/unknown: serviceaccount "unknown" not found`, now.Sub(lastTimestamp).Truncate(time.Second))))
-		Expect(logger.Output()).NotTo(ContainSubstring("👻 no pods matching label selector")) // should not appear, other messages are enough
-	},
-	Entry("from statefulset", diagnose.StatefulSet, "test", "sts-sa-notfound"),
-	Entry("from service", diagnose.Service, "test", "sts-sa-notfound"),
-	Entry("from route", diagnose.Route, "test", "sts-sa-notfound"),
-)
-
-var _ = DescribeTable("should detect invalid storageclass specified in statefulset",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/statefulset-invalid-storageclass.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-		now := time.Now()
-		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
-
-		// when
-		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		switch {
-		case kind == diagnose.Route:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'sts-invalid-sc' in namespace 'test'...`))
-		case kind == diagnose.Route || kind == diagnose.Service:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'sts-invalid-sc' in namespace 'test'...`))
-		case kind == diagnose.StatefulSet:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking statefulset 'sts-invalid-sc' in namespace 'test'...`))
-		}
-		// in all cases:
-		// pod events
-		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-26T08:40:16.475828Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: FailedScheduling: 0/12 nodes are available: 12 pod has unbound immediate PersistentVolumeClaims. preemption: 0/12 nodes are available: 12 Preemption is not helpful for scheduling.`, now.Sub(lastTimestamp).Truncate(time.Second))))
-		// associated persistent volume claim
-		lastTimestamp, _ = time.Parse("2006-01-02T15:04:05Z", "2022-11-26T09:40:20Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: ProvisioningFailed: storageclass.storage.k8s.io "unknown" not found`, now.Sub(lastTimestamp).Truncate(time.Second))))
-
-	},
-	Entry("from pod", diagnose.Pod, "test", "sts-invalid-sc-0"),
-	Entry("from statefulset", diagnose.StatefulSet, "test", "sts-invalid-sc"),
-	Entry("from service", diagnose.Service, "test", "sts-invalid-sc"),
-	Entry("from route", diagnose.Route, "test", "sts-invalid-sc"),
-)
-
-// --------------------------------------------------------
-// Diagnose errors Pods
-// --------------------------------------------------------
-
-var _ = DescribeTable("should detect default container in CrashLoopBackOff status",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-crash-loop-back-off.yaml", "resources/deployment-pod-crash-loop-back-off.logs")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-		now := time.Now()
-		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
-
-		// when
-		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		switch {
-		case kind == diagnose.Route:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'deploy-crash-loop-back-off' in namespace 'test'...`))
-		case kind == diagnose.Route || kind == diagnose.Service:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'deploy-crash-loop-back-off' in namespace 'test'...`))
-		case kind == diagnose.Deployment:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'deploy-crash-loop-back-off' in namespace 'test'...`))
-		case kind == diagnose.Deployment || kind == diagnose.ReplicaSet:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'deploy-crash-loop-back-off-7994787459' in namespace 'test'...`))
-		}
-		// in all cases:
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking pod 'deploy-crash-loop-back-off-7994787459-2nrz5' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 containers with unready status: [default]`))
-		// event
-		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-12T18:02:28Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: BackOff: Back-off restarting failed container`, now.Sub(lastTimestamp).Truncate(time.Second))))
-		// logs
-		Expect(logger.Output()).To(ContainSubstring(`🗒  Error: loading initial config: loading new config: http app module: start: listening on :80: listen tcp :80: bind: permission denied`))
-	},
-	Entry("from pod", diagnose.Pod, "test", "deploy-crash-loop-back-off-7994787459-2nrz5"),
-	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-crash-loop-back-off-7994787459"),
-	Entry("from deployment", diagnose.Deployment, "test", "deploy-crash-loop-back-off"),
-	Entry("from service", diagnose.Service, "test", "deploy-crash-loop-back-off"),
-	Entry("from route", diagnose.Route, "test", "deploy-crash-loop-back-off"),
-)
-
-var _ = DescribeTable("should detect proxy container in CrashLoopBackOff status",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-crash-loop-back-off-proxy.yaml", "resources/deployment-pod-crash-loop-back-off-proxy.logs")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-		now := time.Now()
-		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
-
-		// when
-		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		switch {
-		case kind == diagnose.Service:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'caddy' in namespace 'test'...`))
-		case kind == diagnose.Deployment:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'caddy' in namespace 'test'...`))
-		case kind == diagnose.Deployment || kind == diagnose.ReplicaSet:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'caddy-76c8d8fdfb' in namespace 'test'...`))
-		}
-		// in all cases:
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking pod 'caddy-76c8d8fdfb-qgssh' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 containers with unready status: [kube-rbac-proxy]`))
-		Expect(logger.Output()).To(ContainSubstring(`🗒  FLAG: --oidc-username-claim="email"`))
-		Expect(logger.Output()).To(ContainSubstring(`  E0106 06:27:45.761479       1 run.go:74] "command failed" err="failed to read the config file: failed to read resource-attribute file: open /etc/kube-rbac-proxy/config.yaml: no such file or directory"`))
-
-		// logs
-		Expect(logger.Output()).NotTo(ContainSubstring(`--alsologtostderr="false"`))
-		Expect(logger.Output()).NotTo(ContainSubstring(`--logtostderr="true"`))
-		Expect(logger.Output()).NotTo(ContainSubstring(`🤷 no 'error'/'failed'/'fatal'/'panic'/'emerg' messages found in the 'default' container logs`))
-		// event
-		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2023-01-04T06:59:16Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: BackOff: Back-off restarting failed container`, now.Sub(lastTimestamp).Truncate(time.Second))))
-
-	},
-	Entry("from pod", diagnose.Pod, "test", "caddy-76c8d8fdfb-qgssh"),
-	Entry("from replicaset", diagnose.ReplicaSet, "test", "caddy-76c8d8fdfb"),
-	Entry("from deployment", diagnose.Deployment, "test", "caddy"),
-	Entry("from service", diagnose.Service, "test", "caddy"),
-)
-
-var _ = DescribeTable("should detect container in ImagePullBackOff status",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-image-pull-back-off.yaml")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-		now := time.Now()
-		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
-
-		// when
-		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		switch {
-		case kind == diagnose.Route:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'deploy-image-pull-back-off' in namespace 'test'...`))
-		case kind == diagnose.Route || kind == diagnose.Service:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'deploy-image-pull-back-off' in namespace 'test'...`))
-		case kind == diagnose.Deployment:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'deploy-image-pull-back-off' in namespace 'test'...`))
-		case kind == diagnose.Deployment || kind == diagnose.ReplicaSet:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'deploy-image-pull-back-off-9bbb4f9bd' in namespace 'test'...`))
-		}
-		// in all cases:
-		Expect(logger.Output()).To(ContainSubstring(`👻 containers with unready status: [default]`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 container 'default' is waiting with reason 'ImagePullBackOff': Back-off pulling image "unknown:v0.0.0"`))
-		// events
-		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-13T07:59:04Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Failed: Error: ImagePullBackOff`, now.Sub(lastTimestamp).Truncate(time.Second))))
-	},
-	Entry("from pod", diagnose.Pod, "test", "deploy-image-pull-back-off-9bbb4f9bd-pjj55"),
-	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-image-pull-back-off-9bbb4f9bd"),
-	Entry("from deployment", diagnose.Deployment, "test", "deploy-image-pull-back-off"),
-	Entry("from service", diagnose.Service, "test", "deploy-image-pull-back-off"),
-	Entry("from route", diagnose.Route, "test", "deploy-image-pull-back-off"),
-)
-
-var _ = DescribeTable("should detect container with readiness probe error",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-readiness-probe-error.yaml", "resources/deployment-pod-readiness-probe-error.logs")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-		now := time.Now()
-		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
-
-		// when
-		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		switch {
-		case kind == diagnose.Route:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'deploy-readiness-probe-error' in namespace 'test'...`))
-		case kind == diagnose.Route || kind == diagnose.Service:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'deploy-readiness-probe-error' in namespace 'test'...`))
-		case kind == diagnose.Deployment:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'deploy-readiness-probe-error' in namespace 'test'...`))
-		case kind == diagnose.Deployment || kind == diagnose.ReplicaSet:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'deploy-readiness-probe-error-6cb7664768' in namespace 'test'...`))
-		}
-		// in all cases:
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking pod 'deploy-readiness-probe-error-6cb7664768-qlmns' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 containers with unready status: [default]`))
-		// events
-		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-13T21:55:27Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Unhealthy: Readiness probe failed: HTTP probe failed with statuscode: 404`, now.Sub(lastTimestamp).Truncate(time.Second))))
-		// logs
-		Expect(logger.Output()).To(ContainSubstring("🤷 no 'error'/'failed'/'fatal'/'panic'/'emerg' messages found in the 'default' container logs"))
-	},
-	Entry("from pod", diagnose.Pod, "test", "deploy-readiness-probe-error-6cb7664768-qlmns"),
-	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-readiness-probe-error-6cb7664768"),
-	Entry("from deployment", diagnose.Deployment, "test", "deploy-readiness-probe-error"),
-	Entry("from service", diagnose.Service, "test", "deploy-readiness-probe-error"),
-	Entry("from route", diagnose.Route, "test", "deploy-readiness-probe-error"),
-)
-
-var _ = DescribeTable("should detect container with unknown configmap mount",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/deployment-pod-unknown-configmap.yaml") // no logs, container is not created
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-		now := time.Now()
-		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
-
-		// when
-		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		switch {
-		case kind == diagnose.Route:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'deploy-unknown-cm' in namespace 'test'...`))
-		case kind == diagnose.Route || kind == diagnose.Service:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'deploy-unknown-cm' in namespace 'test'...`))
-		case kind == diagnose.Deployment:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking deployment 'deploy-unknown-cm' in namespace 'test'...`))
-		case kind == diagnose.Deployment || kind == diagnose.ReplicaSet:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking replicaset 'deploy-unknown-cm-76476b7d5' in namespace 'test'...`))
-		}
-		// in all cases:
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking pod 'deploy-unknown-cm-76476b7d5-q2khp' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 containers with unready status: [default]`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 container 'default' is waiting with reason 'ContainerCreating'`))
-		Expect(logger.Output()).NotTo(ContainSubstring(`👻 container 'default' is waiting with reason 'ContainerCreating':`)) // ensure there is no `:` followed by an empty message
-		// no logs: container has not started
-		// events
-		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-11-13T17:19:34Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: FailedMount: Unable to attach or mount volumes: unmounted volumes=[caddy-config], unattached volumes=[caddy-config caddy-config-cache kube-api-access-62xrc]: timed out waiting for the condition`, now.Sub(lastTimestamp).Truncate(time.Second))))
-	},
-	Entry("from pod", diagnose.Pod, "test", "deploy-unknown-cm-76476b7d5-q2khp"),
-	Entry("from replicaset", diagnose.ReplicaSet, "test", "deploy-unknown-cm-76476b7d5"),
-	Entry("from deployment", diagnose.Deployment, "test", "deploy-unknown-cm"),
-	Entry("from service", diagnose.Service, "test", "deploy-unknown-cm"),
-	Entry("from route", diagnose.Route, "test", "deploy-unknown-cm"),
-)
-
-var _ = DescribeTable("should detect container with unknown configmap mount",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/statefulset-pod-unknown-configmap.yaml") // no logs, container is not created
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-		now := time.Now()
-		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
-
-		// when
-		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		switch {
-		case kind == diagnose.Route:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking route 'sts-unknown-cm' in namespace 'test'...`))
-		case kind == diagnose.Route || kind == diagnose.Service:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking service 'sts-unknown-cm' in namespace 'test'...`))
-		case kind == diagnose.StatefulSet:
-			Expect(logger.Output()).To(ContainSubstring(`👀 checking statefulset 'sts-unknown-cm' in namespace 'test'...`))
-		}
-		// in all cases:
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking pod 'sts-unknown-cm-0' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 containers with unready status: [default]`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 container 'default' is waiting with reason 'CreateContainerConfigError': configmap "sts-unknown-cm" not found`))
-		// no logs: container has not started
-		// events
-		lastTimestamp, _ := time.Parse("2006-01-02T15:04:05Z", "2022-12-01T05:40:55Z")
-		Expect(logger.Output()).To(ContainSubstring(fmt.Sprintf(`⚡️ %s ago: Failed: Error: configmap "sts-unknown-cm" not found`, now.Sub(lastTimestamp).Truncate(time.Second))))
-	},
-	Entry("from statefulset", diagnose.StatefulSet, "test", "sts-unknown-cm"),
-	Entry("from service", diagnose.Service, "test", "sts-unknown-cm"),
-	Entry("from route", diagnose.Route, "test", "sts-unknown-cm"),
-)
-
-var _ = DescribeTable("should detect container not ready but starting",
-	func(kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/pod-container-starting-not-ready.yaml") // container is taking time to start
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-		now := time.Now()
-		ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
-
-		// when
-		found, err := diagnose.Diagnose(ctx, logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeTrue())
-		// in all cases:
-		Expect(logger.Output()).To(ContainSubstring(`👀 checking pod 'prometheus-container-starting' in namespace 'test'...`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 containers with unready status: [prometheus]`))
-		Expect(logger.Output()).To(ContainSubstring(`👻 container 'prometheus' is still starting`))
-		Expect(logger.Output()).NotTo(ContainSubstring(diagnose.NotFoundMsg))
-	},
-	Entry("from pod", diagnose.Pod, "test", "prometheus-container-starting"),
-)
-
-// --------------------------------------------------------
-// Diagnose no errors when all good
-// --------------------------------------------------------
-
-var _ = DescribeTable("should not find errors",
-	func(gr string, kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger, "resources/all-good.yaml", "resources/all-good.logs")
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		found, err := diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).NotTo(HaveOccurred())
-		Expect(found).To(BeFalse())
-		Expect(logger.Output()).To(ContainSubstring(diagnose.NotFoundMsg))
-	},
-	Entry("from route", "routes.route.openshift.io", diagnose.Route, "test", "all-good"),
-	Entry("from service", "services", diagnose.Service, "test", "all-good"),
-	Entry("from replicaset", "replicasets.apps", diagnose.ReplicaSet, "test", "all-good"),
-	Entry("from pod", "pods", diagnose.Pod, "test", "all-good-785d8bcc5f-x85p2"),
-)
-
-// --------------------------------------------------------
-// Server-side Errors
-// --------------------------------------------------------
-
-var _ = DescribeTable("should handle internal server errors",
-	func(gr string, kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger)
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		_, err = diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(apierrors.IsInternalError(err)).To(BeTrue())
-	},
-	Entry("from pod", "pods", diagnose.Pod, "test", "error"),
-	Entry("from persistentvolumeclaim", "persistentvolumeclaims", diagnose.PersistentVolumeClaim, "test", "error"),
-	Entry("from statefulset", "statefulsets.apps", diagnose.StatefulSet, "test", "error"),
-	Entry("from deployment", "deployments.apps", diagnose.Deployment, "test", "error"),
-	Entry("from service", "services", diagnose.Service, "test", "error"),
-	Entry("from route", "routes.route.openshift.io", diagnose.Route, "test", "error"),
-)
-
-var _ = DescribeTable("should handle not found errors",
-	func(gr string, kind diagnose.ResourceKind, namespace, name string) {
-		// given
-		logger := testsupport.NewLogger()
-		apiserver, err := testsupport.NewFakeAPIServer(logger)
-		Expect(err).NotTo(HaveOccurred())
-		cfg := testsupport.NewConfig(apiserver.URL, "/api")
-
-		// when
-		_, err = diagnose.Diagnose(context.TODO(), logger, cfg, kind, namespace, name)
-
-		// then
-		Expect(err).To(BeNotFoundError())
-	},
-	Entry("from pod", "pods", diagnose.Pod, "test", "notfound"),
-	Entry("from persistentvolumeclaim", "persistentvolumeclaims", diagnose.PersistentVolumeClaim, "test", "notfound"),
-	Entry("from statefulset", "statefulsets.apps", diagnose.StatefulSet, "test", "notfound"),
-	Entry("from deployment", "deployments.apps", diagnose.Deployment, "test", "notfound"),
-	Entry("from service", "services", diagnose.Service, "test", "notfound"),
-	Entry("from route", "routes.route.openshift.io", diagnose.Route, "test", "notfound"),
-)
-
-func BeNotFoundError() types.GomegaMatcher {
-	return And(
-		WithTransform(func(err error) (int, error) {
-			if e := apierrors.APIStatus(nil); errors.As(err, &e) {
-				return int(e.Status().Code), nil
+func TestDiagnose(t *testing.T) {
+
+	// given
+	now := time.Now()
+
+	type entrypoint struct {
+		kind      diagnose.ResourceKind
+		namespace string
+		name      string
+	}
+	testdata := map[string][]struct {
+		title         string
+		resources     []string
+		entrypoints   []entrypoint
+		expectedFound bool
+		expectedMsgs  []string
+	}{
+		// --------------------------------------------------------
+		// Diagnose errors on Routes
+		// --------------------------------------------------------
+		"routes": {
+			{
+				title: "should detect missing route target service",
+				resources: []string{
+					"resources/route-unknown-target-service.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "unknown-target-service",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					"👻 unable to find service 'unknown'",
+				},
+			},
+			{
+				title: "should detect invalid route target port as string",
+				resources: []string{
+					"resources/route-invalid-target-port-str.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "invalid-route-target-port-str",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					"👻 route target port 'https' is not defined in service 'invalid-route-target-port-str'",
+				},
+			},
+			{
+				title: "should detect invalid route target port as int",
+				resources: []string{
+					"resources/route-invalid-target-port-int.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "invalid-route-target-port-int",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					"👻 route target port '8443' is not defined in service 'invalid-route-target-port-int'",
+				},
+			},
+		},
+
+		// --------------------------------------------------------
+		// Diagnose errors on Ingresses
+		// --------------------------------------------------------
+		"ingresses": {
+			{
+				title: "should detect missing target service",
+				resources: []string{
+					"resources/ingress-unknown-target-service.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Ingress,
+						namespace: "test",
+						name:      "unknown-target-service",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					"👻 unable to find service 'unknown' associated with host 'unknown-target-service.test' and path '/'",
+				},
+			},
+
+			{
+				title: "should detect invalid service port",
+				resources: []string{
+					"resources/ingress-invalid-service-port.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Ingress,
+						namespace: "test",
+						name:      "invalid-service-port",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					"👻 port '8081' is not defined in service 'invalid-service-port'",
+				},
+			},
+			{
+				title: "should detect invalid service name",
+				resources: []string{
+					"resources/ingress-invalid-service-name.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Ingress,
+						namespace: "test",
+						name:      "invalid-service-name",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					"👻 port 'https' is not defined in service 'invalid-service-name'",
+				},
+			},
+			{
+				title: "should detect invalid ingressclassname",
+				resources: []string{
+					"resources/ingress-invalid-ingressclassname.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Ingress,
+						namespace: "test",
+						name:      "invalid-ingressclassname",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					"👻 unable to find ingressclass 'invalid'",
+				},
+			},
+			{
+				title: "should not fail when get ingressclass is forbidden",
+				resources: []string{
+					"resources/ingress-forbidden-ingressclassname.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Ingress,
+						namespace: "test",
+						name:      "forbidden-ingressclassname",
+					},
+				},
+				expectedFound: false,
+				expectedMsgs: []string{
+					"🤷 unable to verify ingressclass 'forbidden': ingressclass 'forbidden' is forbidden: User cannot get ingressclass resources at the cluster level (get ingressclasses.networking.k8s.io forbidden",
+				},
+			},
+		},
+
+		// --------------------------------------------------------
+		// Diagnose errors on Services
+		// --------------------------------------------------------
+		"services": {
+			{
+				title: "should detect no matching pods",
+				resources: []string{
+					"resources/service-no-matching-pods.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Service,
+						namespace: "test",
+						name:      "no-matching-pods",
+					},
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "no-matching-pods",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					`👻 no pods matching label selector 'app=invalid' found in namespace 'test'`,
+					`💡 you may want to verify that the pods exist and their labels match 'app=invalid'`,
+				},
+			},
+			{
+				title: "should detect invalid service target port as string",
+				resources: []string{
+					"resources/service-invalid-target-port-str.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Service,
+						namespace: "test",
+						name:      "invalid-service-target-port-str",
+					},
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "invalid-service-target-port-str",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					`👻 no container with port 'https' in pod 'invalid-service-target-port-str-76d5db5c9b-s8wpq'`,
+				},
+			},
+			{
+				title: "should detect invalid service target port as int",
+				resources: []string{
+					"resources/service-invalid-target-port-int.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Service,
+						namespace: "test",
+						name:      "invalid-service-target-port-int",
+					},
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "invalid-service-target-port-int",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					`👻 no container with port '8443' in pod 'invalid-service-target-port-int-bbcb4fd5d-k8kg8'`,
+				},
+			},
+		},
+		// --------------------------------------------------------
+		// Diagnose errors on Deployments / ReplicaSets
+		// --------------------------------------------------------,
+		"deployments": {
+			{
+				title: "should detect zero replicas specified in deployment",
+				resources: []string{
+					"resources/deployment-zero-replica.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.ReplicaSet,
+						namespace: "test",
+						name:      "deploy-zero-replica-9bccf7d88",
+					},
+					{
+						kind:      diagnose.Deployment,
+						namespace: "test",
+						name:      "deploy-zero-replica",
+					},
+					{
+						kind:      diagnose.Service,
+						namespace: "test",
+						name:      "deploy-zero-replica",
+					},
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "deploy-zero-replica",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					`👻 number of desired replicas for deployment 'deploy-zero-replica' is set to 0`,
+					`💡 run 'oc scale --replicas=1 deployment/deploy-zero-replica -n test' or increase the 'replicas' value in the deployment specs`,
+				},
+			},
+			{
+				title: "should detect invalid serviceaccount specified in deployment",
+				resources: []string{
+					"resources/deployment-service-account-not-found.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.ReplicaSet,
+						namespace: "test",
+						name:      "deploy-sa-notfound-59b5d8468f",
+					},
+					{
+						kind:      diagnose.Deployment,
+						namespace: "test",
+						name:      "deploy-sa-notfound",
+					},
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "deploy-sa-notfound",
+					},
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "deploy-sa-notfound",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					`👻 replicaset 'deploy-sa-notfound-59b5d8468f' failed to create pods: pods "deploy-sa-notfound-59b5d8468f-" is forbidden: error looking up service account test/deploy-sa-notfound: serviceaccount "deploy-sa-notfound" not found`,
+				},
+			},
+			{
+				title: "should detect invalid serviceaccount specified in deployment with multiple replicasets",
+				resources: []string{
+					"resources/deployment-multiple-replicasets-failedcreate.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.ReplicaSet,
+						namespace: "test",
+						name:      "deploy-multiple-rs-c5d7d87f",
+					},
+					{
+						kind:      diagnose.Deployment,
+						namespace: "test",
+						name:      "deploy-multiple-rs",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					"👻 containers with unready status: [kube-rbac-proxy default]",
+					"👻 container 'default' is waiting with reason 'ContainerCreating'",
+					"👻 container 'kube-rbac-proxy' is waiting with reason 'ContainerCreating'",
+				},
+			},
+		},
+
+		// --------------------------------------------------------
+		// Diagnose errors StatefulSets
+		// --------------------------------------------------------
+		"statefulsets": {
+			{
+				title: "should detect zero replicas specified in statefulset",
+				resources: []string{
+					"resources/statefulset-zero-replica.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.StatefulSet,
+						namespace: "test",
+						name:      "sts-zero-replica",
+					},
+					{
+						kind:      diagnose.Service,
+						namespace: "test",
+						name:      "sts-zero-replica",
+					},
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "sts-zero-replica",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					`👻 number of desired replicas for statefulset 'sts-zero-replica' is set to 0`,
+					`💡 run 'oc scale --replicas=1 sts/sts-zero-replica -n test' or increase the 'replicas' value in the statefulset specs`,
+				},
+			},
+			{
+				title: "should detect invalid serviceaccount specified in statefulset",
+				resources: []string{
+					"resources/statefulset-service-account-not-found.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.StatefulSet,
+						namespace: "test",
+						name:      "sts-sa-notfound",
+					},
+					{
+						kind:      diagnose.Service,
+						namespace: "test",
+						name:      "sts-sa-notfound",
+					},
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "sts-sa-notfound",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					fmt.Sprintf(`⚡️ %s ago: FailedCreate: create Pod sts-sa-notfound-0 in StatefulSet sts-sa-notfound failed error: pods "sts-sa-notfound-0" is forbidden: error looking up service account test/unknown: serviceaccount "unknown" not found`, since(now, "2022-11-27T08:51:34Z")),
+				},
+			},
+			{
+				title: "should detect invalid storageclass specified in statefulset",
+				resources: []string{
+					"resources/statefulset-invalid-storageclass.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Pod,
+						namespace: "test",
+						name:      "sts-invalid-sc-0",
+					},
+					{
+						kind:      diagnose.StatefulSet,
+						namespace: "test",
+						name:      "sts-invalid-sc",
+					},
+					{
+						kind:      diagnose.Service,
+						namespace: "test",
+						name:      "sts-invalid-sc",
+					},
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "sts-invalid-sc",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					fmt.Sprintf(`⚡️ %s ago: FailedScheduling: 0/12 nodes are available: 12 pod has unbound immediate PersistentVolumeClaims. preemption: 0/12 nodes are available: 12 Preemption is not helpful for scheduling.`, since(now, "2022-11-26T08:40:16.475828Z")),
+					fmt.Sprintf(`⚡️ %s ago: ProvisioningFailed: storageclass.storage.k8s.io "unknown" not found`, since(now, "2022-11-26T09:40:20Z")),
+				},
+			},
+		},
+
+		// --------------------------------------------------------
+		// Diagnose errors Pods
+		// --------------------------------------------------------
+		"pods": {
+			{
+				title: "should detect default container in CrashLoopBackOff status from pod",
+				resources: []string{
+					"resources/deployment-pod-crash-loop-back-off.yaml",
+					"resources/deployment-pod-crash-loop-back-off.logs",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Pod,
+						namespace: "test",
+						name:      "deploy-crash-loop-back-off-7994787459-2nrz5",
+					},
+					{
+						kind:      diagnose.ReplicaSet,
+						namespace: "test",
+						name:      "deploy-crash-loop-back-off-7994787459",
+					},
+					{
+						kind:      diagnose.Deployment,
+						namespace: "test",
+						name:      "deploy-crash-loop-back-off",
+					},
+					{
+						kind:      diagnose.Service,
+						namespace: "test",
+						name:      "deploy-crash-loop-back-off",
+					},
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "deploy-crash-loop-back-off",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					`👻 containers with unready status: [default]`,
+					fmt.Sprintf(`⚡️ %s ago: BackOff: Back-off restarting failed container`, since(now, "2022-11-12T18:02:28Z")),
+					`🗒  Error: loading initial config: loading new config: http app module: start: listening on :80: listen tcp :80: bind: permission denied`,
+				},
+			},
+			{
+				title: "should detect proxy container in CrashLoopBackOff status",
+				resources: []string{
+					"resources/deployment-pod-crash-loop-back-off-proxy.yaml",
+					"resources/deployment-pod-crash-loop-back-off-proxy.logs",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Pod,
+						namespace: "test",
+						name:      "caddy-76c8d8fdfb-qgssh",
+					},
+					{
+						kind:      diagnose.ReplicaSet,
+						namespace: "test",
+						name:      "caddy-76c8d8fdfb",
+					},
+					{
+						kind:      diagnose.Deployment,
+						namespace: "test",
+						name:      "caddy",
+					},
+					{
+						kind:      diagnose.Service,
+						namespace: "test",
+						name:      "caddy",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					`👻 containers with unready status: [kube-rbac-proxy]`,
+					`🗒  FLAG: --oidc-username-claim="email"`,
+					`  E0106 06:27:45.761479       1 run.go:74] "command failed" err="failed to read the config file: failed to read resource-attribute file: open /etc/kube-rbac-proxy/config.yaml: no such file or directory"`,
+					fmt.Sprintf(`⚡️ %s ago: BackOff: Back-off restarting failed container`, since(now, "2023-01-04T06:59:16Z")),
+				},
+			},
+			{
+				title: "should detect container in ImagePullBackOff status",
+				resources: []string{
+					"resources/deployment-pod-image-pull-back-off.yaml",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Pod,
+						namespace: "test",
+						name:      "deploy-image-pull-back-off-9bbb4f9bd-pjj55",
+					},
+					{
+						kind:      diagnose.ReplicaSet,
+						namespace: "test",
+						name:      "deploy-image-pull-back-off-9bbb4f9bd",
+					},
+					{
+						kind:      diagnose.Deployment,
+						namespace: "test",
+						name:      "deploy-image-pull-back-off",
+					},
+					{
+						kind:      diagnose.Service,
+						namespace: "test",
+						name:      "deploy-image-pull-back-off",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					`👻 containers with unready status: [default]`,
+					`👻 container 'default' is waiting with reason 'ImagePullBackOff': Back-off pulling image "unknown:v0.0.0"`,
+				},
+			},
+			{
+				title: "should detect container with readiness probe error",
+				resources: []string{
+					"resources/deployment-pod-readiness-probe-error.yaml",
+					"resources/deployment-pod-readiness-probe-error.logs",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Pod,
+						namespace: "test",
+						name:      "deploy-readiness-probe-error-6cb7664768-qlmns",
+					},
+					{
+						kind:      diagnose.ReplicaSet,
+						namespace: "test",
+						name:      "deploy-readiness-probe-error-6cb7664768",
+					},
+					{
+						kind:      diagnose.Deployment,
+						namespace: "test",
+						name:      "deploy-readiness-probe-error",
+					},
+					{
+						kind:      diagnose.Service,
+						namespace: "test",
+						name:      "deploy-readiness-probe-error",
+					},
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "deploy-readiness-probe-error",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					`👻 containers with unready status: [default]`,
+					fmt.Sprintf(`⚡️ %s ago: Unhealthy: Readiness probe failed: HTTP probe failed with statuscode: 404`, since(now, "2022-11-13T21:55:27Z")),
+					"🤷 no 'error'/'failed'/'fatal'/'panic'/'emerg' messages found in the 'default' container logs",
+				},
+			},
+			{
+				title: "should detect container with unknown configmap mount",
+				resources: []string{
+					"resources/deployment-pod-unknown-configmap.yaml", // no logs, container is not created
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Pod,
+						namespace: "test",
+						name:      "deploy-unknown-cm-76476b7d5-q2khp",
+					},
+					{
+						kind:      diagnose.ReplicaSet,
+						namespace: "test",
+						name:      "deploy-unknown-cm-76476b7d5",
+					},
+					{
+						kind:      diagnose.Deployment,
+						namespace: "test",
+						name:      "deploy-unknown-cm",
+					},
+					{
+						kind:      diagnose.Service,
+						namespace: "test",
+						name:      "deploy-unknown-cm",
+					},
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "deploy-unknown-cm",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					`👻 containers with unready status: [default]`,
+					`👻 container 'default' is waiting with reason 'ContainerCreating'`,
+					fmt.Sprintf(`⚡️ %s ago: FailedMount: Unable to attach or mount volumes: unmounted volumes=[caddy-config], unattached volumes=[caddy-config caddy-config-cache kube-api-access-62xrc]: timed out waiting for the condition`, since(now, "2022-11-13T17:19:34Z")),
+				},
+			},
+			{
+				title: "should detect container with unknown configmap mount",
+				resources: []string{
+					"resources/statefulset-pod-unknown-configmap.yaml", // no logs, container is not created
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.StatefulSet,
+						namespace: "test",
+						name:      "sts-unknown-cm",
+					},
+					{
+						kind:      diagnose.Service,
+						namespace: "test",
+						name:      "sts-unknown-cm",
+					},
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "sts-unknown-cm",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					`👻 containers with unready status: [default]`,
+					`👻 container 'default' is waiting with reason 'CreateContainerConfigError': configmap "sts-unknown-cm" not found`,
+					fmt.Sprintf(`⚡️ %s ago: Failed: Error: configmap "sts-unknown-cm" not found`, since(now, "2022-12-01T05:40:55Z")),
+				},
+			},
+			{
+				title: "should detect container not ready but starting",
+				resources: []string{
+					"resources/pod-container-starting-not-ready.yaml", // container is taking time to start
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Pod,
+						namespace: "test",
+						name:      "prometheus-container-starting",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					`👻 containers with unready status: [prometheus]`,
+				},
+			},
+		},
+		// --------------------------------------------------------
+		// Diagnose no errors when all good
+		// --------------------------------------------------------
+
+		"all good": {
+			{
+				title: "should not find errors",
+				resources: []string{
+					"resources/all-good.yaml",
+					"resources/all-good.logs",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Pod,
+						namespace: "test",
+						name:      "all-good-785d8bcc5f-x85p2",
+					},
+					{
+						kind:      diagnose.ReplicaSet,
+						namespace: "test",
+						name:      "all-good-785d8bcc5f",
+					},
+					// {
+					// 	kind:      diagnose.Deployment,
+					// 	namespace: "test",
+					// 	name:      "all-good",
+					// },
+					{
+						kind:      diagnose.Service,
+						namespace: "test",
+						name:      "all-good",
+					},
+					{
+						kind:      diagnose.Route,
+						namespace: "test",
+						name:      "all-good",
+					},
+				},
+				expectedFound: false,
+				expectedMsgs: []string{
+					diagnose.NotFoundMsg,
+				},
+			},
+		},
+	}
+
+	for category, tcs := range testdata {
+		t.Run(category, func(t *testing.T) {
+			for _, tc := range tcs {
+				t.Run(tc.title, func(t *testing.T) {
+					for _, e := range tc.entrypoints {
+						t.Run(fmt.Sprintf("from %v", e.kind), func(t *testing.T) {
+							// given
+							logger := testsupport.NewLogger()
+							apiserver, err := testsupport.NewFakeAPIServer(logger, tc.resources...)
+							require.NoError(t, err)
+							cfg := testsupport.NewConfig(apiserver.URL, "/api")
+							ctx := context.WithValue(context.TODO(), diagnose.NowContextKey, now)
+							// when
+							found, err := diagnose.Diagnose(ctx, logger, cfg, e.kind, e.namespace, e.name)
+
+							// then
+							require.NoError(t, err)
+							assert.Equal(t, tc.expectedFound, found)
+							for _, m := range tc.expectedMsgs {
+								assert.Contains(t, logger.Output(), m)
+							}
+						})
+					}
+				})
 			}
-			return -1, fmt.Errorf("wrong type of error")
-		}, Equal(http.StatusNotFound)),
-	)
+		})
+	}
+
+	// --------------------------------------------------------
+	// Server-side Errors
+	// --------------------------------------------------------
+
+	t.Run("should handle internal server errors", func(t *testing.T) {
+
+		entrypoints := []entrypoint{
+			{
+				kind:      diagnose.Pod,
+				namespace: "test",
+				name:      "error",
+			},
+			{
+				kind:      diagnose.PersistentVolumeClaim,
+				namespace: "test",
+				name:      "error",
+			},
+			{
+				kind:      diagnose.StatefulSet,
+				namespace: "test",
+				name:      "error",
+			},
+			{
+				kind:      diagnose.Deployment,
+				namespace: "test",
+				name:      "error",
+			},
+			{
+				kind:      diagnose.Service,
+				namespace: "test",
+				name:      "error",
+			},
+			{
+				kind:      diagnose.Route,
+				namespace: "test",
+				name:      "error",
+			},
+		}
+
+		for _, e := range entrypoints {
+			t.Run(fmt.Sprintf("from %v", e.kind), func(t *testing.T) {
+				// given
+				logger := testsupport.NewLogger()
+				apiserver, err := testsupport.NewFakeAPIServer(logger)
+				require.NoError(t, err)
+				cfg := testsupport.NewConfig(apiserver.URL, "/api")
+
+				// when
+				_, err = diagnose.Diagnose(context.TODO(), logger, cfg, e.kind, e.namespace, e.name)
+
+				// then
+				assert.True(t, apierrors.IsInternalError(err))
+			})
+		}
+	})
+
+	t.Run("should handle not found errors", func(t *testing.T) {
+
+		entrypoints := []entrypoint{
+			{
+				kind:      diagnose.Pod,
+				namespace: "test",
+				name:      "notfound",
+			},
+			{
+				kind:      diagnose.PersistentVolumeClaim,
+				namespace: "test",
+				name:      "notfound",
+			},
+			{
+				kind:      diagnose.StatefulSet,
+				namespace: "test",
+				name:      "notfound",
+			},
+			{
+				kind:      diagnose.Deployment,
+				namespace: "test",
+				name:      "notfound",
+			},
+			{
+				kind:      diagnose.Service,
+				namespace: "test",
+				name:      "notfound",
+			},
+			{
+				kind:      diagnose.Route,
+				namespace: "test",
+				name:      "notfound",
+			},
+		}
+
+		for _, e := range entrypoints {
+			t.Run(fmt.Sprintf("from %v", e.kind), func(t *testing.T) {
+				// given
+				logger := testsupport.NewLogger()
+				apiserver, err := testsupport.NewFakeAPIServer(logger)
+				require.NoError(t, err)
+				cfg := testsupport.NewConfig(apiserver.URL, "/api")
+
+				// when
+				_, err = diagnose.Diagnose(context.TODO(), logger, cfg, e.kind, e.namespace, e.name)
+
+				// then
+				assert.True(t, apierrors.IsNotFound(err))
+			})
+		}
+	})
+}
+
+func since(now time.Time, tss string) time.Duration {
+	ts, _ := time.Parse("2006-01-02T15:04:05Z", tss)
+	return now.Sub(ts).Truncate(time.Second)
 }
