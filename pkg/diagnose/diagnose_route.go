@@ -3,9 +3,9 @@ package diagnose
 import (
 	"context"
 
+	"github.com/charmbracelet/log"
 	routev1 "github.com/openshift/api/route/v1"
 	routeclient "github.com/openshift/client-go/route/clientset/versioned"
-	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func diagnoseRoute(ctx context.Context, logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+func diagnoseRoute(ctx context.Context, logger *log.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
 	r, err := routeclient.NewForConfigOrDie(cfg).RouteV1().Routes(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
@@ -25,7 +25,7 @@ func diagnoseRoute(ctx context.Context, logger logr.Logger, cfg *rest.Config, na
 // checks:
 // - the route's target port on pods selected by the service this route points to.
 // (If this is a string, it will be looked up as a named port in the target endpoints port list)
-func checkRoute(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, route *routev1.Route) (bool, error) {
+func checkRoute(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, route *routev1.Route) (bool, error) {
 	logger.Infof("👀 checking route '%s' in namespace '%s'...", route.Name, route.Namespace)
 	svc, err := cl.CoreV1().Services(route.Namespace).Get(ctx, route.Spec.To.Name, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {

@@ -4,8 +4,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
-
+	"github.com/charmbracelet/log"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +12,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func diagnoseIngress(ctx context.Context, logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+func diagnoseIngress(ctx context.Context, logger *log.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
 	cl, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return false, err
@@ -25,7 +24,7 @@ func diagnoseIngress(ctx context.Context, logger logr.Logger, cfg *rest.Config, 
 	return checkIngress(ctx, logger, cl, i)
 }
 
-func checkIngress(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, i *networkingv1.Ingress) (bool, error) {
+func checkIngress(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, i *networkingv1.Ingress) (bool, error) {
 	logger.Infof("👀 checking ingress '%s' in namespace '%s'...", i.Name, i.Namespace)
 	if i.Spec.IngressClassName != nil {
 		logger.Infof("`👀 checking ingressclass '%s' at cluster level...`", *i.Spec.IngressClassName)

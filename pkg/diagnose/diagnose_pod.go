@@ -4,8 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
-
+	"github.com/charmbracelet/log"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -13,7 +12,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func diagnosePod(ctx context.Context, logger logr.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
+func diagnosePod(ctx context.Context, logger *log.Logger, cfg *rest.Config, namespace, name string) (bool, error) {
 	cl := kubernetes.NewForConfigOrDie(cfg)
 	pod, err := cl.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
@@ -33,7 +32,7 @@ func findPods(ctx context.Context, cl *kubernetes.Clientset, namespace string, s
 	return pods.Items, nil
 }
 
-func checkPod(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bool, error) {
+func checkPod(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bool, error) {
 	logger.Infof("👀 checking pod '%s' in namespace '%s'...", pod.Name, pod.Namespace)
 	found := false
 	logger.Debugf("👀 checking pod status...")
@@ -86,7 +85,7 @@ func checkPod(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset,
 
 // check the status of the pod containers
 // return the list of containers' name whose status is `waiting`
-func diagnoseContainer(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bool, error) {
+func diagnoseContainer(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bool, error) {
 	found := false
 	for _, cs := range pod.Status.ContainerStatuses {
 		switch {
@@ -132,7 +131,7 @@ func diagnoseContainer(ctx context.Context, logger logr.Logger, cl *kubernetes.C
 	return found, nil
 }
 
-func checkContainerLogs(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, pod *corev1.Pod, container string) (bool, error) {
+func checkContainerLogs(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, pod *corev1.Pod, container string) (bool, error) {
 	found := false
 	logger.Debugf("👀 checking '%s' container logs...", container)
 	logs, err := cl.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: container}).DoRaw(ctx)

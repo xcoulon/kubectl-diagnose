@@ -6,8 +6,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/xcoulon/kubectl-diagnose/pkg/logr"
-
+	"github.com/charmbracelet/log"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -16,7 +15,7 @@ import (
 
 const Now = "now"
 
-func checkEvents(ctx context.Context, logger logr.Logger, cl *kubernetes.Clientset, obj runtimeclient.Object) (bool, error) {
+func checkEvents(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, obj runtimeclient.Object) (bool, error) {
 	logger.Debugf("👀 checking events...")
 	events, err := cl.CoreV1().Events(obj.GetNamespace()).List(ctx, metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("type=Warning,involvedObject.uid=%s", obj.GetUID()),
