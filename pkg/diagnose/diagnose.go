@@ -41,6 +41,7 @@ func diagnose(ctx context.Context, logger *charmlog.Logger, cfg *rest.Config, ki
 
 const NotFoundMsg = `🤷 couldn't find the culprit
 💡 possible causes:
+   - missing TLS annotations on a route or a service?
    - invalid configuration of a container within the pod?
    - trying to connect to a container listening to '127.0.0.1' instead of '0.0.0.0'?
    - redirecting to an invalid callback URL after logging in on a third-party SSO?

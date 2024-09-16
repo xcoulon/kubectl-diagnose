@@ -697,7 +697,8 @@ func TestDiagnose(t *testing.T) {
 				},
 				expectedFound: true,
 				expectedMsgs: []string{
-					`TLS handshake error`,
+					`tls: bad record MAC`,
+					`wrong TLS secret mounted on the 'oauth2-proxy' container?`,
 				},
 			},
 		},
@@ -723,11 +724,6 @@ func TestDiagnose(t *testing.T) {
 						namespace: "test",
 						name:      "all-good-785d8bcc5f",
 					},
-					// {
-					// 	kind:      diagnose.Deployment,
-					// 	namespace: "test",
-					// 	name:      "all-good",
-					// },
 					{
 						kind:      diagnose.Service,
 						namespace: "test",

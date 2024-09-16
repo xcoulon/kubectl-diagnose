@@ -112,19 +112,13 @@ func diagnoseContainer(ctx context.Context, logger *log.Logger, cl *kubernetes.C
 				}
 			}
 
-		case cs.Started != nil && *cs.Started && !cs.Ready:
+		case cs.Started != nil && *cs.Started:
 			f, err := checkContainerLogs(ctx, logger, cl, pod, cs.Name)
 			if err != nil {
 				return false, err
 			}
 			found = found || f
 		}
-		// also, check the logs
-		// if () ||
-		// 	s.LastTerminationState.Running != nil ||
-		// 	s.LastTerminationState.Terminated != nil ||
-		// 	s.LastTerminationState.Waiting != nil {
-		// }
 		// TODO: check reason and provide a more detailed diagnosis or hint to fix the problem?
 		// eg: if reason is `CrashLoopBackOff`, look for errors (`ERROR`/`FATAL`) in the container logs? (but display the n last lines?)
 		// eg: if reason is `CreateContainerConfigError`, message should be enough (eg: `secret "cookie" not found`)
@@ -141,7 +135,14 @@ func checkContainerLogs(ctx context.Context, logger *log.Logger, cl *kubernetes.
 	}
 	logger.Debugf("logs: '%s'", string(logs))
 	for _, l := range strings.Split(string(logs), "\n") {
+		// known errors
+		if strings.Contains(l, "tls: bad record MAC") {
+			logger.Errorf("🗒  %s", l)
+			logger.Errorf("👻 wrong TLS secret mounted on the '%s' container?", container)
+			return true, nil
+		}
 		ll := strings.ToLower(l)
+
 		if strings.Contains(ll, "error") ||
 			strings.Contains(ll, "failed") ||
 			strings.Contains(ll, "fatal") ||
