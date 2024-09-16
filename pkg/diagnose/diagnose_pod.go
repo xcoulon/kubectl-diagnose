@@ -40,6 +40,7 @@ func checkPod(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset,
 	for _, c := range pod.Status.Conditions {
 		if c.Type == corev1.ContainersReady && c.Status == corev1.ConditionTrue {
 			logger.Infof("☑️  all containers in pod '%s' are ready", pod.Name)
+			// check the latest logs for the container (or sidecar container, eg, a proxy) that matches the port
 			return false, nil
 		}
 	}
@@ -133,7 +134,7 @@ func diagnoseContainer(ctx context.Context, logger *log.Logger, cl *kubernetes.C
 
 func checkContainerLogs(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, pod *corev1.Pod, container string) (bool, error) {
 	found := false
-	logger.Debugf("👀 checking '%s' container logs...", container)
+	logger.Infof("👀 checking '%s' container logs...", container)
 	logs, err := cl.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: container}).DoRaw(ctx)
 	if err != nil {
 		return false, err

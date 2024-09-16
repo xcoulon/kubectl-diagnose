@@ -76,12 +76,14 @@ pods:
 		for _, sp := range svc.Spec.Ports {
 			// check the svc/pod port bindings
 			found := false
+			var targetContainer string
 		containers:
 			for _, c := range pod.Spec.Containers {
 				for _, cp := range c.Ports {
 					if cp.Name == sp.TargetPort.StrVal || cp.ContainerPort == sp.TargetPort.IntVal {
 						logger.Debugf("☑️ found matching target port '%s' (%d) in container '%s' of pod '%s'", cp.Name, cp.ContainerPort, c.Name, pod.Name)
 						found = true
+						targetContainer = c.Name
 						break containers
 					}
 				}
@@ -92,6 +94,11 @@ pods:
 			}
 			p := pod
 			if found, err := checkPod(ctx, logger, cl, &p); err != nil {
+				return false, err
+			} else if found {
+				return true, nil
+			}
+			if found, err := checkContainerLogs(ctx, logger, cl, &p, targetContainer); err != nil {
 				return false, err
 			} else if found {
 				return true, nil

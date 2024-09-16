@@ -682,6 +682,24 @@ func TestDiagnose(t *testing.T) {
 					`👻 containers with unready status: [prometheus]`,
 				},
 			},
+			{
+				title: "should detect error logs in target container",
+				resources: []string{
+					"resources/pod-container-with-errors.yaml",
+					"resources/pod-container-with-errors.logs",
+				},
+				entrypoints: []entrypoint{
+					{
+						kind:      diagnose.Service,
+						namespace: "test",
+						name:      "alertmanager-oauth2",
+					},
+				},
+				expectedFound: true,
+				expectedMsgs: []string{
+					`TLS handshake error`,
+				},
+			},
 		},
 		// --------------------------------------------------------
 		// Diagnose no errors when all good
@@ -740,6 +758,7 @@ func TestDiagnose(t *testing.T) {
 							logger := log.NewWithOptions(buf, log.Options{
 								TimeFormat: time.Kitchen,
 								Level:      log.DebugLevel,
+								Formatter:  log.TextFormatter,
 							})
 							apiserver, err := testsupport.NewFakeAPIServer(logger, tc.resources...)
 							require.NoError(t, err)
