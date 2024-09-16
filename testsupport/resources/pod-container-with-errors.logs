@@ -1,0 +1,8 @@
+alertmanager-0:
+  alertmanager: |-
+    <nothing>
+  oauth-proxy: |-
+    <nothing>
+  oauth2-proxy: |-
+    2024/09/13 13:39:04 server.go:3217: http: TLS handshake error from 10.129.2.10:50250: local error: tls: bad record MAC
+    2024/09/13 13:39:05 server.go:3217: http: TLS handshake error from 10.129.2.10:50254: local error: tls: bad record MAC

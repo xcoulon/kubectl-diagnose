@@ -1,0 +1,118 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: test
+  name: alertmanager-oauth2
+  resourceVersion: "38838"
+  uid: 92b785d6-6bd5-46d9-9b11-7eae80758eb7
+spec:
+  clusterIP: 172.30.128.86
+  clusterIPs:
+  - 172.30.128.86
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: https
+    port: 9092
+    protocol: TCP
+    targetPort: oauth2
+  selector:
+    app.kubernetes.io/name: alertmanager
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---  
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: test
+  name: alertmanager-0
+  labels:
+    app.kubernetes.io/name: alertmanager
+  resourceVersion: "39060"
+  uid: d771398d-4db9-47dd-8c04-980987978477
+spec:
+  containers:
+  - name: oauth-proxy
+    ports:
+    - containerPort: 9091
+      name: oauth
+      protocol: TCP
+  - name: oauth2-proxy
+    ports:
+    - containerPort: 9092
+      name: oauth2
+      protocol: TCP
+  - name: alertmanager
+    ports:
+    - containerPort: 9093
+      name: http
+      protocol: TCP
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2024-09-13T13:37:29Z"
+    status: "True"
+    type: PodReadyToStartContainers
+  - lastProbeTime: null
+    lastTransitionTime: "2024-09-13T13:37:10Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2024-09-13T13:37:29Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2024-09-13T13:37:29Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2024-09-13T13:37:10Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: cri-o://0a669d7d5df2b1d67b73848d86f7479e179a7ab1bae0e2a4a1e2dc0873ca4fa7
+    image: quay.io/prometheus/alertmanager:v0.27.0
+    imageID: quay.io/prometheus/alertmanager@sha256:45c3a586d4332d710bef92b06e90380c0b1f588968c00100d4b5e4e44c40ca5f
+    lastState: {}
+    name: alertmanager
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2024-09-13T13:37:28Z"
+  - containerID: cri-o://d14aa86e4ba560e154987faaa2e248aff38f86da033535422ea7e18647644845
+    image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.15
+    imageID: registry.redhat.io/openshift4/ose-kube-rbac-proxy@sha256:e27b70b2882f3f59e1ba1d10a406bc015a5fbc7077c3964801213a93d55eccc3
+    lastState: {}
+    name: oauth-proxy
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2024-09-13T13:37:22Z"
+  - containerID: cri-o://79f8242c8eaae343b54ffe94d6acba2082c71d8c35d4e3d5b26ae478fd1593fb
+    image: registry.redhat.io/openshift4/ose-oauth-proxy:v4.14
+    imageID: registry.redhat.io/openshift4/ose-oauth-proxy@sha256:105307b602ac74649f868e1ea0aab7b8621ea1ecfd58ceca669dcf32f538798e
+    lastState: {}
+    name: oauth2-proxy
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2024-09-13T13:37:26Z"
+  hostIP: 10.0.89.190
+  hostIPs:
+  - ip: 10.0.89.190
+  phase: Running
+  podIP: 10.128.2.23
+  podIPs:
+  - ip: 10.128.2.23
+  qosClass: Burstable
+  startTime: "2024-09-13T13:37:10Z"
