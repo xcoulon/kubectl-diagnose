@@ -485,7 +485,7 @@ func TestDiagnose(t *testing.T) {
 				expectedMsgs: []string{
 					`👻 containers with unready status: [default]`,
 					fmt.Sprintf(`⚡️ %s ago: BackOff: Back-off restarting failed container`, since(now, "2022-11-12T18:02:28Z")),
-					`🗒  Error: loading initial config: loading new config: http app module: start: listening on :80: listen tcp :80: bind: permission denied`,
+					`loading initial config: loading new config: http app module: start: listening on :80: listen tcp :80: bind: permission denied`,
 				},
 			},
 			{
