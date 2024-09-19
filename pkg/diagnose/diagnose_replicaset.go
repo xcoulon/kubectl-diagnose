@@ -54,7 +54,7 @@ rss:
 }
 
 func checkReplicaSet(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, rs *appsv1.ReplicaSet) (bool, error) {
-	logger.Debugf("👀 checking replicaset '%s' in namespace '%s'...", rs.Name, rs.Namespace)
+	logger.Infof("👀 checking replicaset '%s' in namespace '%s'...", rs.Name, rs.Namespace)
 	for _, c := range rs.Status.Conditions {
 		if c.Type == appsv1.ReplicaSetReplicaFailure &&
 			c.Reason == "FailedCreate" &&
@@ -91,7 +91,7 @@ func checkReplicaSet(ctx context.Context, logger *log.Logger, cl *kubernetes.Cli
 	}
 	for i := range pods.Items {
 		pod := pods.Items[i]
-		logger.Debugf("👀 checking pod '%s'...", pod.Name)
+		logger.Infof("👀 checking pod '%s'...", pod.Name)
 		for _, ownerRef := range pod.OwnerReferences {
 			if ownerRef.UID == rs.UID {
 				// pod is "owned" by this replicaset

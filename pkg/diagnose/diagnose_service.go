@@ -21,7 +21,7 @@ func diagnoseService(ctx context.Context, logger *log.Logger, cfg *rest.Config, 
 }
 
 func checkService(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, svc *corev1.Service) (bool, error) {
-	logger.Debugf("👀 checking service '%s' in namespace '%s'...", svc.Name, svc.Namespace)
+	logger.Infof("👀 checking service '%s' in namespace '%s'...", svc.Name, svc.Namespace)
 
 	pods, err := findPods(ctx, cl, svc.Namespace, svc.Spec.Selector)
 	if err != nil {

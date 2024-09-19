@@ -25,7 +25,7 @@ func diagnoseIngress(ctx context.Context, logger *log.Logger, cfg *rest.Config, 
 }
 
 func checkIngress(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, i *networkingv1.Ingress) (bool, error) {
-	logger.Debugf("👀 checking ingress '%s' in namespace '%s'...", i.Name, i.Namespace)
+	logger.Infof("👀 checking ingress '%s' in namespace '%s'...", i.Name, i.Namespace)
 	if i.Spec.IngressClassName != nil {
 		logger.Debugf("`👀 checking ingressclass '%s' at cluster level...`", *i.Spec.IngressClassName)
 		// look for ingress classnames (if allowed)

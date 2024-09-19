@@ -21,7 +21,7 @@ func diagnoseDeployment(ctx context.Context, logger *log.Logger, cfg *rest.Confi
 }
 
 func checkDeployment(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, d *appsv1.Deployment) (bool, error) {
-	logger.Debugf("👀 checking deployment '%s' in namespace '%s'...", d.Name, d.Namespace)
+	logger.Infof("👀 checking deployment '%s' in namespace '%s'...", d.Name, d.Namespace)
 	found := false
 	for _, c := range d.Status.Conditions {
 		if c.Type == appsv1.DeploymentAvailable && c.Status == corev1.ConditionFalse {

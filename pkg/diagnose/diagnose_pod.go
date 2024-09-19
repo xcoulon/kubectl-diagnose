@@ -33,13 +33,13 @@ func findPods(ctx context.Context, cl *kubernetes.Clientset, namespace string, s
 }
 
 func checkPod(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, pod *corev1.Pod) (bool, error) {
-	logger.Debugf("👀 checking pod '%s' in namespace '%s'...", pod.Name, pod.Namespace)
+	logger.Infof("👀 checking pod '%s' in namespace '%s'...", pod.Name, pod.Namespace)
 	found := false
 	logger.Debugf("👀 checking pod status...")
 	//
 	for _, c := range pod.Status.Conditions {
 		if c.Type == corev1.ContainersReady && c.Status == corev1.ConditionTrue {
-			logger.Infof("☑️  all containers in pod '%s' are ready", pod.Name)
+			logger.Debugf("☑  all containers in pod '%s' are ready", pod.Name)
 			// check the latest logs for the container (or sidecar container, eg, a proxy) that matches the port
 			return false, nil
 		}
@@ -158,7 +158,7 @@ func checkContainerLogs(ctx context.Context, logger *log.Logger, cl *kubernetes.
 		logger.Debugf("🤷 no 'error'/'failed'/'fatal'/'panic'/'emerg' messages found in the '%s' container logs", container)
 		return false, nil
 	}
-	logger.Errorf("🗒 '%s' container logs contains error messages:", container)
+	logger.Errorf("🗒 error messages found in the '%s' container logs:", container)
 	logger.Printf("%s", string(logs))
 	return true, nil
 }
