@@ -26,7 +26,7 @@ func diagnoseRoute(ctx context.Context, logger *log.Logger, cfg *rest.Config, na
 // - the route's target port on pods selected by the service this route points to.
 // (If this is a string, it will be looked up as a named port in the target endpoints port list)
 func checkRoute(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, route *routev1.Route) (bool, error) {
-	logger.Infof("👀 checking route '%s' in namespace '%s'...", route.Name, route.Namespace)
+	logger.Debugf("👀 checking route '%s' in namespace '%s'...", route.Name, route.Namespace)
 	svc, err := cl.CoreV1().Services(route.Namespace).Get(ctx, route.Spec.To.Name, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		logger.Errorf("👻 unable to find service '%s'", route.Spec.To.Name)

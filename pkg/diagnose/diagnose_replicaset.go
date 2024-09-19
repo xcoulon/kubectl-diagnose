@@ -54,7 +54,7 @@ rss:
 }
 
 func checkReplicaSet(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, rs *appsv1.ReplicaSet) (bool, error) {
-	logger.Infof("👀 checking replicaset '%s' in namespace '%s'...", rs.Name, rs.Namespace)
+	logger.Debugf("👀 checking replicaset '%s' in namespace '%s'...", rs.Name, rs.Namespace)
 	for _, c := range rs.Status.Conditions {
 		if c.Type == appsv1.ReplicaSetReplicaFailure &&
 			c.Reason == "FailedCreate" &&

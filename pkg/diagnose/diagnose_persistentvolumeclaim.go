@@ -20,7 +20,7 @@ func diagnosePersistentVolumeClaim(ctx context.Context, logger *log.Logger, cfg 
 }
 
 func checkPersistentVolumeClaim(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, pvc *corev1.PersistentVolumeClaim) (bool, error) {
-	logger.Infof("👀 checking persistentvolumeclaim '%s' in namespace '%s'...", pvc.Name, pvc.Namespace)
+	logger.Debugf("👀 checking persistentvolumeclaim '%s' in namespace '%s'...", pvc.Name, pvc.Namespace)
 	found := false
 	logger.Debugf("👀 checking persistentvolumeclaim status...")
 	if pvc.Status.Phase == corev1.ClaimPending {

@@ -21,7 +21,7 @@ func diagnoseStatefulSet(ctx context.Context, logger *log.Logger, cfg *rest.Conf
 }
 
 func checkStatefulSet(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, sts *appsv1.StatefulSet) (bool, error) {
-	logger.Infof("👀 checking statefulset '%s' in namespace '%s'...", sts.Name, sts.Namespace)
+	logger.Debugf("👀 checking statefulset '%s' in namespace '%s'...", sts.Name, sts.Namespace)
 	found := false
 	// check the replicas
 	if sts.Spec.Replicas != nil && *sts.Spec.Replicas == 0 {
