@@ -39,7 +39,7 @@ func checkPod(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset,
 	//
 	for _, c := range pod.Status.Conditions {
 		if c.Type == corev1.ContainersReady && c.Status == corev1.ConditionTrue {
-			logger.Infof("☑️  all containers in pod '%s' are ready", pod.Name)
+			logger.Debugf("☑  all containers in pod '%s' are ready", pod.Name)
 			// check the latest logs for the container (or sidecar container, eg, a proxy) that matches the port
 			return false, nil
 		}
@@ -128,7 +128,6 @@ func diagnoseContainer(ctx context.Context, logger *log.Logger, cl *kubernetes.C
 
 func checkContainerLogs(ctx context.Context, logger *log.Logger, cl *kubernetes.Clientset, pod *corev1.Pod, container string) (bool, error) {
 	found := false
-	logger.Infof("👀 checking '%s' container logs...", container)
 	logs, err := cl.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: container}).DoRaw(ctx)
 	if err != nil {
 		return false, err
@@ -147,13 +146,19 @@ func checkContainerLogs(ctx context.Context, logger *log.Logger, cl *kubernetes.
 			strings.Contains(ll, "failed") ||
 			strings.Contains(ll, "fatal") ||
 			strings.Contains(ll, "panic") ||
+			strings.Contains(ll, "forbidden") ||
+			strings.Contains(ll, "cannot") ||
+			strings.Contains(ll, "unable") ||
 			strings.Contains(ll, "emerg") {
 			found = true
-			logger.Errorf("🗒  %s", l)
+
 		}
 	}
 	if !found {
-		logger.Infof("🤷 no 'error'/'failed'/'fatal'/'panic'/'emerg' messages found in the '%s' container logs", container)
+		logger.Debugf("🤷 no 'error'/'failed'/'fatal'/'panic'/'emerg' messages found in the '%s' container logs", container)
+		return false, nil
 	}
-	return found, nil
+	logger.Errorf("🗒 error messages found in the '%s' container logs:", container)
+	logger.Printf("%s", string(logs))
+	return true, nil
 }

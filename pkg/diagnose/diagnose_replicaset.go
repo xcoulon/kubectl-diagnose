@@ -91,7 +91,7 @@ func checkReplicaSet(ctx context.Context, logger *log.Logger, cl *kubernetes.Cli
 	}
 	for i := range pods.Items {
 		pod := pods.Items[i]
-		logger.Debugf("👀 checking pod '%s'...", pod.Name)
+		logger.Infof("👀 checking pod '%s'...", pod.Name)
 		for _, ownerRef := range pod.OwnerReferences {
 			if ownerRef.UID == rs.UID {
 				// pod is "owned" by this replicaset
