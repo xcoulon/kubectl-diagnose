@@ -48,10 +48,6 @@ linters-settings:
     # Disable to ensure that all nolint directives actually have an effect.
     # Default: false
     allow-unused: false
-    # Disable to ensure that nolint directives don't have a leading space.
-    # Default: true
-    allow-leading-space: false
-    # Exclude following linters from requiring an explanation.
     # Default: []
     allow-no-explanation: []
     # Enable to require an explanation of nonzero length after each nolint directive.
